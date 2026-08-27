@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a1a3a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Notifications — Elite Scholar Institute</title>
+<link rel="apple-touch-icon" href="logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<!-- Every key + the admin email live here, and ONLY here. Must load before password.js. -->
+<script src="./firebase-config.js"></script>
+<script src="./app.js" defer></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;-webkit-tap-highlight-color:transparent}
+:root{
+  --blue:#1565ff; --blue-deep:#0a2472; --blue-light:#5b8def; --blue-dim:#12224a;
+  --orange:#ff8a00; --orange-light:#ffb347; --orange-dim:#3a2410;
+  --bg:#050b1a; --card:#0d1b3ee6; --card2:#0f2050; --card-solid:#0d1b3e;
+  --border:#1e3a6e; --border2:#2a4d8f;
+  --text:#f2f6ff; --muted:#9db3dc; --muted2:#6f88b8;
+  --green:#10b981; --green-dim:#064e3b; --red:#ef4444; --red-dim:#7f1d1d;
+  --accent-color:var(--blue);
+}
+html{height:100%}
+body{
+background: linear-gradient(180deg, rgba(4,9,22,.92), rgba(9,22,50,.95)), url('advert.png') center/cover no-repeat;
+
+  color:var(--text); min-height:100vh; padding-bottom:90px;
+  transition: font-size 0.2s ease;
+}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+button{cursor:pointer;font-family:inherit}
+input,textarea,select{font-family:inherit;outline:none}
+
+/* ---------- READING PROGRESS BAR ---------- */
+#readingProgress{position:fixed;top:0;left:0;height:3px;background:var(--orange);width:0%;z-index:9999;transition:width 0.1s linear}
+
+/* ---------- OFFLINE BANNER ---------- */
+#offlineBanner{position:fixed;top:0;left:0;right:0;background:var(--orange);color:#1a0e00;font-size:10.5px;font-weight:700;text-align:center;padding:4px;z-index:9998;display:none}
+#offlineBanner.show{display:block}
+
+/* ---------- HEADER ---------- */
+#appHeader{
+  position:sticky;top:0;z-index:100;
+  background:linear-gradient(180deg,rgba(5,12,28,.96),rgba(5,12,28,.88));
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:12px 14px;
+}
+.header-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.header-title{display:flex;align-items:center;gap:10px}
+.logo-badge{
+  width:42px;height:42px;border-radius:50%;overflow:hidden;
+  border:2px solid var(--orange); flex-shrink:0;
+  box-shadow:0 0 14px rgba(255,138,0,.35);
+  background:var(--card2);
+}
+.logo-badge img{width:100%;height:100%;object-fit:cover}
+.header-title h1{font-size:15px;font-weight:800;line-height:1.2}
+.header-title p{font-size:10px;color:var(--muted);font-weight:500;margin-top:1px}
+.header-actions{display:flex;align-items:center;gap:6px}
+.icon-btn{
+  width:36px;height:36px;border-radius:10px;background:var(--card2);
+  border:1px solid var(--border);display:grid;place-items:center;
+  color:var(--muted);font-size:15px;position:relative;
+}
+.icon-btn:active{background:var(--blue-dim)}
+#unreadBadge{
+  position:absolute;top:-5px;right:-5px;background:var(--orange);color:#1a0e00;
+  font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;
+  display:none;align-items:center;justify-content:center;padding:0 4px;
+  box-shadow:0 0 0 2px var(--bg);
+}
+#unreadBadge.show{display:flex}
+.spin{animation:spin .6s linear}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* search bar */
+#searchWrap{max-height:0;overflow:hidden;transition:max-height .25s ease}
+#searchWrap.open{max-height:50px;margin-top:10px}
+#searchInput{
+  width:100%;padding:9px 12px;background:var(--card2);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);font-size:12px;
+}
+#searchInput::placeholder{color:var(--muted2)}
+
+/* tabs */
+#filterTabs{display:flex;gap:6px;overflow-x:auto;margin-top:10px;padding-bottom:2px;scrollbar-width:none}
+#filterTabs::-webkit-scrollbar{display:none}
+.tab{
+  flex-shrink:0;padding:6px 13px;border-radius:999px;background:var(--card2);
+  border:1px solid var(--border);font-size:10.5px;font-weight:600;color:var(--muted);
+  white-space:nowrap;
+}
+.tab.active{background:var(--accent-color);border-color:var(--accent-color);color:#fff}
+
+/* ---------- FEED ---------- */
+#feedContainer{padding:12px;max-width:640px;margin:0 auto}
+
+.notif-card{
+  background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent-color);
+  border-radius:14px;padding:13px;margin-bottom:11px;position:relative;
+  box-shadow:0 4px 18px rgba(0,0,0,.25);
+}
+/* Only cards that are genuinely new play this — see renderFeed()/renderCard()
+   in password.js. Applying it to every card on every re-render is what
+   caused the whole feed to flash/blur each time anything changed. */
+.notif-card.card-enter{animation:cardIn .3s ease}
+@keyframes cardIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.notif-card.urgent{border-left-color:var(--orange)}
+.notif-card.pinned{border-color:var(--orange);box-shadow:0 0 0 1px rgba(255,138,0,.25),0 4px 18px rgba(0,0,0,.25)}
+.notif-card.unread::after{
+  content:'';position:absolute;top:14px;right:13px;width:8px;height:8px;border-radius:50%;
+  background:var(--orange);box-shadow:0 0 6px var(--orange);
+}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.card-author{display:flex;align-items:center;gap:8px}
+.author-avatar{
+  width:36px;height:36px;border-radius:50%;overflow:hidden;border:1px solid var(--border2);flex-shrink:0;background:var(--card2);
+}
+.author-avatar img{width:100%;height:100%;object-fit:cover}
+.author-name{font-size:11.5px;font-weight:700}
+.card-meta{font-size:9px;color:var(--muted2);margin-top:1px}
+
+.chip-mini{
+  display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;
+  font-size:8.5px;font-weight:800;letter-spacing:.3px;
+}
+.chip-urgent{background:var(--orange-dim);color:var(--orange-light);border:1px solid rgba(255,138,0,.4)}
+.chip-pinned{background:var(--orange-dim);color:var(--orange-light);border:1px solid rgba(255,138,0,.4)}
+.chip-admin{background:var(--blue-dim);color:var(--blue-light);border:1px solid var(--border2)}
+.chip-edited{background:var(--blue-dim);color:var(--blue-light);border:1px solid var(--border2);font-size:7.5px;padding:1px 5px}
+
+.card-body{font-size:12.5px;line-height:1.5;color:var(--text);white-space:pre-wrap;word-break:break-word;margin-top:4px}
+.card-img{width:100%;border-radius:10px;margin-top:8px;max-height:280px;object-fit:cover;border:1px solid var(--border)}
+
+/* poll & quiz */
+.poll-q{font-size:12.5px;font-weight:700;margin-bottom:9px}
+.poll-opt{
+  position:relative;height:38px;border-radius:9px;background:var(--card2);
+  border:1px solid var(--border);margin-bottom:7px;overflow:hidden;cursor:pointer;
+}
+.poll-fill{position:absolute;top:0;left:0;height:100%;background:var(--blue-dim);transition:width .5s ease;z-index:1}
+.poll-fill.mine{background:rgba(255,138,0,.35)}
+.poll-opt-label{
+  position:relative;z-index:2;height:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:0 11px;font-size:11px;font-weight:600;
+}
+.poll-total{font-size:9.5px;color:var(--muted2);margin-top:2px}
+
+/* quiz styling */
+.quiz-opt{
+  padding:10px 12px;border-radius:9px;background:var(--card2);border:1px solid var(--border);
+  margin-bottom:7px;font-size:11px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;
+}
+.quiz-opt.correct{background:var(--green-dim);border-color:var(--green);color:#a7f3d0}
+.quiz-opt.incorrect{background:var(--red-dim);border-color:var(--red);color:#fecaca}
+.quiz-explanation{
+  margin-top:8px;padding:9px;background:var(--card2);border:1px solid var(--border2);border-radius:8px;font-size:11px;line-height:1.4;color:var(--muted);
+}
+
+/* reactions */
+.reaction-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:40px;align-items:center}
+.reaction-chip{
+  display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:999px;
+  background:var(--card2);border:1px solid var(--border);font-size:10.5px;color:var(--muted);position:relative;cursor:pointer;
+}
+.reaction-chip.mine{border-color:var(--orange);color:var(--orange-light)}
+.reaction-add{
+  width:26px;height:26px;border-radius:50%;background:var(--card2);border:1px solid var(--border);
+  display:grid;place-items:center;font-size:12px;color:var(--muted);position:relative;
+}
+.emoji-picker{
+  position:absolute;bottom:32px;left:0;background:var(--card-solid);border:1px solid var(--border);
+  border-radius:12px;padding:8px;display:none;grid-template-columns:repeat(5, 1fr);gap:6px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:50;
+  width:210px;max-height:160px;overflow-y:auto;
+}
+.emoji-picker.show{display:grid}
+.emoji-picker button{font-size:16px;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px;display:grid;place-items:center}
+.emoji-picker button:hover{background:var(--blue-dim)}
+
+/* reaction names admin tooltip */
+.reaction-names-tooltip{
+  position:absolute;bottom:115%;left:50%;transform:translateX(-50%);background:var(--card-solid);
+  border:1px solid var(--border2);border-radius:10px;padding:8px 12px;font-size:9.5px;color:var(--text);
+  line-height:1.7;text-align:left;min-width:110px;box-shadow:0 4px 16px rgba(0,0,0,.6);z-index:60;display:none;pointer-events:none;
+}
+.reaction-chip:hover .reaction-names-tooltip{display:block}
+
+/* views counter (admin only) */
+.card-views-counter{
+  font-size:10px;color:var(--muted2);margin-top:8px;display:flex;align-items:center;gap:4px;font-weight:600;
+}
+
+/* WhatsApp responses section */
+.responses-section{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
+/* WhatsApp-style "View responses" voter list */
+.view-responses-link{color:var(--blue-light);font-weight:700;cursor:pointer;text-decoration:underline}
+.vv-opt{margin-bottom:14px}
+.vv-opt-head{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--text);padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--border)}
+.vv-count{margin-left:auto;color:var(--muted2);font-weight:700}
+.vv-correct-badge{font-size:9px;background:var(--green-dim);color:#a7f3d0;border:1px solid var(--green);border-radius:6px;padding:1px 6px}
+.vv-row{display:flex;align-items:center;gap:9px;padding:6px 2px}
+.vv-avatar{width:28px;height:28px;border-radius:50%;background:var(--blue-dim);color:var(--blue-light);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0}
+.vv-name{font-size:11.5px;font-weight:700;color:var(--text)}
+.vv-time{font-size:9.5px;color:var(--muted2)}
+.vv-empty{font-size:10.5px;color:var(--muted2);padding:4px 2px 10px}
+
+.response-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;max-height:180px;overflow-y:auto}
+.response-item{
+  background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:11px;
+}
+.response-author{font-weight:700;color:var(--blue-light);font-size:10.5px;margin-bottom:2px}
+.response-text{color:var(--text);word-break:break-word}
+.response-reply-bar{display:flex;gap:6px}
+.response-input{
+  flex:1;padding:7px 10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:11px;
+}
+.response-send-btn{
+  padding:0 12px;border-radius:8px;background:var(--accent-color);border:none;color:#fff;font-size:11px;font-weight:700;
+}
+
+/* admin row */
+.admin-row{display:flex;gap:8px;margin-top:10px;padding-top:9px;border-top:1px solid var(--border2);flex-wrap:wrap}
+.admin-btn{
+  font-size:9.5px;font-weight:700;padding:5px 10px;border-radius:8px;background:var(--card2);
+  border:1px solid var(--border);color:var(--muted);
+}
+.admin-btn.danger{color:var(--orange-light);border-color:rgba(255,138,0,.4)}
+
+/* extra action buttons on cards */
+.card-tools{display:flex;gap:6px;margin-top:8px}
+.tool-btn{font-size:9px;padding:3px 7px;border-radius:6px;background:var(--card2);border:1px solid var(--border);color:var(--muted2)}
+
+/* skeleton */
+.skeleton-card{
+  height:90px;border-radius:14px;margin-bottom:11px;
+  background:linear-gradient(90deg,var(--card2) 25%,#16295c 37%,var(--card2) 63%);
+  background-size:400% 100%;animation:shimmer 1.4s ease infinite;
+}
+@keyframes shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+
+#emptyState{display:none;text-align:center;padding:60px 20px;color:var(--muted)}
+#emptyState .e-icon{font-size:44px;margin-bottom:10px}
+#emptyState p{font-size:12px}
+
+#loadMoreBtn{
+  display:none;width:calc(100% - 24px);margin:6px auto 14px;padding:11px;border-radius:10px;
+  background:var(--card2);border:1px solid var(--border);color:var(--blue-light);font-size:11.5px;font-weight:700;
+}
+
+/* ---------- FAB ---------- */
+#fab{
+  position:fixed;right:18px;bottom:22px;width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--orange),#ff6a00);border:none;
+  box-shadow:0 8px 22px rgba(255,138,0,.45);display:grid;place-items:center;
+  font-size:24px;color:#1a0e00;z-index:200;font-weight:900;
+}
+#fabLock{position:absolute;top:-2px;right:-2px;background:var(--accent-color);border-radius:50%;width:18px;height:18px;
+  display:none;align-items:center;justify-content:center;font-size:9px;box-shadow:0 0 0 2px var(--bg);}
+#fabLock.show{display:flex}
+
+/* ---------- MODALS ---------- */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(2,5,14,.72);backdrop-filter:blur(3px);
+  display:none;align-items:flex-end;justify-content:center;z-index:1000;
+}
+.modal-overlay.show{display:flex}
+@media(min-width:520px){.modal-overlay{align-items:center}}
+.modal-box{
+  width:100%;max-width:460px;max-height:88vh;overflow-y:auto;background:var(--card-solid);
+  border:1px solid var(--border);border-radius:18px 18px 0 0;padding:20px;animation:slideUp .25s ease;
+}
+@media(min-width:520px){.modal-box{border-radius:18px}}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.modal-head h2{font-size:15px;font-weight:800}
+.modal-close{width:30px;height:30px;border-radius:9px;background:var(--card2);border:1px solid var(--border);color:var(--muted);font-size:14px}
+
+.field{margin-bottom:12px}
+.field label{font-size:10px;font-weight:700;color:var(--blue-light);display:block;margin-bottom:5px;letter-spacing:.3px}
+.field input[type=text],.field input[type=password],.field input[type=url],.field textarea,.field select{
+  width:100%;padding:11px;background:var(--card2);border:1px solid var(--border);border-radius:10px;
+  color:var(--text);font-size:12.5px;
+}
+.field textarea{resize:vertical;min-height:80px}
+
+.compose-tabs{display:flex;gap:4px;margin-bottom:14px;overflow-x:auto}
+.compose-tab-btn{flex:1;padding:8px 6px;border-radius:9px;background:var(--card2);border:1px solid var(--border);
+  font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap}
+.compose-tab-btn.active{background:var(--accent-color);border-color:var(--accent-color);color:#fff}
+.compose-section{display:none}
+.compose-section.active{display:block}
+
+.radio-row{display:flex;gap:14px;margin-bottom:10px;font-size:11px;color:var(--muted)}
+.radio-row label{display:flex;align-items:center;gap:5px}
+
+.poll-opt-row{display:flex;gap:7px;margin-bottom:7px}
+.poll-opt-row input{flex:1;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:12px}
+.opt-remove{width:34px;border-radius:9px;background:var(--orange-dim);border:1px solid rgba(255,138,0,.4);color:var(--orange-light);font-size:12px}
+#addPollOptBtn,#addQuizOptBtn{width:100%;padding:9px;border-radius:9px;background:var(--card2);border:1px dashed var(--border2);color:var(--blue-light);font-size:11px;font-weight:700;margin-top:2px;margin-bottom:12px}
+
+#uploadProgressWrap{display:none;margin-bottom:12px}
+#uploadProgressTrack{height:7px;border-radius:99px;background:var(--card2);overflow:hidden;border:1px solid var(--border)}
+#uploadProgressBar{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-color),var(--orange));transition:width .2s ease}
+#uploadProgressLabel{font-size:9.5px;color:var(--muted);margin-top:4px}
+
+.btn-send{width:100%;padding:13px;border-radius:11px;border:none;font-size:13px;font-weight:800;
+  background:linear-gradient(135deg,var(--orange),#ff6a00);color:#1a0e00;box-shadow:0 6px 16px rgba(255,138,0,.35)}
+
+.settings-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border2);font-size:12px}
+.settings-row:last-child{border-bottom:none}
+.switch{position:relative;width:40px;height:22px}
+.switch input{opacity:0;width:0;height:0}
+.slider-tog{position:absolute;inset:0;background:var(--card2);border:1px solid var(--border);border-radius:99px;transition:.2s}
+.slider-tog::before{content:'';position:absolute;width:16px;height:16px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:.2s}
+.switch input:checked+.slider-tog{background:var(--accent-color);border-color:var(--accent-color)}
+.switch input:checked+.slider-tog::before{transform:translateX(18px);background:#fff}
+.small-btn{padding:8px 13px;border-radius:9px;background:var(--card2);border:1px solid var(--border);color:var(--blue-light);font-size:10.5px;font-weight:700}
+.small-btn.orange{color:var(--orange-light);border-color:rgba(255,138,0,.4)}
+
+/* lightbox */
+#lightboxModal{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px;flex-direction:column;gap:15px}
+#lightboxModal.show{display:flex}
+#lightboxImg{max-width:100%;max-height:78vh;border-radius:10px}
+#lightboxActions{display:flex;gap:10px}
+#lightboxClose{position:absolute;top:18px;right:18px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:16px}
+
+/* toast */
+#toastContainer{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:3000;display:flex;flex-direction:column;gap:8px;align-items:center;width:90%;max-width:420px}
+.toast{
+  padding:10px 16px;border-radius:10px;font-size:11.5px;font-weight:600;color:#fff;
+  opacity:0;transform:translateY(10px);transition:.25s ease;box-shadow:0 6px 18px rgba(0,0,0,.35);
+  max-width:100%;text-align:center;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast-blue{background:var(--accent-color)}
+.toast-orange{background:var(--orange);color:#1a0e00}
+
+footer{text-align:center;padding:20px;font-size:9.5px;color:var(--muted2)}
+
+/* ===== GLOBAL SMOOTH PAGE SCROLL CONFIGURATION ===== */
+html {
+  height: 100%;
+  overflow-y: scroll; /* Forces a dedicated root scroll track so it slides freely */
+}
+
+body {
+  min-height: 100%; 
+  width: 100%; 
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Ensures snappy, native iOS inertia physics */
+  overscroll-behavior-y: auto; /* Restores free boundary bounce at both ends */
+}
+
+/* Base box modeling for child elements */
+body * {
+  box-sizing: border-box;
+}
+
+/* Prevent text selection across the entire website */
+body {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none;     /* IE 10 and Consumer Edge */
+  user-select: none;         /* Standard syntax for Chrome, Firefox, and Opera */
+}
+
+
+// Disable right-click context menu
+document.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+});
+
+// Disable copy keyboard shortcuts (Ctrl+C, Ctrl+X, Ctrl+U)
+document.addEventListener('keydown', function(e) {
+  // Disable Ctrl+C or Cmd+C (Copy)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+    e.preventDefault();
+  }
+  
+  // Disable Ctrl+X or Cmd+X (Cut)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+    e.preventDefault();
+  }
+
+  // Disable Ctrl+U or Cmd+U (View Source)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+    e.preventDefault();
+  }
+});
+
+</style>
+<style>
+/* ===== FORCE SMOOTH PAGE SCROLL FIX ===== */
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+* {
+  touch-action: pan-y; /* allow vertical scroll by default */
+}
+
+#lightbox {
+  touch-action: none;
+}
+
+#lightbox img {
+  touch-action: pan-x pan-y pinch-zoom;
+}
+</style>
+
+<style>
+  
+    
+    
+@keyframes blueGlow {
+ 0%, 100% { box-shadow:0 0 15px rgba(59,130,246,0.4); }
+ 50% { box-shadow:0 0 30px rgba(59,130,246,0.7); }
+}
+</style>
+
+
+
+
+<style>
+/* ===== GLOBAL SMOOTH PAGE SCROLL CONFIGURATION ===== */
+html {
+  height: 100%;
+  overflow-y: scroll; /* Forces a dedicated root scroll track so it slides freely */
+}
+
+body {
+  min-height: 100%; 
+  width: 100%; 
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Ensures snappy, native iOS inertia physics */
+  overscroll-behavior-y: auto; /* Restores free boundary bounce at both ends */
+}
+
+/* Base box modeling for child elements */
+body * {
+  box-sizing: border-box;
+}
+
+/* Prevent text selection across the entire website */
+body {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none;     /* IE 10 and Consumer Edge */
+  user-select: none;         /* Standard syntax for Chrome, Firefox, and Opera */
+}
+
+
+// Disable right-click context menu
+document.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+});
+
+// Disable copy keyboard shortcuts (Ctrl+C, Ctrl+X, Ctrl+U)
+document.addEventListener('keydown', function(e) {
+  // Disable Ctrl+C or Cmd+C (Copy)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+    e.preventDefault();
+  }
+  
+  // Disable Ctrl+X or Cmd+X (Cut)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+    e.preventDefault();
+  }
+
+  // Disable Ctrl+U or Cmd+U (View Source)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+    e.preventDefault();
+  }
+});
+
+
+
+</style>
+
+
+<script>
+/**
+ * REUSABLE SCROLL CONTROLLER FUNCTIONS
+ * Use these anywhere you need to manage background scroll locking 
+ * when custom popups, menus, or lightboxes trigger.
+ */
+
+// Call this when your modal/lightbox OPENS
+function lockBackgroundScroll() {
+  document.body.style.overflow = 'hidden';
+}
+
+// Call this when your modal/lightbox CLOSES
+function unlockBackgroundScroll() {
+  document.body.style.overflow = '';
+}
+
+
+/* ==========================================================================
+   EXAMPLE IMPLEMENTATION FOR YOUR MODAL / LIGHTBOX SCRIPTS:
+   ========================================================================== */
+
+// Example function for launching a popup
+function openYourCustomModal() {
+  // 1. Lock the page background from dragging
+  lockBackgroundScroll();
+  
+  // 2. Your actual display logic (e.g., adding an active class)
+  // myModalElement.classList.add('active');
+}
+
+// Example function for closing a popup
+function closeYourCustomModal() {
+  // 1. Re-enable free page scrolling natively
+  unlockBackgroundScroll();
+  
+  // 2. Your actual hiding logic (e.g., removing an active class)
+  // myModalElement.classList.remove('active');
+}
+</script>
+
+
+</head>
+<body>
+
+<div id="readingProgress"></div>
+<div id="offlineBanner">You are currently offline.</div>
+
+<div id="appHeader">
+  <div class="header-row">
+    <div class="header-title">
+      <div class="logo-badge"><img src="logo.jpg" alt="ESI"></div>
+      <div>
+        <div class="header-title">
+          <button class="icon-btn" onclick="window.location.href='index.html'" title="Back to Home">Home</button>
+          <span style="font-size:13px;font-weight:700;color:var(--text);"></span>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="toggleSearch()" title="Search">🔍</button>
+      <button class="icon-btn" onclick="markAllRead()" title="Mark all read">
+        ✓✓<span id="unreadBadge">0</span>
+      </button>
+      <button class="icon-btn" id="refreshBtn" onclick="manualRefresh()" title="Refresh">↻</button>
+      <button class="icon-btn" onclick="openSettings()" title="Settings">⚙️</button>
+    </div>
+  </div>
+
+  <div id="searchWrap">
+    <input id="searchInput" type="text" placeholder="Search notifications..." oninput="onSearchInput(this.value)">
+  </div>
+</div>
+
+  <div id="filterTabs">
+    <button class="tab active" data-tab="all" onclick="setTab('all')">All</button>
+    <button class="tab" data-tab="unread" onclick="setTab('unread')">Unread</button>
+    <button class="tab" data-tab="urgent" onclick="setTab('urgent')">🟠 Urgent</button>
+    <button class="tab" data-tab="poll" onclick="setTab('poll')">📊 Polls</button>
+    <button class="tab" data-tab="quiz" onclick="setTab('quiz')">💡 Quizzes</button>
+    <button class="tab" data-tab="image" onclick="setTab('image')">🖼️ Images</button>
+    <button class="tab" data-tab="saved" onclick="setTab('saved')">⭐ Saved</button>
+  </div>
+</div>
+
+<div id="feedContainer">
+  <div id="skeletonWrap">
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+  </div>
+  <div id="feedList"></div>
+  <div id="emptyState">
+    <div class="e-icon">📭</div>
+    <p id="emptyMsg">No notifications yet</p>
+  </div>
+  <button id="loadMoreBtn" onclick="loadMore()">Load older notifications</button>
+</div>
+<footer>Elite Scholar Institute · Advanced Notification System</footer>
+
+<button id="fab" onclick="onFabClick()">
+  <span id="fabIcon">＋</span>
+  <span id="fabLock">🔒</span>
+</button>
+
+<div class="modal-overlay" id="composeModal" onclick="if(event.target===this)closeCompose()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>📢 New Broadcast</h2>
+      <button class="modal-close" onclick="closeCompose()">✕</button>
+    </div>
+
+    <div class="compose-tabs">
+      <button class="compose-tab-btn active" data-ct="message" onclick="switchComposeTab('message')">💬 Message</button>
+      <button class="compose-tab-btn" data-ct="image" onclick="switchComposeTab('image')">🖼️ Image</button>
+      <button class="compose-tab-btn" data-ct="poll" onclick="switchComposeTab('poll')">📊 Poll</button>
+      <button class="compose-tab-btn" data-ct="quiz" onclick="switchComposeTab('quiz')">💡 Quiz</button>
+    </div>
+
+    <div class="compose-section active" id="composeSection-message">
+      <div class="field">
+        <label>Dear Admin, Allow chrome to save the password to your device to avoid inputting the admin password everytime. Do not change your display username without informing other admins. This is a security protocol. Thanks for your cooperation.</br></br>Message Content;</label>
+        <textarea id="composeText" placeholder="Write your announcement..."></textarea>
+      </div>
+      <div class="field">
+        <label>Priority Level</label>
+        <select id="composePriority">
+          <option value="normal">🔵 Normal</option>
+          <option value="urgent">🟠 Urgent</option>
+        </select>
+      </div>
+      <button class="btn-send" onclick="sendMessage()">Broadcast Message</button>
+    </div>
+
+    <div class="compose-section" id="composeSection-image">
+      <div class="radio-row">
+        <label><input type="radio" name="imgMode" value="upload" checked onchange="toggleImgMode()"> Instant Upload</label>
+        <label><input type="radio" name="imgMode" value="url" onchange="toggleImgMode()"> External URL</label>
+      </div>
+      <div class="field" id="imgUploadField">
+        <label>Select Picture File</label>
+        <input type="file" id="composeImgFile" accept="image/*" style="padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:11px;width:100%">
+      </div>
+      <div class="field" id="imgUrlField" style="display:none">
+        <label>Image Direct URL</label>
+        <input type="url" id="composeImgUrl" placeholder="https://...">
+      </div>
+      <div id="uploadProgressWrap">
+        <div id="uploadProgressTrack"><div id="uploadProgressBar"></div></div>
+        <div id="uploadProgressLabel">Processing...</div>
+      </div>
+      <div class="field">
+        <label>Caption / Description (optional)</label>
+        <textarea id="composeImgCaption" placeholder="Say something about this image..."></textarea>
+      </div>
+      <div class="field">
+        <label>Priority Level</label>
+        <select id="composeImgPriority">
+          <option value="normal">🔵 Normal</option>
+          <option value="urgent">🟠 Urgent</option>
+        </select>
+      </div>
+      <button class="btn-send" onclick="sendImage()">Broadcast Image</button>
+    </div>
+
+    <div class="compose-section" id="composeSection-poll">
+      <div class="field">
+        <label>Poll Question</label>
+        <input type="text" id="composePollQ" placeholder="What would you like to ask?">
+      </div>
+      <div class="field">
+        <label>Attach Optional Picture (File or URL)</label>
+        <input type="file" id="composePollImgFile" accept="image/*" style="padding:7px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:11px;width:100%;margin-bottom:5px">
+        <input type="text" id="composePollImgUrl" placeholder="Or paste image URL here..." style="font-size:11px">
+      </div>
+      <div class="settings-row" style="margin-bottom:10px;padding:6px 0">
+        <span style="font-size:11px;font-weight:700;color:var(--muted)">Allow Selecting Multiple Options</span>
+        <label class="switch"><input type="checkbox" id="composePollMultiple"><span class="slider-tog"></span></label>
+      </div>
+      <label style="font-size:10px;font-weight:700;color:var(--blue-light);display:block;margin-bottom:6px">Poll Options</label>
+      <div id="pollOptionsContainer">
+        <div class="poll-opt-row"><input type="text" class="pollOptionInput" placeholder="Option 1"></div>
+        <div class="poll-opt-row"><input type="text" class="pollOptionInput" placeholder="Option 2"></div>
+      </div>
+      <button id="addPollOptBtn" onclick="addPollOption()">+ Add Option</button>
+      <div class="field">
+        <label>Priority Level</label>
+        <select id="composePollPriority">
+          <option value="normal">🔵 Normal</option>
+          <option value="urgent">🟠 Urgent</option>
+        </select>
+      </div>
+      <button class="btn-send" onclick="sendPoll()">Launch Poll</button>
+    </div>
+
+    <div class="compose-section" id="composeSection-quiz">
+      <div class="field">
+        <label>Quiz Question</label>
+        <input type="text" id="composeQuizQ" placeholder="Enter quiz question...">
+      </div>
+       <div class="field">
+        <label>Attach Optional Picture (File or URL)</label>
+        <input type="file" id="composeQuizImgFile" accept="image/*" style="padding:7px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:11px;width:100%;margin-bottom:5px">
+        <input type="text" id="composeQuizImgUrl" placeholder="Or paste image URL here..." style="font-size:11px">
+      </div>
+      <label style="font-size:10px;font-weight:700;color:var(--blue-light);display:block;margin-bottom:6px">Quiz Options</label>
+      <div id="quizOptionsContainer">
+        <div class="poll-opt-row"><input type="text" class="quizOptionInput" placeholder="Option A"><select class="quizCorrectSelect" style="width:70px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:9px;font-size:10px"><option value="correct">Correct</option><option value="wrong" selected>Wrong</option></select></div>
+        <div class="poll-opt-row"><input type="text" class="quizOptionInput" placeholder="Option B"><select class="quizCorrectSelect" style="width:70px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:9px;font-size:10px"><option value="correct">Correct</option><option value="wrong" selected>Wrong</option></select></div>
+      </div>
+      <button id="addQuizOptBtn" onclick="addQuizOption()">+ Add Option</button>
+      <div class="field">
+        <label>Explanation (Shown after answering)</label>
+        <textarea id="composeQuizExplanation" placeholder="Explain why the correct answer is right..."></textarea>
+      </div>
+      <div class="field">
+        <label>Priority Level</label>
+        <select id="composeQuizPriority">
+          <option value="normal">🔵 Normal</option>
+          <option value="urgent">🟠 Urgent</option>
+        </select>
+      </div>
+      <button class="btn-send" onclick="sendQuiz()">Launch Quiz</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editModal" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>✏️ Edit Notification</h2>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <input type="hidden" id="editNotifId">
+    <div class="field">
+      <label>Updated Text / Content / Question</label>
+      <textarea id="editTextContent"></textarea>
+    </div>
+    <button class="btn-send" onclick="saveEditedNotification()">Save & Resend Update</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="adminLoginModal" onclick="if(event.target===this)closeAdminLogin()">
+  <div class="modal-box" style="max-width:340px">
+    <div class="modal-head">
+      <h2>🔒 Admin Security</h2>
+      <button class="modal-close" onclick="closeAdminLogin()">✕</button>
+    </div>
+    <div class="field">
+      <label>Enter Admin Password</label>
+      <input type="password" id="adminPwInput" placeholder="Ensure you have a stable network." onkeydown="if(event.key==='Enter')tryAdminLogin()">
+    </div>
+    <button class="btn-send" onclick="tryAdminLogin()">Unlock Admin Mode</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>⚙️ System Settings</h2>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="field">
+      <label>Your Display Name</label>
+      <input type="text" id="settingsNameInput" placeholder="Your name" onchange="updateDisplayName(this.value)">
+    </div>
+
+    <div class="field">
+      <label>Choose Theme Color</label>
+      <select id="themeSelector" onchange="changeTheme(this.value)">
+        <option value="#0042ff">Classic Blue</option>
+        <option value="#ffb22b">Amber Gold</option>
+           <option value="#00abff">Sky Blue</option>
+         <option value="#ff0a00">Red Blood</option>
+<option value="#ff00b2">Cute Pink</option>
+        <option value="#b92bff">Royal Purple</option>
+       
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Font Scaling</label>
+      <select id="fontSelector" onchange="changeFontSize(this.value)">
+        <option value="11px">Small</option>
+        <option value="20px" selected>Normal</option>
+        <option value="33px">Large</option>
+      </select>
+    </div>
+
+    <div class="settings-row">
+      <span>🔊 Broadcast Chime Audio</span>
+      <label class="switch"><input type="checkbox" id="soundToggle" onchange="toggleSound(event)"><span class="slider-tog"></span></label>
+    </div>
+    <div class="settings-row">
+      <span>🔔 Web Push Notification Alerts</span>
+      <button class="small-btn" onclick="requestPush()">Enable</button>
+    </div>
+    <div class="settings-row">
+      <span>📖 Local Read History</span>
+      <button class="small-btn orange" onclick="clearReadHistory()">Clear</button>
+    </div>
+    <div class="settings-row">
+      <span>⭐ Export Saved Posts</span>
+      <button class="small-btn" onclick="exportSavedPosts()">Export</button>
+    </div>
+
+    <div id="settingsAdminArea" style="margin-top:6px;padding-top:12px;border-top:1px solid var(--border2)"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="nameModal">
+  <div class="modal-box" style="max-width:340px">
+    <div class="modal-head"><h2>👋 Welcome Scholar</h2></div>
+    <p style="font-size:11.5px;color:var(--muted);margin-bottom:14px">Please enter your name for personalized interactions across polls, quizzes, and reactions.</p>
+    <div class="field">
+      <input type="text" id="nameInput" placeholder="Enter display name..." onkeydown="if(event.key==='Enter')saveName()">
+    </div>
+    <button class="btn-send" onclick="saveName()">Continue to Channel</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="voteViewerModal">
+  <div class="modal-box" style="max-width:400px;max-height:80vh;display:flex;flex-direction:column">
+    <div class="modal-head" style="display:flex;justify-content:space-between;align-items:center">
+      <h2 id="voteViewerTitle">RESPONSES</h2>
+      <button class="tool-btn" onclick="closeVoteViewer()">✕</button>
+    </div>
+    <div id="voteViewerQ" style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)"></div>
+    <div id="voteViewerBody" style="overflow-y:auto;flex:1"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="viewsViewerModal">
+  <div class="modal-box" style="max-width:400px;max-height:80vh;display:flex;flex-direction:column">
+    <div class="modal-head" style="display:flex;justify-content:space-between;align-items:center">
+      <h2>VIEWED BY</h2>
+      <button class="tool-btn" onclick="closeViewsViewer()">✕</button>
+    </div>
+    <div id="viewsViewerBody" style="overflow-y:auto;flex:1"></div>
+  </div>
+</div>
+<div id="lightboxModal">
+  <button id="lightboxClose" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="Zoomed view">
+  <div id="lightboxActions">
+    <button class="small-btn" id="lightboxDownloadBtn" onclick="downloadLightboxImage()">📥 Download Image</button>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script src="./password.js" defer></script>
+</body>
+</html>
