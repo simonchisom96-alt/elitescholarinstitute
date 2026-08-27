@@ -1,0 +1,902 @@
+<!--
+ELITE SCHOLAR INSTITUTE
+ULTRA PREMIUM POST-UTME PAGE
+PRO MAX INTENSE VERSION
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+ <style>
+/* SLIM + CENTERED - paste in every HTML file */
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* This is the magic: lock the whole page width + center it */
+body {
+  max-width: 980px; /* CHANGE THIS: 980px = slimmer than normal. Try 900px if still too wide */
+  margin: 0 auto !important; /* centers left + right */
+  float: none !important;
+  width: 100%;
+}
+
+/* Make sure containers don’t break the lock */
+.container, .wrapper, main, section, header, footer {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+  box-sizing: border-box;
+}
+
+/* Images keep their size but won’t break layout */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Make page a little shorter vertically */
+html {
+  font-size: 15px; /* was probably 16px. Shrinks text/spacing slightly */
+}
+
+@media (max-width: 1024px) {
+  body {
+    max-width: 100%; /* on tablets/phones let it be full width */
+    padding: 0 16px;
+  }
+}
+</style>  
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#04142f">
+<title>Post-UTME Universities | Elite Scholar Institute</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;scroll-behavior:smooth}
+body{background:linear-gradient(rgba(2,8,28,0.96),rgba(3,10,35,0.97)),url("advert.png");background-size:cover;background-attachment:fixed;color:white;overflow-x:hidden}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-thumb{background:#00bfff;border-radius:20px}
+.bg-circle{position:fixed;border-radius:50%;filter:blur(90px);z-index:-1;opacity:0.22}
+.bg1{width:260px;height:260px;background:#0066ff;top:-80px;left:-70px}
+.bg2{width:320px;height:320px;background:#00ff88;bottom:-120px;right:-120px}
+header{position:sticky;top:0;padding:15px 18px;display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.45);backdrop-filter:blur(15px);z-index:9999;border-bottom:1px solid rgba(255,255,255,0.08)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo img{width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid #ffd700;box-shadow:0 0 20px rgba(255,215,0,0.4)}
+.logo h2{font-size:17px;font-weight:800}
+.logo p{font-size:11px;color:#b8d8ff;margin-top:3px}
+.back-btn{padding:13px 18px;border-radius:18px;text-decoration:none;font-size:14px;font-weight:800;background:linear-gradient(135deg,#0066ff,#00bfff);color:white}
+.hero{padding:50px 20px 30px;text-align:center}
+.hero-badge{display:inline-block;padding:10px 18px;border-radius:40px;background:linear-gradient(135deg,#ffd700,#ff9800);color:black;font-size:13px;font-weight:800;margin-bottom:20px}
+.hero h1{font-size:42px;font-weight:900;margin-bottom:16px;color:#ffd700}
+.hero p{font-size:15px;line-height:2;color:#dce8ff;max-width:900px;margin:auto}
+
+/* SEARCH WITH MOVING PLACEHOLDER + X + BUTTON */
+.search-section{padding:0 18px 25px}
+.search-box{position:relative;display:flex;gap:10px;align-items:center}
+.search-box input{flex:1;min-width:0;padding:20px 50px 20px 55px;border:none;outline:none;border-radius:25px;font-size:16px;font-weight:600;background:rgba(255,255,255,0.08);color:white;border:1px solid rgba(255,255,255,0.1);box-shadow:0 10px 30px rgba(0,0,0,0.25)}
+.search-box input::placeholder{color:#c7d7ff}
+.search-icon{position:absolute;top:50%;left:20px;transform:translateY(-50%);font-size:20px}
+.clear-btn{position:absolute;top:50%;right:120px;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:none;color:white;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:none}
+.clear-btn.show{display:block}
+.search-btn{flex-shrink:0;padding:20px 24px;border-radius:25px;border:none;background:linear-gradient(135deg,#0066ff,#00bfff);color:white;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap} 
+
+
+/* NO RESULTS */
+.no-results {
+  margin-top: 20px;font-size: 15px;color: #00d9ff;text-align: center;padding: 18px;
+  border: 1px dashed #00d9ff;border-radius: 12px;font-weight: 600;
+  animation: fadeIn 0.3s ease;
+}
+.hidden { display: none; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* SMALL OVAL FILTERS - PILL SHAPE */
+.filter-section{padding:0 18px 35px}
+.filter-wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.filter-pill{padding:10px 18px;border-radius:50px;font-size:13px;font-weight:700;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:white;cursor:pointer;transition:0.3s;white-space:nowrap}
+.filter-pill:hover{transform:scale(1.05)}
+.filter-pill.active{border:2px solid #00ff88;box-shadow:0 0 15px rgba(0,255,136,0.5);background:rgba(0,255,136,0.1)}
+.filter-pill.federal.active{border-color:#00bfff;box-shadow:0 0 15px rgba(0,191,255,0.5);background:rgba(0,191,255,0.1)}
+.filter-pill.state.active{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.5);background:rgba(0,255,136,0.1)}
+.filter-pill.private.active{border-color:#ff4d4d;box-shadow:0 0 15px rgba(255,77,77,0.5);background:rgba(255,77,77,0.1)}
+
+.section{padding:0 18px 70px}
+.section-title{font-size:32px;font-weight:900;margin-bottom:8px;color:#26ff00;text-align:center}
+.section-sub{font-size:14px;line-height:1;color:#d7e7ff;margin-bottom:25px;text-align:center}
+.book-grid{display:grid;gap:24px}
+
+
+
+.book-grid{
+  display:grid;
+  gap:24px;
+  max-width: 600px;   /* 1. ADD THIS: Controls width. Use 600px to make it slimmer */
+  margin: 0 auto;     /* 2. ADD THIS: Centers the grid */
+  padding: 0 16px;    /* 3. ADD THIS: Stops it from touching phone edges */
+}
+
+
+
+.book-card{position:relative;background:rgba(255,255,255,0.06);border-radius:25px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);transition:0.9s;margin-left: 0px !important}
+.book-card:hover{transform:translateY(-6px)}
+.book-tag{position:absolute;top:16px;left:16px;padding:6px 12px;border-radius:25px;font-size:11px;font-weight:800;color:black;z-index:10}
+.book-tag.federal{background:linear-gradient(135deg,#0066ff,#00bfff)}
+.book-tag.state{background:linear-gradient(135deg,#00c853,#00ff88)}
+.book-tag.private{background:linear-gradient(135deg,#ff4d4d,#ff9800)}
+.book-image{position:relative;height:190px;overflow:hidden}
+.book-image img{width:100%;height:100%;object-fit:cover;transition:0.5s}
+.book-card:hover .book-image img{transform:scale(1.05)}
+.book-content{padding:8px}
+.book-content h2{font-size:18px;font-weight:900;margin-bottom:8px}
+.book-content p{font-size:13px;line-height:1.3;color:#dbe7ff;margin-bottom:18px}
+.info-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.info{padding:8px 12px;border-radius:12px;background:rgba(255,255,255,0.08);font-size:11px;font-weight:700;color:#cfe3ff}
+.download-btn{display:flex;justify-content:center;align-items:center;gap:8px;width:100%;padding:16px;text-decoration:none;border-radius:18px;font-size:14px;font-weight:800;background:linear-gradient(135deg,#0066ff,#00bfff);color:white;transition:0.3s}
+.download-btn:hover{transform:scale(1.02)}
+footer{margin-top:70px;padding:40px 22px;background:rgba(0,0,0,0.6);text-align:center;line-height:2;border-top:1px solid rgba(255,255,255,0.08)}
+.footer-divider{height:1px;background:linear-gradient(90deg,transparent,#ffd700,transparent);margin:24px 0}
+.footer-brand h2{font-size:26px;font-weight:900;margin-bottom:12px;background:linear-gradient(135deg,#ffd700,#ff9800);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.footer-brand p{font-size:13px;color:#94a3b8}
+.footer-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin:24px 0;text-align:left}
+.footer-col h4{color:#fff;font-size:14px;margin-bottom:10px}
+.footer-col a{display:block;color:#94a3b8;text-decoration:none;font-size:13px;margin:6px 0;transition:0.3s}
+.footer-col a:hover{color:#00ff88;transform:translateX(5px)}
+.copy{color:#475569;font-size:12px}
+/* Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.active { display: flex; }
+
+/* Box */
+.modal-box {
+  background: #fff;
+  width: 90%;
+  max-width: 420px;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  position: relative;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  animation: popIn 0.2s ease;
+}
+@keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* Button */
+.suggest-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  background:#1562ff;
+  color: #fff;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.suggest-btn:active { transform: scale(0.96); }
+
+/* Close */
+.close-btn {
+  position: absolute;
+  top: 12px; right: 14px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+}
+
+/* Text */
+.modal-box h2 { margin: 0 0 4px; font-size: 20px; }
+.subtext { margin: 0 0 16px; color: #666; font-size: 14px; }
+
+/* Form */
+.modal-box label { display: block; margin: 10px 0 6px; font-weight: 600; font-size: 14px; }
+.modal-box select,
+.modal-box textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1.5px solid #ddd;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.2s;
+  box-sizing: border-box;
+}
+.modal-box select:focus,
+.modal-box textarea:focus { border-color: #25D366; }
+
+.send-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: #25D366;
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+}
+.send-btn:hover { filter: brightness(0.95); }
+
+@media(min-width:700px){.book-grid{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:60px}}
+@media(min-width:1100px){.book-grid{grid-template-columns:repeat(3,1fr)}
+
+
+
+</style>
+</head>
+<body>
+<div class="bg-circle bg1"></div>
+<div class="bg-circle bg2"></div>
+
+<header>
+<div class="logo">
+<img src="logo.jpg">
+<div>
+<h2>Elite Scholar Institute</h2>
+<p>Academic Excellence Redefined</p>
+</div>
+</div>
+<a href="index.html" class="back-btn">← Back</a>
+</header>
+
+<section class="hero">
+<div class="hero-badge">📝 Premium Post-UTME</div>
+<h1>Post-UTME Past Questions</h1>
+<p>Select your university below to access verified Post-UTME past questions, accurate and reliable answers.<br>We would keep updating the collection, stay tuned.
+</section>
+
+<section class="search-section">
+<div class="search-box">
+<span class="search-icon">🔍</span>
+<input type="text" id="searchInput" placeholder=" SEARCH UI, UNILAG, OAU, UNN, ABU, UNIBEN, FUTO, UNILORIN, UNIZIK, UNIPORT, OTHERS..." oninput="handleSearch()">
+<button class="clear-btn" id="clearBtn" onclick="clearSearch()">×</button>
+<button class="search-btn" onclick="searchUniversities()">Search</button>
+</div>
+<div id="noResults" class="no-results hidden">
+University currently unavailable. Please revisit the website later to view added updates.
+</div>
+</section>
+
+<section class="filter-section">
+<div class="filter-wrap">
+<div class="filter-pill active" onclick="filterUni('all', this)">All <span id="countAll">24</span></div>
+<div class="filter-pill federal" onclick="filterUni('federal', this)">Federal <span id="countFederal">13</span></div>
+<div class="filter-pill state" onclick="filterUni('state', this)">State <span id="countState">8</span></div>
+<div class="filter-pill private" onclick="filterUni('polytechnic', this)">Polytechnic <span id="countpolytechnic">1</span></div>
+<div class="filter-pill teaching" onclick="filterUni('teaching', this)">Teaching hospital <span id="countteaching">2</span></div>
+</div>
+</section>
+
+<section class="section">
+
+<div class="section-title">AVAILABLE UNIVERSITIES</div>
+<div class="section-sub"></div>
+<div class="book-grid" id="universityGrid">
+
+
+<!-- FEDERAL -->
+<div class="book-card" data-type="federal" data-name="University of Ibadan UI Ibadan Oyo">
+<div class="book-tag federal">Federal</div>
+<div class="book-image"><img src="ui.jpg"></div>
+<div class="book-content">
+<h2>University of Ibadan</h2>
+<p>UI Post-UTME past questions with detailed solutions and CBT practice.</p>
+<div class="info-row"><div class="info">📍 Ibadan, Oyo</div><div class="info">🏛️ Federal</div></div>
+<a href="uip.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="federal" data-name="University of Lagos UNILAG Lagos">
+<div class="book-tag federal">Federal</div>
+<div class="book-image"><img src="unilag.jpg"></div>
+<div class="book-content">
+<h2>University of Lagos</h2>
+<p>UNILAG Post-UTME past questions covering all faculties.</p>
+<div class="info-row"><div class="info">📍 Lagos</div><div class="info">🏛️ Federal</div></div>
+<a href="ulp.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+
+<div class="book-card" data-type="federal" data-name="University of Benin UNIBEN Edo">
+<div class="book-tag federal">Federal</div>
+<div class="book-image"><img src="uniben.jpg"></div>
+<div class="book-content">
+<h2>University of Benin</h2>
+<p>UNIBEN Post-UTME past questions with accurate solutions.</p>
+<div class="info-row"><div class="info">📍 Benin City, Edo</div><div class="info">🏛️ Federal</div></div>
+<a href="uniben.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+
+<div class="book-card" data-type="federal" data-name="Obafemi Awolowo University OAU Ile Ife Osun">
+<div class="book-tag federal">Federal</div>
+<div class="book-image"><img src="oau.jpg"></div>
+<div class="book-content">
+<h2>Obafemi Awolowo University</h2>
+<p>OAU Post-UTME past questions with comprehensive solutions.</p>
+<div class="info-row"><div class="info">📍 Ile-Ife, Osun</div><div class="info">🏛️ Federal</div></div>
+<a href="oau.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="federal" data-name="University of Nigeria Nsukka UNN Enugu">
+<div class="book-tag federal">Federal</div>
+<div class="book-image"><img src="unn.jpg"></div>
+<div class="book-content">
+<h2>University of Nigeria Nsukka</h2>
+<p>UNN Post-UTME past questions with detailed explanations.</p>
+<div class="info-row"><div class="info">📍 Nsukka, Enugu</div><div class="info">🏛️ Federal</div></div>
+<a href="unn.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="federal" data-name="Ahmadu Bello University ABU Zaria Kaduna">
+<div class="book-tag federal">Federal</div>
+<div class="book-image"><img src="abu.jpg"></div>
+<div class="book-content">
+<h2>Ahmadu Bello University</h2>
+<p>ABU Post-UTME past questions for Medicine, Engineering, Sciences.</p>
+<div class="info-row"><div class="info">📍 Zaria, Kaduna</div><div class="info">🏛️ Federal</div></div>
+<a href="abu.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="federal" data-name="Federal University of Technology Akure FUTA Ondo">
+<div class="book-tag federal">Federal</div>
+<div class="book-image"><img src="futa.jpg"></div>
+<div class="book-content">
+<h2>Federal University of Technology Akure</h2>
+<p>FUTA Post-UTME past questions focused on Science and Technology.</p>
+<div class="info-row"><div class="info">📍 Akure, Ondo</div><div class="info">🏛️ Federal</div></div>
+<a href="futa.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="federal" data-name="University of Ilorin UNILORIN Kwara">
+<div class="book-tag federal">Federal</div>
+<div class="book-image"><img src="unilorin.jpg"></div>
+<div class="book-content">
+<h2>University of Ilorin</h2>
+<p>UNILORIN Post-UTME past questions with detailed solutions.</p>
+<div class="info-row"><div class="info">📍 Ilorin, Kwara</div><div class="info">🏛️ Federal</div></div>
+<a href="unilorin.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="federal" data-name="Nnamdi Azikiwe University UNIZIK Awka Anambra">
+<div class="book-tag federal">Federal</div>
+<div class="book-image"><img src="unizik.jpg"></div>
+<div class="book-content">
+<h2>Nnamdi Azikiwe University</h2>
+<p>UNIZIK/NAU Post-UTME past questions covering all departments.</p>
+<div class="info-row"><div class="info">📍 Awka, Anambra</div><div class="info">🏛️ Federal</div></div>
+<a href="unizik.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="federal" data-name="University of Port Harcourt UNIPORT Rivers">
+<div class="book-tag federal">Federal</div>
+<div class="book-image"><img src="uniport.jpg"></div>
+<div class="book-content">
+<h2>University of Port Harcourt</h2>
+<p>UNIPORT Post-UTME past questions with CBT practice.</p>
+<div class="info-row"><div class="info">📍 Port Harcourt, Rivers</div><div class="info">🏛️ Federal</div></div>
+<a href="uniport.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="federal" data-name="Bayero University Kano BUK Kano">
+<div class="book-tag federal">Federal</div>
+<div class="book-image"><img src="buk.jpg"></div>
+<div class="book-content">
+<h2>Bayero University Kano</h2>
+<p>BUK Post-UTME past questions with comprehensive solutions.</p>
+<div class="info-row"><div class="info">📍 Kano</div><div class="info">🏛️ Federal</div></div>
+<a href="buk.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="federal" data-name="University of Jos UNIJOS Plateau">
+<div class="book-tag federal">Federal</div>
+<div class="book-image"><img src="unijos.jpg"></div>
+<div class="book-content">
+<h2>University of Jos</h2>
+<p>UNIJOS Post-UTME past questions with detailed explanations.</p>
+<div class="info-row"><div class="info">📍 Jos, Plateau</div><div class="info">🏛️ Federal</div></div>
+<a href="unijos.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="federal" data-name="University of Calabar UNICAL Cross River">
+<div class="book-tag federal">Federal</div>
+<div class="book-image"><img src="unical.jpg"></div>
+<div class="book-content">
+<h2>University of Calabar</h2>
+<p>UNICAL Post-UTME past questions covering all faculties.</p>
+<div class="info-row"><div class="info">📍 Calabar, Cross River</div><div class="info">🏛️ Federal</div></div>
+<a href="unical.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<!-- STATE -->
+<div class="book-card" data-type="state" data-name="Imo State University IMSU Owerri Imo">
+<div class="book-tag state">State</div>
+<div class="book-image"><img src="imsu.jpg"></div>
+<div class="book-content">
+<h2>Imo State University</h2>
+<p>IMSU Post-UTME past questions with detailed explanations.</p>
+<div class="info-row"><div class="info">📍 Owerri, Imo</div><div class="info">🏛️ State</div></div>
+<a href="imsu.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="state" data-name="Olabisi Onabanjo University OOU Ago Iwoye Ogun">
+<div class="book-tag state">State</div>
+<div class="book-image"><img src="oou.jpg"></div>
+<div class="book-content">
+<h2>Olabisi Onabanjo University</h2>
+<p>OOU Post-UTME past questions with detailed answers.</p>
+<div class="info-row"><div class="info">📍 Ago-Iwoye, Ogun</div><div class="info">🏛️ State</div></div>
+<a href="oou.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="state" data-name="Ekiti State University EKSU Ado Ekiti Ekiti">
+<div class="book-tag state">State</div>
+<div class="book-image"><img src="eksu.jpg"></div>
+<div class="book-content">
+<h2>Ekiti State University</h2>
+<p>EKSU Post-UTME past questions covering all faculties.</p>
+<div class="info-row"><div class="info">📍 Ado-Ekiti, Ekiti</div><div class="info">🏛️ State</div></div>
+<a href="eksu.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="state" data-name="Enugu State University of Science and Technology ESUT Enugu">
+<div class="book-tag state">State</div>
+<div class="book-image"><img src="esut.jpg"></div>
+<div class="book-content">
+<h2>Enugu State University of Science and Technology</h2>
+<p>ESUT Post-UTME past questions with comprehensive solutions.</p>
+<div class="info-row"><div class="info">📍 Enugu</div><div class="info">🏛️ State</div></div>
+<a href="esut.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="state" data-name="Ladoke Akintola University of Technology LAUTECH Ogbomoso Oyo">
+<div class="book-tag state">State</div>
+<div class="book-image"><img src="lautech.jpg"></div>
+<div class="book-content">
+<h2>Ladoke Akintola University of Technology</h2>
+<p>LAUTECH Post-UTME past questions focused on Science and Technology.</p>
+<div class="info-row"><div class="info">📍 Ogbomoso, Oyo</div><div class="info">🏛️ State</div></div>
+<a href="lautech.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="state" data-name="Adekunle Ajasin University AAUA Akungba Ondo">
+<div class="book-tag state">State</div>
+<div class="book-image"><img src="aaua.jpg"></div>
+<div class="book-content">
+<h2>Adekunle Ajasin University</h2>
+<p>AAUA Post-UTME past questions with detailed explanations.</p>
+<div class="info-row"><div class="info">📍 Akungba, Ondo</div><div class="info">🏛️ State</div></div>
+<a href="aaua.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="state" data-name="University of Medical Sciences UNIMED Ondo Ondo">
+<div class="book-tag state">State</div>
+<div class="book-image"><img src="unimed.jpg"></div>
+<div class="book-content">
+<h2>University of Medical Sciences</h2>
+<p>UNIMED Post-UTME past questions for Medicine and Health Sciences.</p>
+<div class="info-row"><div class="info">📍 Ondo, Ondo</div><div class="info">🏛️ State</div></div>
+<a href="unimed.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="state" data-name="Delta State University DELSU Abraka Delta">
+<div class="book-tag state">State</div>
+<div class="book-image"><img src="delsu.jpg"></div>
+<div class="book-content">
+<h2>Delta State University</h2>
+<p>DELSU Post-UTME past questions covering all courses.</p>
+<div class="info-row"><div class="info">📍 Abraka, Delta</div><div class="info">🏛️ State</div></div>
+<a href="delsu.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+
+<!-- POLYTECHNIC -->
+<div class="book-card" data-type="polytechnic" data-name="Yaba College of Technology YABATECH Lagos">
+<div class="book-tag state">Polytechnic</div>
+<div class="book-image"><img src="yabatech.jpg"></div>
+<div class="book-content">
+<h2>Yaba College of Technology</h2>
+<p>YABATECH Post-UTME past questions for ND and HND courses.</p>
+<div class="info-row"><div class="info">📍 Yaba, Lagos</div><div class="info">🏛️ Polytechnic</div></div>
+<a href="yabatech.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<!-- TEACHING HOSPITAL -->
+<div class="book-card" data-type="teaching" data-name="Lagos University Teaching Hospital LUTH Lagos">
+<div class="book-tag state">Teaching Hospital</div>
+<div class="book-image"><img src="luth.jpg"></div>
+<div class="book-content">
+<h2>Lagos University Teaching Hospital</h2>
+<p>LUTH Post-UTME past questions for School of Nursing and Health Tech.</p>
+<div class="info-row"><div class="info">📍 Idi-Araba, Lagos</div><div class="info">🏛️ Teaching Hospital</div></div>
+<a href="luth.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+
+<div class="book-card" data-type="teaching" data-name="Obafemi Awolowo University Teaching Hospital Complex OAUTH Ile Ife Osun">
+<div class="book-tag state">Teaching Hospital</div>
+<div class="book-image"><img src="oauth.jpg"></div>
+<div class="book-content">
+<h2>Obafemi Awolowo University Teaching Hospital Complex</h2>
+<p>OAUTH Post-UTME past questions for Nursing and Health Sciences.</p>
+<div class="info-row"><div class="info">📍 Ile-Ife, Osun</div><div class="info">🏛️ Teaching Hospital</div></div>
+<a href="oauth.html" class="download-btn">📘 Open Subjects</a>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+
+</div>
+</section>
+
+<!-- Suggestion -->
+<button id="openSuggestionBtn" class="suggest-btn"> Make suggestions</button>
+
+<!-- Suggestion Modal -->
+<div id="suggestionModal" class="modal-overlay">
+  <div class="modal-box">
+    <button id="closeModalBtn" class="close-btn">&times;</button>
+    <h2>Make Suggestions</h2>
+    <p class="subtext">Help us improve Elite Scholar Institute.</p>
+
+    <form id="suggestionForm">
+      <label for="category">Category</label>
+      <select id="category" required>
+        <option value="" disabled selected>Select category</option>
+        <option value="Design/UI">Design/UI</option>
+        <option value="Speed/Performance">Speed/Performance</option>
+        <option value="Content/Idea">Content/Idea</option>
+        <option value="Bug/Issue">Bug/Issue</option>
+      <option value="Ratings and reviews">Rate and review us</option>
+        <option value="Other">Others</option>
+      </select>
+
+      <label for="message">Your Suggestion</label>
+      <textarea id="message" placeholder="Tell us how we can grow..." rows="4" required></textarea>
+
+      <button type="submit" class="send-btn">Send suggestion.</button>
+    </form>
+  </div>
+</div>
+
+
+<footer>
+
+<div class="footer-divider"></div>
+<div class="footer-brand">
+<h2>Elite Scholar Institute</h2>
+<p>Academic Excellence Redefined</p>
+<p>Premium Digital Library For All Students</p>
+</div>
+
+<div class="footer-grid">
+<div class="footer-col">
+<h4>Quick Links</h4>
+<a href="index.html">Home</a>
+<a href="Textbooks.html">Textbooks</a>
+<a href="postutme.html">Post Utme PQ</a>
+<a href="syllables.html">Syllables</a>
+<a href="picture.html">Elite Gallery</a>
+<a href="motivation3.html">Motivational Guide</a>
+<a href="quiz.html">Elite AI quiz bot</a>
+<a href="notification.html">Elite Announcement Channel</a>
+</div>
+<div class="footer-col">
+<h4>Contact</h4>
+<a href="https://whatsapp.com/channel/0029VbCJIMs6mYPR74rtX844" target="_blank" rel="noopener">WhatsApp Community</a>
+
+<a href="https://chat.whatsapp.com/DJE3tvwkRQzA6qboxbsLzP?s=cl&p=a&ilr=2&amv=3" target="_blank" rel="noopener">General WhatsApp Group</a>
+
+
+<a href="https://telegram.me/elitescholarinstitute" target="_blank" rel="noopener">Telegram Channel</a>
+
+<a href="credit.html">👥 Credits</a>
+</div>
+</div>
+
+<div class="footer-divider"></div>
+<p class="copy">© 2026 Elite Scholar Institute. All Rights Reserved</p>
+
+<script src="./app.js" defer></script>
+</body>
+</html>
+
+<style>
+@keyframes blueGlow {
+ 0%, 100% { box-shadow:0 0 15px rgba(59,130,246,0.4); }
+ 50% { box-shadow:0 0 30px rgba(59,130,246,0.7); }
+}
+</style>
+
+
+<style>
+/* ===== GLOBAL SMOOTH PAGE SCROLL CONFIGURATION ===== */
+html {
+  height: 100%;
+  overflow-y: scroll; /* Forces a dedicated root scroll track so it slides freely */
+}
+
+body {
+  min-height: 100%; 
+  width: 100%; 
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Ensures snappy, native iOS inertia physics */
+  overscroll-behavior-y: auto; /* Restores free boundary bounce at both ends */
+}
+
+/* Base box modeling for child elements */
+body * {
+  box-sizing: border-box;
+}
+/* Prevent text selection across the entire website */
+body {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none;     /* IE 10 and Consumer Edge */
+  user-select: none;         /* Standard syntax for Chrome, Firefox, and Opera */
+}
+
+
+// Disable right-click context menu
+document.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+});
+
+// Disable copy keyboard shortcuts (Ctrl+C, Ctrl+X, Ctrl+U)
+document.addEventListener('keydown', function(e) {
+  // Disable Ctrl+C or Cmd+C (Copy)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+    e.preventDefault();
+  }
+  
+  // Disable Ctrl+X or Cmd+X (Cut)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+    e.preventDefault();
+  }
+
+  // Disable Ctrl+U or Cmd+U (View Source)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+    e.preventDefault();
+  }
+});
+
+
+
+
+
+
+
+</style>
+
+
+<script>
+/**
+ * REUSABLE SCROLL CONTROLLER FUNCTIONS
+ * Use these anywhere you need to manage background scroll locking 
+ * when custom popups, menus, or lightboxes trigger.
+ */
+
+// Call this when your modal/lightbox OPENS
+function lockBackgroundScroll() {
+  document.body.style.overflow = 'hidden';
+}
+
+// Call this when your modal/lightbox CLOSES
+function unlockBackgroundScroll() {
+  document.body.style.overflow = '';
+}
+
+
+/* ==========================================================================
+   EXAMPLE IMPLEMENTATION FOR YOUR MODAL / LIGHTBOX SCRIPTS:
+   ========================================================================== */
+
+// Example function for launching a popup
+function openYourCustomModal() {
+  // 1. Lock the page background from dragging
+  lockBackgroundScroll();
+  
+  // 2. Your actual display logic (e.g., adding an active class)
+  // myModalElement.classList.add('active');
+}
+
+// Example function for closing a popup
+function closeYourCustomModal() {
+  // 1. Re-enable free page scrolling natively
+  unlockBackgroundScroll();
+  
+  // 2. Your actual hiding logic (e.g., removing an active class)
+  // myModalElement.classList.remove('active');
+}
+</script>
+
+
+
+<style>
+/* ===== FORCE SMOOTH PAGE SCROLL FIX ===== */
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+* {
+  touch-action: pan-y; /* allow vertical scroll by default */
+}
+
+#lightbox {
+  touch-action: none;
+}
+
+#lightbox img {
+  touch-action: pan-x pan-y pinch-zoom;
+}
+</style>
+<!-- SEARCH SCRIPT - PASTE HERE BEFORE </body> -->
+<script>
+    
+    const WA_NUMBER = "2348108391083"; // Must be 234... no + or 0
+const openBtn = document.getElementById("openSuggestionBtn");
+const modal = document.getElementById("suggestionModal");
+const closeBtn = document.getElementById("closeModalBtn");
+const form = document.getElementById("suggestionForm");
+
+openBtn.addEventListener("click", () => modal.classList.add("active"));
+closeBtn.addEventListener("click", () => modal.classList.remove("active"));
+modal.addEventListener("click", (e) => { if(e.target === modal) modal.classList.remove("active"); });
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  // NEW: CHECK INTERNET FIRST
+  if(!navigator.onLine){
+    showToast("Check your Internet connection and try again.");
+    return; // stop here
+  }
+
+  const category = document.getElementById("category").value;
+  const message = document.getElementById("message").value.trim();
+
+  if(!category ||!message) {
+    alert("Please select a category and write a message.");
+    return;
+  }
+
+  const text = `*Website Suggestion*\n\n*Category:* ${category}\n*Message:* ${message}`;
+  const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
+
+  const newWindow = window.open(url, "_blank");
+  
+  if(!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+    window.location.href = url;
+  }
+
+  form.reset();
+  modal.classList.remove("active");
+});
+
+let currentFilter = 'all';
+
+function handleSearch(){
+  let input = document.getElementById("searchInput").value;
+  let clearBtn = document.getElementById("clearBtn");
+  if(input.length > 0){
+    clearBtn.classList.add("show");
+  } else {
+    clearBtn.classList.remove("show");
+  }
+  searchUniversities();
+}
+
+function clearSearch(){
+  document.getElementById("searchInput").value = "";
+  document.getElementById("clearBtn").classList.remove("show");
+  showAll();
+}
+
+function showAll(){
+  let universities = document.querySelectorAll(".book-card");
+  let noResults = document.getElementById("noResults");
+  universities.forEach(uni => {
+    if(currentFilter === 'all' || uni.getAttribute("data-type") === currentFilter){
+      uni.style.display = "block";
+    }
+  });
+  noResults.classList.add("hidden");
+}
+
+function searchUniversities(){
+  let input = document.getElementById("searchInput").value.toLowerCase();
+  let universities = document.querySelectorAll(".book-card");
+  let noResults = document.getElementById("noResults");
+  let found = 0;
+
+  universities.forEach(uni => {
+    let text = (uni.getAttribute("data-name") || "").toLowerCase(); // safety check
+    let type = uni.getAttribute("data-type");
+    let passFilter = currentFilter === 'all' || type === currentFilter;
+    
+    if(text.includes(input) && passFilter){
+      uni.style.display = "block";
+      found++;
+    } else {
+      uni.style.display = "none";
+    }
+  });
+
+  // THIS MAKES NO RESULTS WORK
+  if(input.trim() !== '' && found === 0){
+    noResults.classList.remove("hidden");
+  } else {
+    noResults.classList.add("hidden");
+  }
+}
+
+function filterUni(type, element){
+  currentFilter = type;
+  let pills = document.querySelectorAll(".filter-pill");
+  pills.forEach(p => p.classList.remove("active"));
+  element.classList.add("active");
+  searchUniversities();
+}
+
+// SMOOTH SCROLLING PLACEHOLDER
+let txt = document.getElementById("searchInput").placeholder + "   ";
+setInterval(() => {
+  if(!document.getElementById("searchInput").value){
+    txt = txt.substring(1) + txt.charAt(0);
+    document.getElementById("searchInput").placeholder = txt;
+  }
+}, 230);
+</script>
+</body>
+</html>

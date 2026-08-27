@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#020818">
+    <title>Elite Scholar Institute</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+      <style>
+/* ===== GLOBAL SMOOTH PAGE SCROLL CONFIGURATION ===== */
+html {
+  height: 100%;
+  overflow-y: scroll; /* Forces a dedicated root scroll track so it slides freely */
+}
+
+body {
+  min-height: 100%; 
+  width: 100%; 
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Ensures snappy, native iOS inertia physics */
+  overscroll-behavior-y: auto; /* Restores free boundary bounce at both ends */
+}
+
+/* Base box modeling for child elements */
+body * {
+  box-sizing: border-box;
+}
+
+/* Prevent text selection across the entire website */
+body {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none;     /* IE 10 and Consumer Edge */
+  user-select: none;         /* Standard syntax for Chrome, Firefox, and Opera */
+}
+
+
+// Disable right-click context menu
+document.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+});
+
+// Disable copy keyboard shortcuts (Ctrl+C, Ctrl+X, Ctrl+U)
+document.addEventListener('keydown', function(e) {
+  // Disable Ctrl+C or Cmd+C (Copy)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+    e.preventDefault();
+  }
+  
+  // Disable Ctrl+X or Cmd+X (Cut)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+    e.preventDefault();
+  }
+
+  // Disable Ctrl+U or Cmd+U (View Source)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+    e.preventDefault();
+  }
+});
+
+</style>
+<style>
+/* ===== FORCE SMOOTH PAGE SCROLL FIX ===== */
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+* {
+  touch-action: pan-y; /* allow vertical scroll by default */
+}
+
+#lightbox {
+  touch-action: none;
+}
+
+#lightbox img {
+  touch-action: pan-x pan-y pinch-zoom;
+}
+</style>
+
+<style>
+  
+    
+    
+@keyframes blueGlow {
+ 0%, 100% { box-shadow:0 0 15px rgba(59,130,246,0.4); }
+ 50% { box-shadow:0 0 30px rgba(59,130,246,0.7); }
+}
+</style>
+
+
+
+
+<style>
+/* ===== GLOBAL SMOOTH PAGE SCROLL CONFIGURATION ===== */
+html {
+  height: 100%;
+  overflow-y: scroll; /* Forces a dedicated root scroll track so it slides freely */
+}
+
+body {
+  min-height: 100%; 
+  width: 100%; 
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Ensures snappy, native iOS inertia physics */
+  overscroll-behavior-y: auto; /* Restores free boundary bounce at both ends */
+}
+
+/* Base box modeling for child elements */
+body * {
+  box-sizing: border-box;
+}
+
+/* Prevent text selection across the entire website */
+body {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none;     /* IE 10 and Consumer Edge */
+  user-select: none;         /* Standard syntax for Chrome, Firefox, and Opera */
+}
+
+
+// Disable right-click context menu
+document.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+});
+
+// Disable copy keyboard shortcuts (Ctrl+C, Ctrl+X, Ctrl+U)
+document.addEventListener('keydown', function(e) {
+  // Disable Ctrl+C or Cmd+C (Copy)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+    e.preventDefault();
+  }
+  
+  // Disable Ctrl+X or Cmd+X (Cut)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+    e.preventDefault();
+  }
+
+  // Disable Ctrl+U or Cmd+U (View Source)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+    e.preventDefault();
+  }
+});
+
+
+
+</style>
+
+
+<script>
+/**
+ * REUSABLE SCROLL CONTROLLER FUNCTIONS
+ * Use these anywhere you need to manage background scroll locking 
+ * when custom popups, menus, or lightboxes trigger.
+ */
+
+// Call this when your modal/lightbox OPENS
+function lockBackgroundScroll() {
+  document.body.style.overflow = 'hidden';
+}
+
+// Call this when your modal/lightbox CLOSES
+function unlockBackgroundScroll() {
+  document.body.style.overflow = '';
+}
+
+
+/* ==========================================================================
+   EXAMPLE IMPLEMENTATION FOR YOUR MODAL / LIGHTBOX SCRIPTS:
+   ========================================================================== */
+
+// Example function for launching a popup
+function openYourCustomModal() {
+  // 1. Lock the page background from dragging
+  lockBackgroundScroll();
+  
+  // 2. Your actual display logic (e.g., adding an active class)
+  // myModalElement.classList.add('active');
+}
+
+// Example function for closing a popup
+function closeYourCustomModal() {
+  // 1. Re-enable free page scrolling natively
+  unlockBackgroundScroll();
+  
+  // 2. Your actual hiding logic (e.g., removing an active class)
+  // myModalElement.classList.remove('active');
+}
+</script>
+
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;-webkit-tap-highlight-color:transparent}
+        :root{
+            --bg:#020818;
+            --card:#0a1628;
+            --card2:#0d1b36;
+            --border:#1d356f;
+            --border2:#ffffff1c;
+            --text:#ffffff;
+            --muted:#8ea0c8;
+            --accent:#ffd700;
+            --success:#00ff88;
+            --error:#ff4757;
+            --whatsapp:#25D366;
+        }
+        html,body{
+            min-height:100%;
+            background:var(--bg);
+            color:var(--text);
+            max-width:520px;
+            margin:0 auto;
+            padding:calc(68px + env(safe-area-inset-top)) 16px 40px;
+            overflow-x:hidden;
+        }
+        header{
+            position:fixed;top:0;left:0;right:0;width:100%;
+            height:calc(58px + env(safe-area-inset-top));
+            padding-top:env(safe-area-inset-top);
+            background:rgba(2,8,24,0.97);
+            backdrop-filter:blur(16px);
+            -webkit-backdrop-filter:blur(16px);
+            border-bottom:1px solid #ffffff14;
+            display:flex;align-items:center;justify-content:space-between;
+            padding-left:14px;padding-right:14px;z-index:1000;
+        }
+        .left{display:flex;align-items:center;gap:10px}
+        .logo-img{
+            width:40px;height:40px;border-radius:50%;
+            border:2px solid var(--accent);
+            box-shadow:0 0 12px #ffd70055;
+            object-fit:cover;
+        }
+        .logo-t{font-weight:900;font-size:13px;color:var(--accent);letter-spacing:.3px;line-height:1.15}
+        .logo-t span{display:block;font-size:9px;color:var(--muted);font-weight:600}
+        .back-btn{
+            padding:8px 14px;border-radius:9px;
+            background:#12204a;border:1.5px solid #2a4486;
+            color:#8fb0ff;font-size:12px;font-weight:800;
+            cursor:pointer;text-decoration:none;
+        }
+        .back-btn:active{transform:scale(0.96)}
+
+        .hero{text-align:center;margin:28px 0 24px}
+        .hero h1{
+            font-size:26px;font-weight:900;color:var(--accent);
+            letter-spacing:0.3px;margin-bottom:8px;
+            text-shadow:0 0 24px rgba(255,215,0,0.2);
+        }
+        .hero p{font-size:13px;color:var(--muted);line-height:1.5}
+
+        .status-pill{
+            display:inline-flex;align-items:center;gap:6px;
+            padding:5px 12px;border-radius:99px;
+            font-size:11px;font-weight:700;margin-top:14px;
+        }
+        .status-pill.unlocked{
+            background:rgba(0,255,136,0.12);
+            border:1px solid var(--success);color:var(--success);
+        }
+        .status-pill.locked{
+            background:rgba(255,215,0,0.1);
+            border:1px solid var(--accent);color:var(--accent);
+        }
+
+        .btn-grid{display:flex;flex-direction:column;gap:14px;max-width:400px;margin:0 auto}
+        .mode-btn{
+            width:100%;
+            padding:18px 20px;
+            border:none;border-radius:14px;
+            font-weight:800;font-size:16px;
+            cursor:pointer;
+            display:flex;align-items:center;gap:14px;
+            transition:transform 0.12s ease, box-shadow 0.2s ease;
+            text-align:left;
+            min-height:72px;
+        }
+        .mode-btn:active{transform:scale(0.98)}
+        .mode-btn .icon{
+            font-size:26px;width:44px;height:44px;
+            display:grid;place-items:center;
+            border-radius:12px;flex-shrink:0;
+        }
+        .mode-btn .txt{flex:1}
+        .mode-btn .txt b{display:block;font-size:16px;font-weight:800;line-height:1.2}
+        .mode-btn .txt small{display:block;font-size:12px;font-weight:600;opacity:0.85;margin-top:2px}
+        .mode-btn .arrow{font-size:18px;opacity:0.7}
+
+        .mode-btn.single{
+            background:linear-gradient(145deg,#00e676,#00c853);
+            color:#001a0a;
+            box-shadow:0 6px 20px rgba(0,255,136,0.22);
+        }
+        .mode-btn.single .icon{background:rgba(0,0,0,0.12)}
+
+        .mode-btn.multi{
+            background:linear-gradient(145deg,#ffd700,#f0a500);
+            color:#1a1200;
+            box-shadow:0 6px 20px rgba(255,215,0,0.28);
+        }
+        .mode-btn.multi .icon{background:rgba(0,0,0,0.12)}
+
+        .mode-btn.unlock{
+            background:linear-gradient(145deg,#0d1b36,#0a1628);
+            color:var(--accent);
+            border:2px solid var(--accent);
+            box-shadow:0 6px 18px rgba(255,215,0,0.12);
+        }
+        .mode-btn.unlock .icon{background:rgba(255,215,0,0.1)}
+
+        .card{
+            background:linear-gradient(180deg,var(--card),#ffffff05);
+            border:1px solid var(--border2);
+            border-radius:16px;
+            padding:20px;
+            margin-top:28px;
+            max-width:400px;
+            margin-left:auto;margin-right:auto;
+        }
+        .card h2{
+            font-size:14px;font-weight:800;color:var(--accent);
+            text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;
+        }
+        .card .lead{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:16px}
+
+        .steps{
+            background:var(--card2);
+            border-radius:11px;
+            padding:12px 14px;
+            margin-bottom:16px;
+            font-size:12px;color:var(--muted);line-height:1.7;
+        }
+        .steps b{color:var(--text)}
+        .steps .num{
+            display:inline-flex;align-items:center;justify-content:center;
+            width:18px;height:18px;border-radius:50%;
+            background:var(--accent);color:#1a1200;
+            font-size:10px;font-weight:900;margin-right:5px;
+        }
+
+        .input-group{margin-bottom:12px}
+        .input-group label{
+            display:block;font-size:11px;color:#8fb0ff;
+            font-weight:700;margin-bottom:5px;
+        }
+        input{
+            width:100%;padding:14px 14px;
+            background:var(--card2);
+            border:1.5px solid var(--border);
+            border-radius:11px;
+            color:var(--text);font-size:15px;
+            outline:none;font-weight:700;
+            letter-spacing:0.8px;text-align:center;
+        }
+        input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,215,0,0.12)}
+        input::placeholder{color:var(--muted);font-weight:500;letter-spacing:0;font-size:13px}
+
+        .action-btn{
+            width:100%;padding:14px;
+            border:none;border-radius:11px;
+            font-weight:800;font-size:14px;
+            cursor:pointer;margin-top:4px;
+            transition:transform 0.1s;
+            min-height:48px;
+        }
+        .action-btn:active{transform:scale(0.98)}
+        .action-btn.gold{
+            background:linear-gradient(145deg,#ffd700,#f0a500);
+            color:#1a1200;
+            box-shadow:0 4px 14px rgba(255,215,0,0.22);
+        }
+        .action-btn.green{
+            background:var(--whatsapp);
+            color:#fff;
+            box-shadow:0 4px 14px rgba(37,211,102,0.28);
+            font-size:15px;
+        }
+
+        .status-box{
+            margin-top:14px;padding:12px;
+            border-radius:11px;font-size:12.5px;
+            text-align:center;font-weight:600;
+            display:none;line-height:1.4;
+        }
+        .status-box.ok{background:rgba(0,255,136,0.1);border:1px solid var(--success);color:var(--success)}
+        .status-box.err{background:rgba(255,71,87,0.1);border:1px solid var(--error);color:var(--error)}
+        .status-box.info{background:rgba(255,215,0,0.08);border:1px solid var(--accent);color:var(--accent)}
+
+        .unlock-key-box{
+            margin-top:16px;padding:14px;
+            background:var(--card2);
+            border:1.5px dashed var(--accent);
+            border-radius:11px;display:none;
+        }
+        .unlock-key-box label{font-size:11px;color:var(--muted);display:block;margin-bottom:6px;font-weight:600}
+        .unlock-key-box .key{
+            font-size:14px;font-weight:800;color:var(--accent);
+            word-break:break-all;letter-spacing:0.6px;
+            margin-bottom:10px;line-height:1.4;
+        }
+
+        .divider{
+            display:flex;align-items:center;gap:10px;
+            margin:16px 0 12px;font-size:11px;color:var(--muted);
+        }
+        .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border2)}
+
+        .faq{margin-top:24px;max-width:400px;margin-left:auto;margin-right:auto}
+        .faq h3{font-size:12px;font-weight:800;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.4px}
+        .faq details{
+            background:var(--card);border:1px solid var(--border2);
+            border-radius:11px;margin-bottom:7px;padding:11px 13px;
+        }
+        .faq summary{font-size:12.5px;font-weight:700;cursor:pointer;color:var(--text);list-style:none}
+        .faq summary::-webkit-details-marker{display:none}
+        .faq details[open] summary{margin-bottom:6px;color:var(--accent)}
+        .faq p{font-size:12px;color:var(--muted);line-height:1.5}
+
+        #toast{
+            position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+            background:#111e42;color:#cfe0ff;
+            padding:11px 18px;border-radius:10px;
+            font-size:12.5px;font-weight:600;display:none;z-index:6000;
+            border:1px solid #2a4486;box-shadow:0 6px 18px rgba(0,0,0,0.35);
+            max-width:90vw;text-align:center;
+        }
+    </style>
+
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#04142f" id="themeMeta">
+    <title>Elite Scholar Institute — Multiplayer Arena</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://js.puter.com/v2/"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="./app.js" defer></script>
+    <style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;-webkit-tap-highlight-color:transparent}
+        :root{
+            --bg:#020818; --card:#ffffff11; --card2:#08132e; --border:#1d356f; --border2:#ffffff1c;
+            --text:#fff; --muted:#8ea0c8; --muted2:#5d75ac; --accent:#ffd700; --success:#00ff88;
+            --error:#ff4757; --info:#00bfff; --flag:#ff8fa3;
+            --spak-color:#00ff88; --speed-color:#00bfff; --free-color:#ffd700;
+            --teamA:#00bfff; --teamB:#ff6b6b;
+        }
+[data-theme="light"]{
+    --bg:#d7e2f0; --card:#f9fbff; --card2:#eef4fb;
+    --border:#8fa8c8; --border2:#a7bdd9;
+    --text:#050b18; --muted:#26364d; --muted2:#43556d;
+    --accent:#d49d00; --success:#00864f; --error:#d1003a; --info:#005fc4; --flag:#ff0033;
+    --spak-color:#00864f; --speed-color:#005fc4; --free-color:#d49d00;
+}
+[data-theme="light"] body{background:var(--bg);color:var(--text)}
+[data-theme="light"] .card{background:var(--card);border:2px solid var(--border);color:var(--text);box-shadow:0 5px 15px rgba(0,0,0,.08)}
+[data-theme="light"] .muted{color:var(--muted)!important}
+[data-theme="light"] h1,[data-theme="light"] h2,[data-theme="light"] h3,[data-theme="light"] p,[data-theme="light"] label,[data-theme="light"] span,[data-theme="light"] td,[data-theme="light"] th{color:var(--text);font-weight:600}
+[data-theme="light"] .chip-mini{background:#c9daf7;border:2px solid #6d91d4;color:#06101f}
+[data-theme="light"] .chip-mini i{color:var(--flag)}
+[data-theme="light"] select,[data-theme="light"] input,[data-theme="light"] textarea{background:#ffffff;color:var(--text);border:2px solid var(--border)}
+[data-theme="light"] .mode-card{background:var(--card2);border:2px solid var(--border);color:var(--text)}
+[data-theme="light"] .submode-chip{background:var(--card);color:var(--muted);border:2px solid var(--border)}
+[data-theme="light"] .submode-chip.active{background:rgba(212,157,0,.25);border:2px solid var(--accent);color:#000}
+[data-theme="light"] #toast{background:#f8fbff;color:var(--text);border:2px solid var(--border)}
+[data-theme="light"] .metric-box{background:var(--card);border:2px solid var(--border)}
+[data-theme="light"] .metric-box val{color:var(--accent);font-weight:700}
+[data-theme="light"] .metric-box lbl{color:var(--muted)}
+[data-theme="light"] .btn-g{background:#ffffff;color:var(--text);border:2px solid var(--border)}
+[data-theme="light"] #calcH{background:var(--bg)}
+[data-theme="light"] header{background:rgba(215,226,240,.98);border-bottom:2px solid var(--border2)}
+[data-theme="light"] .bottom-nav{background:rgba(215,226,240,.98);border-top:2px solid var(--border2)}
+[data-theme="light"] .nav-btn{color:#334155}
+[data-theme="light"] .nav-btn.active{color:var(--accent)}
+[data-theme="light"] .back-btn{background:#c9daf7;border:2px solid #6d91d4;color:var(--text)}
+[data-theme="light"] .modal-overlay{background:rgba(30,45,75,0.35)}
+[data-theme="light"] .icon-btn{background:#eef4fb;border:2px solid var(--border)}
+[data-theme="light"] .notif-panel{background:var(--card);border:2px solid var(--border)}
+
+        .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:9999;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+        .modal-overlay.active{display:flex}
+        .modal-box{background:var(--card2);width:90%;max-width:460px;padding:24px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);position:relative;animation:popIn 0.2s ease;border:1px solid var(--border);max-height:88vh;overflow-y:auto}
+        @keyframes popIn{from{transform:scale(0.9);opacity:0}to{transform:scale(1);opacity:1}}
+        @keyframes fadeInDown{from{transform:translateY(-8px);opacity:0}to{transform:translateY(0);opacity:1}}
+        .close-btn{position:absolute;top:12px;right:14px;background:none;border:none;font-size:24px;cursor:pointer;color:var(--muted)}
+        .modal-box h2{margin:0 0 4px;font-size:18px;color:var(--text)}
+        .subtext{margin:0 0 16px;color:var(--muted);font-size:13px}
+        .modal-box label{display:block;margin:10px 0 6px;font-weight:600;font-size:13px;color:var(--text)}
+        .modal-box select,.modal-box textarea,.modal-box input{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;outline:none;background:var(--bg);color:var(--text)}
+        .send-btn{width:100%;margin-top:16px;padding:14px;border:none;border-radius:10px;background:#25D366;color:#fff;font-weight:700;font-size:16px;cursor:pointer}
+
+        footer{padding:35px 20px;background:rgba(0,0,0,0.45);text-align:center;line-height:2.1;font-size:13px}
+        html{height:100%;overflow-y:scroll}
+        html, body {min-height:100%;background:var(--bg);color:var(--text);max-width:980px;margin:0 auto;padding:calc(64px + env(safe-area-inset-top)) 10px 90px;overscroll-behavior-y:auto;-webkit-user-select:none;-ms-user-select:none;user-select:none;width:100%;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+        body *{box-sizing:border-box}
+
+        header{position:fixed;top:0;left:0;right:0;width:100%;height:calc(56px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);background:rgba(4,20,47,0.96);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid #ffffff14;display:flex;align-items:center;justify-content:space-between;padding-left:10px;padding-right:10px;z-index:1000;-webkit-transform:translateZ(0);transform:translateZ(0)}
+        .left{display:flex;align-items:center;gap:8px}
+        .logo-img{width:38px;height:38px;border-radius:50%;border:2px solid var(--accent);box-shadow:0 0 10px #ffd70066;object-fit:cover}
+        .logo-t{font-weight:900;font-size:11px;color:var(--accent);letter-spacing:.3px;line-height:1.15}
+        .back-btn{ padding:12px 16px; border-radius:15px; text-decoration:none; font-size:14px; font-weight:800; background: linear-gradient( 135deg, #0066ff, #00bfff ); color:white; }
+  
+        .icon-btn{width:auto;padding:6px 8px;position:relative;background:#121f44;border:1px solid #22346e;color:#cfe0ff;border-radius:8px;font-size:14px;cursor:pointer}
+        .icon-btn.flagged{background:rgba(255,143,163,0.18);border-color:var(--flag)}
+        .badge-dot{position:absolute;top:-3px;right:-3px;min-width:15px;height:15px;padding:0 3px;border-radius:99px;background:var(--error);color:#fff;font-size:8.5px;font-weight:900;display:none;align-items:center;justify-content:center;border:1.5px solid var(--bg)}
+        .badge-dot.glow{animation:badgeGlow 1.1s ease-in-out infinite}
+        @keyframes badgeGlow{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.65)}50%{box-shadow:0 0 6px 4px rgba(239,68,68,0.55)}}
+        .badge-dot.show{display:flex}
+
+        .card{background:linear-gradient(180deg,var(--card),#ffffff07);border:1px solid var(--border2);border-radius:14px;padding:14px;margin-top:9px;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+        h2.section-h{font-size:13px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px}
+        .muted{color:var(--muted)}
+
+        select,input,textarea{width:100%;padding:11px;background:var(--card2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:12px;outline:none;transition:all 0.2s ease}
+        select:focus,input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 5px rgba(255,215,0,0.2)}
+        input::placeholder,textarea::placeholder{color:var(--muted2);font-size:11px}
+        .row{display:flex;gap:6px}.row>*{flex:1}
+        label{font-size:9px;color:#8fb0ff;margin-bottom:3px;display:block;font-weight:600}
+        [data-theme="light"] label{color:#334155}
+
+        .btn{width:100%;padding:12px;border:0;border-radius:10px;font-weight:800;font-size:11px;cursor:pointer;transition:transform 0.1s ease,opacity 0.2s ease;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+        .btn:active{transform:scale(0.98)}
+        .btn:disabled{opacity:.5;cursor:not-allowed}
+        .btn-p{background:linear-gradient(135deg,#00e676,#00ff88);color:#001a0a;box-shadow:0 3px 12px rgba(0,255,136,0.2)}
+        .btn-g{background:#121f44;border:1px solid #22346e;color:#cfe0ff}
+        .btn-red{background:linear-gradient(135deg,#ff4757,#ff6b81);color:#2a0006}
+        .btn-blue{background:linear-gradient(135deg,#00bfff,#1e90ff);color:#00121f}
+        .btn-gold{background:linear-gradient(135deg,#ffd700,#ffae00);color:#000}
+        .lobby-btn-blocked{background:#2a3557 !important;color:#7c88ab !important;opacity:0.75;cursor:not-allowed}
+        .btn-sm{width:auto;padding:7px 12px;font-size:10px}
+
+        #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111e42;color:#cfe0ff;padding:8px 16px;border-radius:8px;font-size:10px;display:none;z-index:6500;border:1px solid #2a4486;box-shadow:0 4px 15px rgba(0,0,0,0.3);font-weight:600;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
+
+        .metric-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin:8px 0}
+        .metric-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center}
+        .metric-box val{display:block;font-size:13px;font-weight:900;color:var(--accent)}
+        .metric-box lbl{display:block;font-size:7.5px;color:var(--muted);text-transform:uppercase}
+
+        .realtime-badge{animation:pulse 1.5s infinite alternate;font-size:8px;padding:2px 5px;background:rgba(255,71,87,0.15);color:var(--error);border-radius:4px;border:1px solid var(--error)}
+        @keyframes pulse{from{opacity:0.5}to{opacity:1}}
+        .submode-container{display:flex;gap:4px;margin-top:6px;overflow-x:auto;padding-bottom:2px}
+        .submode-chip{padding:4px 8px;font-size:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;white-space:nowrap}
+        .submode-chip.active{background:rgba(255,215,0,0.1);border-color:var(--accent);color:var(--text)}
+        .chip-mini{display:inline-flex;gap:4px;padding:4px 9px;background:#10204a;border:1px solid #204080;border-radius:999px;font-size:9px;color:var(--text);align-items:center;text-transform:uppercase;letter-spacing:0.3px}
+        .subj-dd{position:relative}
+        .subj-dd-btn{width:100%;padding:12px;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:12.5px;color:var(--text)}
+        .subj-dd-arrow{color:var(--accent);font-size:10px;flex-shrink:0;margin-left:6px}
+        .subj-dd-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;max-height:240px;overflow-y:auto;z-index:60;padding:4px;box-shadow:0 10px 24px rgba(0,0,0,.4)}
+        .subj-dd-panel.open{display:block}
+        .subj-dd-item{display:flex;align-items:center;gap:9px;padding:9px 8px;font-size:12px;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border2)}
+        .subj-dd-item:last-child{border-bottom:none}
+        .subj-dd-item input{width:16px;height:16px;flex-shrink:0;padding:0}
+        [data-theme="light"] .subj-dd-panel{background:var(--card)}
+        .mode-row{display:flex;gap:5px;margin-top:7px}
+        .mode-card{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px;position:relative;cursor:pointer;transition:all .2s ease}
+        .mode-card.on{border-color:var(--accent);box-shadow:0 0 0 1px #ffd70044 inset,0 0 14px #ffd70022}
+        .mode-card b{font-size:10.5px;display:block;color:var(--text);text-transform:capitalize}
+        .mode-card span{font-size:8px;color:var(--muted)}
+        .input-hint{font-size:8px;color:var(--muted2);margin-top:3px;line-height:1.2}
+
+        /* ===== HUB ===== */
+        .hub-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+        .hub-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s ease;position:relative}
+        .hub-card:active{transform:scale(.97)}
+        .hub-card .ic{font-size:24px;display:block;margin-bottom:6px}
+        .hub-card b{font-size:11px;display:block;color:var(--text)}
+        .hub-card span{font-size:8.5px;color:var(--muted);display:block;margin-top:2px}
+        .hub-card .badge-dot{top:6px;right:6px}
+        @media(min-width:600px){.hub-grid{grid-template-columns:repeat(4,1fr)}}
+
+        /* ===== STATUS DOTS / FRIENDS ===== */
+        .status-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0;box-shadow:0 0 6px currentColor}
+        .status-dot.online{background:var(--success);color:var(--success)}
+        .status-dot.offline{background:#5a6b8c;color:#5a6b8c;box-shadow:none}
+        .status-dot.inmatch{background:var(--info);color:var(--info)}
+        .friend-row{display:flex;align-items:center;gap:9px;padding:9px 6px;border-bottom:1px solid var(--border2)}
+        .friend-row:last-child{border-bottom:none}
+        .fav{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#12204a,#1d356f);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;border:1px solid var(--border)}
+        .friend-name{font-size:11.5px;font-weight:700;color:var(--text)}
+        .friend-sub{font-size:8.5px;color:var(--muted)}
+        .fr-actions{display:flex;gap:5px;margin-left:auto}
+        .tab-row{display:flex;gap:5px;margin-top:8px;overflow-x:auto;padding-bottom:2px}
+        .tab-chip{padding:6px 11px;font-size:9.5px;font-weight:700;background:var(--bg);border:1px solid var(--border);border-radius:99px;color:var(--muted);cursor:pointer;white-space:nowrap}
+        .tab-chip.active{background:rgba(255,215,0,0.12);border-color:var(--accent);color:var(--accent)}
+
+        /* ===== CHAT ===== */
+        .chat-wrap{display:flex;flex-direction:column;height:52vh;background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+        .chat-msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px}
+        #chatTypingLine:empty{padding:0 !important;margin:0 !important;min-height:0 !important}
+        .chat-bubble{max-width:76%;padding:8px 11px;border-radius:12px;font-size:11.5px;line-height:1.4;word-break:break-word}
+        .chat-bubble.me{align-self:flex-end;background:linear-gradient(135deg,#00e676,#00c86a);color:#00220f;border-bottom-right-radius:3px}
+        .chat-bubble.them{align-self:flex-start;background:var(--card2);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:3px}
+        .chat-bubble .ts{display:block;font-size:7.5px;opacity:.65;margin-top:3px}
+        .chat-input-row{display:flex;gap:6px;padding:8px;border-top:1px solid var(--border);background:var(--card2)}
+        .chat-input-row input{flex:1;direction:ltr;unicode-bidi:plaintext;text-align:left}
+        .chat-send-btn{flex:0 0 40px;width:40px;height:40px;padding:0;border:0;border-radius:50%;background:linear-gradient(135deg,#00e676,#00c853);color:#04140a;font-size:16px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,230,118,0.35)}
+        .chat-send-btn:active{transform:scale(0.92)}
+        .graph-wrap{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-bottom:6px;margin-top:8px}
+        .graph-wrap canvas{min-width:100%;height:90px!important;display:block}
+        .shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;margin-top:6px}
+        .shop-item{background:var(--card2);border:1.5px solid var(--border);border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer}
+        #fxLayer{position:fixed;inset:0;pointer-events:none;z-index:9200;overflow:hidden}
+        #battleBanner{position:fixed;inset:0;z-index:9300;display:none;align-items:center;justify-content:center;background:rgba(2,8,20,0.88);flex-direction:column;gap:6px}
+        #battleBanner .bside{font-size:22px;font-weight:900;opacity:0;transform:translateX(-60px)}
+        #battleBanner .bside.right{transform:translateX(60px)}
+        #battleBanner.show .bside{animation:slideIn .5s ease forwards}
+        #battleBanner .vsBig{font-size:15px;font-weight:900;color:var(--accent);margin:4px 0;opacity:0;animation:popScale .4s ease .5s forwards}
+        #bbMeta{font-size:10px;letter-spacing:1px;color:var(--muted);font-weight:700;opacity:0;animation:popScale .4s ease .75s forwards}
+        #bbCountdown{font-size:0;font-weight:900;color:#fff;margin-top:10px;height:70px;display:flex;align-items:center;justify-content:center}
+        #bbCountdown.tick{font-size:56px;animation:countTick .8s ease}
+        #bbCountdown.go{font-size:40px;color:var(--success);animation:countTick .5s ease}
+        @keyframes countTick{0%{transform:scale(0.3);opacity:0}30%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:0.85}}
+        @keyframes slideIn{to{opacity:1;transform:translateX(0)}}
+        @keyframes popScale{from{opacity:0;transform:scale(0.4)}to{opacity:1;transform:scale(1)}}
+        .fx-piece{position:absolute;top:-30px;font-size:20px;will-change:transform,opacity;animation:fxFall linear forwards}
+        @keyframes fxFall{
+            0%{transform:translateY(0) rotate(0deg);opacity:1}
+            100%{transform:translateY(110vh) rotate(360deg);opacity:0.15}
+        }
+        .shop-item.owned{border-color:var(--success)}
+        .shop-item.equipped{border-color:var(--accent);box-shadow:0 0 8px rgba(255,215,0,0.3)}
+        .shop-item .swatch{width:28px;height:28px;border-radius:50%;margin:0 auto 4px}
+        .shop-item .price{font-size:8.5px;color:var(--accent);font-weight:800;margin-top:2px}
+
+        /* ===== ROOMS / LOBBY ===== */
+        .room-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:11px;margin-top:8px}
+        .room-title{font-size:12.5px;font-weight:800;color:var(--text)}
+        .room-meta{font-size:9px;color:var(--muted);margin-top:3px;line-height:1.6}
+        .player-slot{display:flex;align-items:center;gap:8px;padding:7px 6px;border-bottom:1px dashed var(--border2)}
+        .player-slot:last-child{border-bottom:none}
+        .ready-pill{font-size:8px;font-weight:800;padding:3px 8px;border-radius:99px;margin-left:auto}
+        .ready-pill.yes{background:rgba(0,255,136,0.15);color:var(--success);border:1px solid var(--success)}
+        .ready-pill.no{background:rgba(255,71,87,0.12);color:var(--error);border:1px solid var(--error)}
+        .team-tag{font-size:8px;font-weight:900;padding:2px 6px;border-radius:5px;color:#fff}
+        .team-tag.A{background:var(--teamA)}
+        .team-tag.B{background:var(--teamB)}
+
+        /* ===== MATCH / GAMEPLAY ===== */
+        .vs-header{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:10px}
+        .vs-side{flex:1;text-align:center}
+        .vs-side .nm{font-size:11px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .vs-side .sc{font-size:20px;font-weight:900;color:var(--accent)}
+        .vs-mid{font-size:10px;font-weight:900;color:var(--muted);padding:0 6px}
+        .oppo-indicator{width:10px;height:10px;border-radius:50%;display:inline-block;background:#3a4a70;margin-top:3px;transition:all .2s ease}
+        .oppo-indicator.locked{background:var(--success);box-shadow:0 0 8px var(--success)}
+        .powerup-bar{display:flex;gap:6px;margin-top:8px;overflow-x:auto;padding-bottom:2px}
+        .pu-btn{flex-shrink:0;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;padding:7px 10px;text-align:center;cursor:pointer;min-width:58px}
+        .pu-btn .ic{font-size:16px;display:block}
+        .pu-btn .lbl{font-size:7px;font-weight:800;color:var(--muted);margin-top:2px}
+        .pu-btn.used{opacity:.3;pointer-events:none}
+        .pu-btn:active{transform:scale(.94)}
+        .team-panel{display:flex;gap:6px;margin-top:8px}
+        .team-box{flex:1;background:var(--card2);border-radius:10px;padding:8px;border:1px solid var(--border)}
+        .team-box .th{font-size:9px;font-weight:900;letter-spacing:.4px}
+        .contrib-bar-wrap{height:6px;background:#0e1d42;border-radius:99px;overflow:hidden;margin-top:3px}
+        .contrib-bar{height:100%;border-radius:99px}
+        .opt-btn{display:block;width:100%;text-align:left;padding:11px;margin-top:7px;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;font-size:11.5px;color:var(--text);cursor:pointer}
+        .opt-btn:active{transform:scale(.98)}
+        .opt-btn.picked{border-color:var(--accent);background:rgba(255,215,0,0.08)}
+        .opt-btn.correct{border-color:var(--success)!important;background:rgba(0,255,136,0.14)!important}
+        .opt-btn.wrong{border-color:var(--error)!important;background:rgba(255,71,87,0.14)!important}
+        .opt-btn.dim{opacity:.28;pointer-events:none}
+        .float-react{position:fixed;font-size:26px;pointer-events:none;z-index:7000;animation:floatUp 1.6s ease-out forwards}
+        @keyframes floatUp{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:1;transform:translateY(-10px) scale(1.1)}100%{transform:translateY(-160px) scale(1);opacity:0}}
+        .reaction-bar{display:flex;gap:8px;justify-content:center;margin-top:8px}
+        .reaction-bar button{font-size:20px;background:var(--card2);border:1px solid var(--border);border-radius:99px;width:40px;height:40px;cursor:pointer}
+
+        /* ===== NOTIFICATIONS ===== */
+        .notif-panel{position:fixed;top:calc(56px + env(safe-area-inset-top) + 4px);right:8px;width:300px;max-width:92vw;max-height:70vh;overflow-y:auto;background:var(--card2);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.4);z-index:5500;display:none}
+        .notif-panel.active{display:block}
+        .notif-item{padding:10px 12px;border-bottom:1px solid var(--border2);font-size:10.5px;color:var(--text)}
+        .notif-item .t{color:var(--muted);font-size:8px;margin-top:3px}
+        .notif-item .acts{display:flex;gap:5px;margin-top:6px}
+        .notif-item.unread{background:rgba(255,215,0,0.05)}
+
+        /* ===== BRACKET ===== */
+        .bracket-scroll{overflow-x:auto;padding:10px 4px}
+        .bracket{display:flex;gap:0;min-width:max-content}
+        .bracket-round{display:flex;flex-direction:column;justify-content:space-around;gap:16px;min-width:168px;position:relative;padding:0 20px}
+        .bracket-round .rlabel{font-size:8px;font-weight:900;color:var(--accent);text-align:center;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+        .bracket-round:not(:last-child) .match-node{position:relative}
+        .bracket-round:not(:last-child) .match-node::after{content:'';position:absolute;right:-20px;top:50%;width:20px;height:2px;background:linear-gradient(90deg,var(--border2),var(--accent));opacity:.5}
+        .match-node{background:linear-gradient(180deg,var(--card2),rgba(0,0,0,0.15));border:1.5px solid var(--border2);border-radius:12px;padding:0;font-size:9.5px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,0.25)}
+        .match-node.live{border-color:var(--error);box-shadow:0 0 14px rgba(255,71,87,0.35)}
+        .match-node .p{display:flex;align-items:center;gap:7px;padding:7px 9px;border-bottom:1px solid rgba(255,255,255,0.06)}
+        .match-node .p:last-child{border-bottom:none}
+        .match-node .p .av{width:22px;height:22px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;border:1.5px solid var(--border2)}
+        .match-node .p span.nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .match-node .p.win{background:rgba(0,255,136,0.12);color:var(--success);font-weight:900}
+        .match-node .p.win .av{background:var(--success);color:#04140a;border-color:var(--success);box-shadow:0 0 8px rgba(0,255,136,0.5)}
+        .match-node .p.lose{color:var(--muted);opacity:.55}
+        .match-node .p.lose .av{filter:grayscale(1)}
+        .match-node .p.bye{font-style:italic;opacity:.35}
+        .bracket-live-tag{text-align:center;font-size:7.5px;color:var(--error);font-weight:800;padding:3px;background:rgba(255,71,87,0.1);animation:pulseLive 1.4s infinite}
+        @keyframes pulseLive{0%,100%{opacity:1}50%{opacity:.4}}
+        .champion-card{border-color:gold!important;text-align:center;padding:16px 10px;background:linear-gradient(180deg,rgba(255,215,0,0.15),transparent)!important;box-shadow:0 0 20px rgba(255,215,0,0.35)!important}
+        .champion-card .av{width:46px!important;height:46px!important;font-size:24px!important;margin:0 auto 6px;box-shadow:0 0 14px gold!important;border-color:gold!important}
+        .rr-table{width:100%;font-size:10px;border-collapse:collapse;margin-top:6px}
+        .rr-table th,.rr-table td{padding:6px;border:1px solid var(--border2);text-align:left}
+        .rr-table th{background:var(--card2);color:var(--accent)}
+        
+        footer{margin-top:70px;padding:40px 22px;background:rgba(0,0,0,0.6);text-align:center;line-height:2;border-top:1px solid rgba(255,255,255,0.08)}
+.footer-divider{height:1px;background:linear-gradient(90deg,transparent,#ffd700,transparent);margin:24px 0}
+.footer-bran h2{font-size:26px;font-weight:900;margin-bottom:12px;background:linear-gradient(135deg,#ffd700,#ff9800);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.footer-bran p{font-size:13px;color:#94a3b8}
+.footer-gri{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin:24px 0;text-align:left}
+.footer-co h4{color:#fff;font-size:14px;margin-bottom:10px}
+.footer-co a{display:block;color:#94a3b8;text-decoration:none;font-size:13px;margin:6px 0;transition:0.3s}
+.footer-co a:hover{color:#00ff88;transform:translateX(5px)}
+.copy{color:#475569;font-size:12px}
+
+        /* ===== LEADERBOARD (mirrors single-player) ===== */
+        .lb-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #1e4080;border-radius:10px;margin-top:8px;max-width:100%}
+        .lb-table-wrap::-webkit-scrollbar{height:4px}
+        .lb-table-wrap::-webkit-scrollbar-thumb{background:#1e4080;border-radius:4px}
+        .lb-table{width:100%;font-size:11px;border-collapse:collapse;min-width:580px;table-layout:fixed}
+        .lb-table thead{position:sticky;top:0;background:#0d2055;z-index:1}
+        .lb-table th{padding:9px 8px;color:#5ba3f5;font-weight:800;font-size:10px;border:1px solid #1e4080;white-space:nowrap;text-align:left}
+        .lb-table td{padding:8px 6px;border:1px solid #1e4080;color:#a8c8ff;word-break:break-word;white-space:normal;vertical-align:middle}
+        .lb-table tbody tr{border-bottom:1px solid #1e4080}
+        .lb-table tbody tr:hover{background:rgba(30,64,128,0.3)}
+        /* Column widths: # / ELO / Wins / Losses / Win% / Matches / Contrib stay tight and never
+           wrap; Name and Tier — the two that were crushing into vertical letter-stacks — get real
+           room and their content is forced onto one line instead of breaking mid-word. */
+        .lb-table th:nth-child(1),.lb-table td:nth-child(1){width:28px;text-align:center}
+        .lb-table th:nth-child(2),.lb-table td:nth-child(2){width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .lb-table th:nth-child(3),.lb-table td:nth-child(3){width:56px;white-space:nowrap}
+        .lb-table th:nth-child(4),.lb-table td:nth-child(4){width:85px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .lb-table th:nth-child(5),.lb-table td:nth-child(5),
+        .lb-table th:nth-child(6),.lb-table td:nth-child(6){width:52px;white-space:nowrap;text-align:center}
+        .lb-table th:nth-child(7),.lb-table td:nth-child(7){width:52px;white-space:nowrap;text-align:center}
+        .lb-table th:nth-child(8),.lb-table td:nth-child(8){width:64px;white-space:nowrap;text-align:center}
+        .lb-table th:nth-child(9),.lb-table td:nth-child(9){width:64px;white-space:nowrap;text-align:center}
+        .elo-tier{font-size:8.5px;font-weight:900;padding:2px 7px;border-radius:6px;display:inline-block;white-space:nowrap}
+        tr.me{outline:2px solid var(--accent);background:rgba(255,215,0,0.08)!important}
+        [data-theme="light"] .lb-table-wrap{border-color:#3b82f6}
+        [data-theme="light"] .lb-table thead{background:#e8f0fe}
+        [data-theme="light"] .lb-table th{color:#1e40af;border-color:#93c5fd}
+        [data-theme="light"] .lb-table td{color:#1e3a8a;border-color:#93c5fd}
+
+        /* ===== BOTTOM NAV ===== */
+        .bottom-nav{position:fixed;left:0;right:0;bottom:0;height:calc(58px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:rgba(4,20,47,0.97);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid #ffffff14;display:flex;z-index:1000;max-width:980px;margin:0 auto;right:0}
+        [data-theme="light"] .bottom-nav{background:rgba(215,226,240,.98);border-top:2px solid var(--border2)}
+        .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:var(--muted);font-size:8.5px;font-weight:700;cursor:pointer}
+        .nav-btn .ic{font-size:17px}
+        .nav-btn.active{color:var(--accent)}
+        .screen{display:none}
+        .screen.active{display:block}
+        .trophy-badge{position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;background:#ff2d55;box-shadow:0 0 6px 2px rgba(255,45,85,.9);display:none;animation:trophyGlow 1.4s ease-in-out infinite}
+        .trophy-badge.show{display:block}
+        @keyframes trophyGlow{0%,100%{box-shadow:0 0 4px 1px rgba(255,45,85,.7);opacity:1}50%{box-shadow:0 0 10px 4px rgba(255,45,85,1);opacity:.75}}
+        .empty-hint{text-align:center;padding:22px 10px;color:var(--muted);font-size:11px}
+    </style>
+</head>
+<body>
+    <div id="gateScreen">
+    <header>
+        <div class="left">
+            <img src="logo.jpg" class="logo-img" onerror="this.src='https://i.imgur.com/8Km9tLL.png'" alt="Logo">
+            <div class="logo-t">ELITE SCHOLAR INSTITUTE</div>
+        </div>
+        <a href="index.html" class="back-btn">← Back</a>
+    </header>
+
+    <div class="hero">
+        <h1>CHOOSE YOUR MODE</h1>
+        <p>Single Player is free. Multiplayer is a one-time unlock.</p>
+        <div id="statusPill" class="status-pill locked">🔒 Multiplayer Locked</div>
+    </div>
+
+    <div class="btn-grid">
+        <button class="mode-btn single" onclick="location.href='quiz1.html'">
+            <span class="icon">👤</span>
+            <span class="txt">
+                <b>SINGLE PLAYER</b>
+                <small>Free • Practice anytime</small>
+            </span>
+            <span class="arrow">→</span>
+        </button>
+
+        <button class="mode-btn unlock" id="multiBtn" onclick="handleMultiClick()">
+            <span class="icon" id="multiIcon">👥</span>
+            <span class="txt">
+                <b id="multiTitle">MULTIPLAYER</b>
+                <small id="multiSub">Locked • Tap to unlock</small>
+            </span>
+            <span class="arrow" id="multiArrow">→</span>
+        </button>
+    </div>
+
+    <div class="card" id="unlockCard" style="display:none">
+        <h2>Unlock Multiplayer</h2>
+        <p class="lead">Pay <b style="color:var(--accent)">₦3,500 once</b> and unlock Multiplayer permanently on this device.</p>
+
+        <div class="steps">
+            <div><span class="num">1</span> <b>Tap the green button below</b> → WhatsApp opens, send the drafted message to the administrator</div>
+            <div><span class="num">2</span> Pay the ₦3,500 company price and wait for the administrator to give you your passcode</div>
+            <div><span class="num">3</span> Enter the passcode below and tap redeem passcode</div>
+            <div><span class="num">4</span> Copy the Unlock Key → paste it to finish and click unlock multiplayer</div>
+        </div>
+
+        <button class="action-btn green" onclick="openWhatsApp()">
+            💬 Message WhatsApp to Unlock (₦3,500)
+        </button>
+
+        <div class="divider">Already paid?</div>
+
+        <div class="input-group">
+            <label>1. Enter Passcode</label>
+            <input type="text" id="passcodeInput" placeholder="e.g. MP-X7K9-P2M4" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="action-btn gold" onclick="redeemPasscode()">Redeem Passcode</button>
+
+        <div class="status-box" id="statusBox"></div>
+
+        <div class="unlock-key-box" id="unlockKeyBox">
+            <label>Your unique Unlock Key — copy it now</label>
+            <div class="key" id="generatedKey"></div>
+            <button class="action-btn gold" onclick="copyUnlockKey()">📋 Copy Unlock Key</button>
+        </div>
+
+        <div style="margin-top:18px;border-top:1px solid var(--border2);padding-top:16px">
+            <div class="input-group">
+                <label>2. Paste Unlock Key to finish (auto-copied)</label>
+                <input type="text" id="unlockKeyInput" placeholder="Paste the long key here" autocomplete="off" spellcheck="false">
+            </div>
+            <button class="action-btn gold" onclick="applyUnlockKey()">🔓 Unlock Multiplayer Now</button>
+        </div>
+    </div>
+
+
+    
+<div class="faq" id="faqSection">
+        <h3>FREQUENTLY ASKED QUESTIONS</h3>
+
+        <details>
+            <summary>I paid but didn’t receive a passcode</summary>
+            <p>Message us again on WhatsApp with proof of payment — a screenshot or transaction reference is all we need — and we'll send your passcode over immediately, no extra charge and no long wait. Delays are almost always just a missed message on our end, never a sign that something's wrong with your payment, so there's no need to panic or assume you've lost your money. Every payment is tracked against your account, so even if a first message gets buried, following up with proof gets it sorted fast. This is the only support step you'll ever need for a passcode issue — no forms, no tickets, no runaround, just a direct message and a direct fix.</p>
+        </details>
+
+        <details>
+            <summary>What is Multiplayer mode and what features does it include?</summary>
+            <p>Multiplayer unlocks the full competitive arena — play live against friends or scholars from around the globe, send 1v1 duel challenges, join full Team Battles, compete in hosted tournaments with live chat, and climb a global leaderboard that pays out prizes to the top three every month. Add friend requests, public profiles with avatar customization, a permanent Hall of Fame for the best of the best and tons of more features awaiting you — guaranteed to be the most complete competitive mode available, without compromise.</p>
+        </details>
+
+        <details>
+            <summary>How does the ELO ranking system work?</summary>
+            <p>Every ranked match moves your ELO using the same rating math used in competitive chess. Beat someone rated near or above you and you gain real points; beat someone far weaker and you barely gain anything, since you were expected to win anyway. There are 15 tiers in total, from Bronze all the way up to Elite Master, and each tier takes a bigger climb than the last — so the higher you go, the more it actually means. Casual matches and Team Battles never touch your ELO, so there's always a way to play risk-free.</p>
+        </details>
+
+        <details>
+            <summary>What do I earn from playing?</summary>
+            <p>Every match earns you coins and XP regardless of the outcome. Coins are spent in the Shop on exclusive cosmetic titles and effects, while XP permanently levels you up over time. On top of that, there's a full set of achievement badges to unlock — from your first win to hot streaks, tournament championships, and team MVP performances — all shown proudly on your public profile.</p>
+        </details>
+
+        <details>
+            <summary>How long does Multiplayer stay unlocked?</summary>
+            <p>Once unlocked on a device, it stays unlocked permanently on that device — there is no subscription, no monthly fee, and no expiry date attached to it. You pay once, and from that point forward every feature in Multiplayer — ranked matches, tournaments, team battles, the shop, everything — is yours for as long as you keep using that device. This is a deliberate one-time-purchase model, not a recurring one, because access to a mode you've already paid for shouldn't ever need to be paid for twice. The only time you'd need a new passcode is if you move to a different phone entirely, which is covered in the next question.</p>
+        </details>
+
+        <details>
+            <summary>Can I use the same passcode on another phone?</summary>
+            <p>No — each passcode is tied to a single device and can only be redeemed once, which is what keeps unlock codes fair and prevents them from being shared or resold. If you get a new phone or switch devices, your old passcode won't carry over automatically, but that's not something you need to worry about losing money over: just message us on WhatsApp, and a new unlock passcode will be issued to you for your new device. The one-device rule exists purely to protect the integrity of the unlock system, not to make life difficult for genuine players who've already paid — switching devices is a quick, straightforward fix, not a repurchase.</p>
+        </details>
+    </div>
+
+<footer>
+
+<div class="footer-divide"></div>
+<div class="footer-bran">
+<h2>Elite Scholar Institute</h2>
+<p>Academic Excellence Redefined</p>
+<p>Premium Digital Library For All Students</p>
+</div>
+
+<div class="footer-gri">
+<div class="footer-co">
+<h4>Quick Links</h4>
+<a href="index.html">Home</a>
+<a href="Textbooks.html">Textbooks</a>
+<a href="postutme.html">Post Utme PQ</a>
+<a href="syllables.html">Syllables</a>
+<a href="picture.html">Elite Gallery</a>
+<a href="motivatio.html">Motivational Guide</a>
+<a href="quiz.html">Elite AI quiz bot</a>
+<a href="notification.html">Elite Announcement Channel</a>
+
+</div>
+<div class="footer-co">
+<h4>Contact</h4>
+<a href="https://whatsapp.com/channel/0029VbCJIMs6mYPR74rtX844" target="_blank" rel="noopener">WhatsApp Community</a>
+
+<a href="https://chat.whatsapp.com/DJE3tvwkRQzA6qboxbsLzP?s=cl&p=a&ilr=2&amv=3" target="_blank" rel="noopener">General WhatsApp Group</a>
+
+
+<a href="https://telegram.me/elitescholarinstitute" target="_blank" rel="noopener">Telegram Channel</a>
+
+
+<a href="credit.html">👥 Credits</a>
+
+
+</div>
+</div>
+
+<div class="footer-divide"></div>
+<p class="copy">© 2026 Elite Scholar Institute. All Rights Reserved</p>
+</footer>
+
+
+        <div id="gateToast"></div>
+    </div>
+    <div id="multiplayerApp" style="display:none">
+    <div id="fxLayer"></div>
+    <div id="battleBanner"><div class="bside" id="bbLeft"></div><div class="vsBig">⚔️ VS ⚔️</div><div class="bside right" id="bbRight"></div><div id="bbMeta"></div><div id="bbCountdown"></div></div>
+    <header>
+        <div class="left">
+            <a href="quiz.html" class="back-btn">← Back</a>
+            <img src="logo.jpg" class="logo-img" onerror="this.src='https://i.imgur.com/8Km9tLL.png'">
+        </div>
+        <div style="display:flex;gap:5px;align-items:center">
+            <span id="net" style="width:8px;height:8px;border-radius:50%;display:inline-block;background:#556" title="Connection status"></span>
+          
+            <button class="icon-btn" onclick="openLB()" title="Leaderboard">🏆<span id="trophyBadge" class="trophy-badge"></span></button>
+            <button class="icon-btn" onclick="toggleCalc()" title="Calculator">🧮</button>
+            <button class="icon-btn" id="sfxBtn" onclick="toggleSfx()" title="Sound">🔊</button>
+            <button class="icon-btn" onclick="toggleTheme()" title="Theme">🌓</button>
+        </div>
+    </header>
+
+    <!-- Clean full-screen loading splash — shown until sign-in resolves, hidden the moment it does.
+         Nothing technical is ever shown here: no error codes, hostnames, or console-style text,
+         just a calm "connecting" state and (only after a real delay) a plain Retry button. -->
+    <div id="loadingSplash" style="position:fixed;inset:0;background:var(--bg);z-index:9500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px;text-align:center">
+        <img src="logo.jpg" onerror="this.src='https://i.imgur.com/8Km9tLL.png'" style="width:70px;height:70px;border-radius:50%;border:2px solid var(--accent);box-shadow:0 0 16px #ffd70066">
+        <div style="width:34px;height:34px;border:3px solid #22346e;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite"></div>
+        <div id="loadingSplashText" style="color:var(--muted);font-size:12px;font-weight:700">Connecting to the Arena…</div>
+        <button id="loadingRetryBtn" class="btn btn-g" style="width:auto;padding:10px 20px;display:none" onclick="location.reload()">Retry</button>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+
+    <!-- ===================== HUB SCREEN ===================== -->
+    <div class="screen active" id="screen_hub">
+        <div class="card" id="welcomeCard">
+            <h2 class="section-h">Welcome back, Scholar!</h2>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+                <div class="fav" style="width:44px;height:44px;font-size:19px" id="myAvatar">🎓</div>
+                <div style="flex:1;min-width:0">
+                    <div style="font-size:14px;font-weight:900;color:var(--text)" id="myNameDisp">—</div>
+                    <div style="font-size:9px;color:var(--muted)" id="myEloDisp">ELO — • — Wins — Losses</div>
+                </div>
+                <span class="elo-tier" id="myTierDisp">Bronze</span>
+            </div>
+            <div style="margin-top:8px;font-size:8.5px;color:var(--muted)"><span class="status-dot online" style="width:6px;height:6px"></span> <b id="playersOnlineCount" style="color:var(--success)">—</b> players online right now</div>
+        </div>
+
+        <div class="card" id="myTournamentWidget" style="display:none">
+            <h2 class="section-h">🏅 Your Tournaments</h2>
+            <div id="myTournamentWidgetList" style="margin-top:6px"></div>
+        </div>
+
+        <div class="hub-grid">
+            <div class="hub-card" onclick="openQuickMatchModal()"><span class="ic">⚡</span><b>Quick Match</b><span>Auto-paired 1v1</span></div>
+            <div class="hub-card" onclick="showScreen('rooms')"><span class="ic">🚪</span><b>Rooms</b><span>Public &amp; private lobbies</span></div>
+            <div class="hub-card" onclick="showScreen('tournaments')"><span class="ic">🏅</span><b>Tournaments</b><span>Brackets &amp; leagues</span></div>
+            <div class="hub-card" onclick="showScreen('friends')"><span class="ic">👥</span><b>Friends</b><span id="friendsOnlineHint">0 online</span><span class="badge-dot" id="friendReqBadge">0</span></div>
+            <div class="hub-card" onclick="openCreateRoomModal('duo')"><span class="ic">⚔️</span><b>Custom Duel</b><span>Set your own rules</span></div>
+            <div class="hub-card" onclick="openCreateRoomModal('team')"><span class="ic">🛡️</span><b>Team Battle</b><span>2v2, 3v3, 4v4</span></div>
+            <div class="hub-card" onclick="showScreen('profile')"><span class="ic">📊</span><b>My Profile</b><span>Stats &amp; achievements</span></div>
+            <div class="hub-card" onclick="openLB()"><span class="ic">🏆</span><b>Leaderboard</b><span>Global rankings</span></div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <h2 class="section-h">Public Rooms Right Now</h2>
+                <button class="btn-g btn-sm" onclick="showScreen('rooms')">See all</button>
+            </div>
+            <div id="hubRoomsPreview"><div class="empty-hint">Loading rooms…</div></div>
+        </div>
+
+        <div class="card" id="historyWrap">
+            <h2 class="section-h">📜 History &amp; Performance</h2>
+            <details style="margin-top:6px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px" id="det_mp_spak">
+                <summary style="cursor:pointer;font-size:11px;font-weight:700;color:#00ff88">▶ Spak mode history<span id="cnt_mp_spak" class="muted" style="font-weight:400"></span></summary>
+                <div class="graph-wrap"><canvas id="g_mp_spak" height="90"></canvas></div>
+                <div id="s_mp_spak" class="muted" style="font-size:8.5px;margin-top:4px"></div>
+                <div id="h_mp_spak" style="font-size:9.5px;margin-top:6px"></div>
+            </details>
+            <details style="margin-top:6px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px" id="det_mp_speed">
+                <summary style="cursor:pointer;font-size:11px;font-weight:700;color:#00bfff">▶ Sprint mode history<span id="cnt_mp_speed" class="muted" style="font-weight:400"></span></summary>
+                <div class="graph-wrap"><canvas id="g_mp_speed" height="90"></canvas></div>
+                <div id="s_mp_speed" class="muted" style="font-size:8.5px;margin-top:4px"></div>
+                <div id="h_mp_speed" style="font-size:9.5px;margin-top:6px"></div>
+            </details>
+            <details style="margin-top:6px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px" id="det_mp_free">
+                <summary style="cursor:pointer;font-size:11px;font-weight:700;color:#ffd700">▶ Read mode history<span id="cnt_mp_free" class="muted" style="font-weight:400"></span></summary>
+                <div class="graph-wrap"><canvas id="g_mp_free" height="90"></canvas></div>
+                <div id="s_mp_free" class="muted" style="font-size:8.5px;margin-top:4px"></div>
+                <div id="h_mp_free" style="font-size:9.5px;margin-top:6px"></div>
+                </details>
+                
+                <button class="btn btn-g" style="margin-top:8px;font-size:9.5px;color:var(--accent);border-color:var(--accent)" onclick="openFlaggedQuestions()">🚩 Flagged Questions</button>
+            
+            <button class="btn btn-g" style="margin-top:8px;font-size:9px;color:var(--error);border-color:rgba(255,71,87,0.3)" onclick="clearAllMPHistory()">🗑 CLEAR ALL HISTORY</button>
+        </div>
+    </div>
+
+    <!-- ===================== FRIENDS SCREEN ===================== -->
+    <div class="screen" id="screen_friends">
+        <div class="card">
+            <h2 class="section-h">Add a Friend</h2>
+            <div class="row" style="margin-top:6px">
+                <input id="addFriendInput" placeholder="Enter friends username…">
+                <button class="btn btn-p" style="flex:0 0 100px" onclick="sendFriendRequest()">Send</button>
+            </div>
+        </div>
+        <details class="card" id="notifDetails" style="padding:0">
+            <summary style="cursor:pointer;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;list-style:none">
+                <b style="font-size:12px;color:var(--accent)">🔔 Activity<span id="notifBadge" class="badge-dot" style="position:static;margin-left:6px"></span></b>
+                <button class="btn-g btn-sm" onclick="event.preventDefault();event.stopPropagation();clearAllNotifs()">Clear all</button>
+            </summary>
+            <div id="notifList" style="padding:0 10px 10px"></div>
+        </details>
+        <div class="card">
+            <div class="tab-row">
+                <div class="tab-chip active" data-ftab="all" onclick="setFriendTab('all')">All Friends</div>
+                <div class="tab-chip" data-ftab="online" onclick="setFriendTab('online')">Online</div>
+                <div class="tab-chip" data-ftab="requests" onclick="setFriendTab('requests')">Requests<span id="reqCountChip"></span></div>
+                <div class="tab-chip" data-ftab="sent" onclick="setFriendTab('sent')">Sent</div>
+            </div>
+            <div id="friendsListWrap"><div class="empty-hint">Loading…</div></div>
+        </div>
+    </div>
+
+    <!-- ===================== ROOMS SCREEN ===================== -->
+    <div class="screen" id="screen_rooms">
+        <div class="card">
+            <div class="row">
+                <button class="btn btn-p" onclick="openCreateRoomModal('duo')">➕ Create Room</button>
+                <button class="btn btn-g" onclick="openJoinCodeModal()">🔑 Join by Code</button>
+            </div>
+            <div class="row" style="margin-top:6px">
+                <button class="btn btn-blue" onclick="openQuickMatchModal()">⚡ Quick Match</button>
+            </div>
+        </div>
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <h2 class="section-h">🔎 Live Searches</h2>
+                <button class="btn-g btn-sm" onclick="refreshLiveSearches()">🔄</button>
+            </div>
+            <div id="liveSearchesList"><div class="empty-hint">Loading…</div></div>
+        </div>
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <h2 class="section-h">Public Lobbies</h2>
+                <button class="btn-g btn-sm" onclick="refreshPublicRooms()">🔄</button>
+            </div>
+            <div id="publicRoomsList"><div class="empty-hint">Loading rooms…</div></div>
+        </div>
+    </div>
+
+    <!-- ===================== LOBBY (INSIDE A ROOM) SCREEN ===================== -->
+    <div class="screen" id="screen_lobby">
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <h2 class="section-h" id="lobbyTitle">Room</h2>
+                <button class="btn-g btn-sm" onclick="leaveRoom()">Leave</button>
+            </div>
+            <div class="room-meta" id="lobbySettingsSummary"></div>
+            <div id="lobbyCodeWrap" style="margin-top:8px;display:none;text-align:center">
+                <div class="muted" style="font-size:8.5px;margin-bottom:3px">ROOM CODE — TAP TO COPY</div>
+                <div id="lobbyCodeVal" onclick="copyRoomCode()" style="cursor:pointer;display:inline-block;font-family:monospace;font-weight:900;font-size:22px;letter-spacing:4px;color:var(--accent);background:var(--card2);border:1.5px dashed var(--accent);border-radius:10px;padding:8px 18px">------</div>
+            </div>
+        </div>
+        <div class="card" id="lobbyTeamWrap" style="display:none">
+            <h2 class="section-h">Teams</h2>
+            <div class="team-panel">
+                <div class="team-box"><div class="th" style="color:var(--teamA)"><span id="lobbyTeamAName">TEAM A</span> <span style="cursor:pointer" onclick="renameRoomTeam('A')" title="Rename">✏️</span></div><div id="teamAList"></div><button class="btn-g btn-sm" style="margin-top:6px;width:100%" onclick="joinTeam('A')">Join Team A</button></div>
+                <div class="team-box"><div class="th" style="color:var(--teamB)"><span id="lobbyTeamBName">TEAM B</span> <span style="cursor:pointer" onclick="renameRoomTeam('B')" title="Rename">✏️</span></div><div id="teamBList"></div><button class="btn-g btn-sm" style="margin-top:6px;width:100%" onclick="joinTeam('B')">Join Team B</button></div>
+            </div>
+        </div>
+        <div class="card">
+            <h2 class="section-h">Players</h2>
+            <div id="lobbyPlayers"></div>
+        </div>
+        <div class="card" id="predictionsCard" style="display:none">
+            <h2 class="section-h">🔮 Predictions Pool</h2>
+            <p class="subtext">Players and spectators, who do you think wins? Correct predictions earn coin bonuses at the end of the match.</p>
+            <div id="predictionsOptions" style="margin-top:6px"></div>
+            <div id="predictionsTally" class="muted" style="font-size:9px;margin-top:8px"></div>
+            <div id="predictionsVotesWrap" style="display:none;margin-top:8px"></div>
+        </div>
+        <div class="card">
+            <button class="btn btn-p" id="readyBtn" onclick="toggleReady()">✅ I'm Ready</button>
+            <button class="btn-g" id="lobbySwitchBtn" style="margin-top:8px;display:none"></button>
+            <button class="btn btn-gold" id="hostStartBtn" style="margin-top:8px;display:none" onclick="hostStartMatch()">🚀 Start Match (Host)</button>
+            <button class="btn btn-red" id="hostDeleteBtn" style="margin-top:8px;display:none" onclick="deleteRoom()">🗑️ Delete Room</button>
+            <div id="lobbyStatusLine" style="display:none;margin-top:8px;text-align:center;font-size:10.5px;font-weight:700;color:var(--accent)"></div>
+        </div>
+        <div class="card">
+            <h2 class="section-h">Lobby Chat</h2>
+            <div class="chat-wrap" style="height:30vh"><div class="chat-msgs" id="lobbyChatMsgs"></div>
+                <div id="lobbyTypingLine" style="font-size:9px;color:var(--success);font-weight:700;min-height:14px;padding:0 6px"></div>
+                <div class="chat-input-row"><input id="lobbyChatInput" dir="ltr" placeholder="Say hi…" oninput="onLobbyChatTyping()" onkeydown="if(event.key==='Enter')sendLobbyChat()"><button class="chat-send-btn" onclick="sendLobbyChat()">➤</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== TOURNAMENTS SCREEN ===================== -->
+    <div class="screen" id="screen_tournaments">
+        <div class="card">
+            <button class="btn btn-p" onclick="openCreateTournamentModal()">🏅 Create Tournament</button>
+        </div>
+        <div class="card">
+            <h2 class="section-h">Join Private Tournament</h2>
+            <div class="row" style="margin-top:6px">
+                <input id="tJoinCodeInput" placeholder="e.g. ESI-1234" style="text-transform:uppercase">
+                <button class="btn btn-g" style="flex:0 0 90px" onclick="joinTournamentByCode()">Join</button>
+            </div>
+        </div>
+        <div class="card">
+            <h2 class="section-h">Open Tournaments</h2>
+            <div id="tournamentsList"><div class="empty-hint">Loading…</div></div>
+        </div>
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <h2 class="section-h" style="margin:0">📜 Tournament History</h2>
+                <button class="icon-btn" style="padding:5px 8px" title="Clear all history" onclick="clearAllTournamentHistory()">🗑️ Clear All</button>
+            </div>
+            <p class="subtext" style="margin:2px 0 6px">...</p>
+            <div id="tournamentHistoryList"><div class="empty-hint">Loading…</div></div>
+        </div>
+    </div>
+
+    <div class="screen" id="screen_tournament_detail">
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <h2 class="section-h" id="tDetailTitle">Tournament</h2>
+                <button class="btn-g btn-sm" onclick="showScreen('tournaments')">← Back</button>
+            </div>
+            <div class="room-meta" id="tDetailMeta"></div>
+            <div id="tCodeBox" style="display:none;text-align:center;margin-top:8px;padding:8px;background:var(--card2);border:1.5px dashed var(--accent);border-radius:9px">
+                <div style="font-size:8.5px;color:var(--muted)">PRIVATE CODE — SHARE TO INVITE</div>
+                <div id="tCodeVal" onclick="copyTournamentCode()" style="cursor:pointer;font-family:monospace;font-size:18px;font-weight:900;letter-spacing:3px;color:var(--accent);background:var(--card2);border:1.5px dashed var(--accent);border-radius:8px;padding:6px 14px;display:inline-block"></div>
+            </div>
+            <div id="tCountdownBox" style="display:none;text-align:center;margin-top:10px;padding:12px;background:linear-gradient(135deg,#1a0e33,#0e1d42);border-radius:12px;border:1.5px solid var(--accent)">
+                <div style="font-size:9px;color:var(--muted);letter-spacing:1px" id="tCountdownLabel">TOURNAMENT BEGINS IN</div>
+                <div style="font-size:24px;font-weight:900;color:var(--accent);letter-spacing:2px;font-variant-numeric:tabular-nums" id="tCountdownVal">000:00:00</div>
+            </div>
+            <div id="tRoundInfoBox" style="display:none;text-align:center;margin-top:10px;padding:12px;background:linear-gradient(135deg,#1a0e33,#0e1d42);border-radius:12px;border:1.5px solid var(--accent)">
+                <div style="font-size:8.5px;color:var(--muted);letter-spacing:0.3px;line-height:1.5" id="tRoundInfoText"></div>
+                <div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:6px">TIME LEFT TO PLAY</div>
+                <div style="font-size:22px;font-weight:900;color:var(--accent);letter-spacing:2px;font-variant-numeric:tabular-nums" id="tRoundInfoCountdown">000:00:00</div>
+            </div>
+        </div>
+        <div class="card" id="tMyMatchAlert" style="display:none;background:linear-gradient(135deg,#00ff8822,#0e1d42);border:2px solid var(--success);animation:pulse 1.4s infinite">
+            <div style="text-align:center;font-weight:900;font-size:13px;color:var(--success)">🔴 Your match is live!</div>
+            <div id="tMyMatchOpponent" style="text-align:center;font-size:10px;color:var(--muted);margin-top:2px"></div>
+            <button class="btn btn-gold" style="margin-top:8px" onclick="joinMyTournamentMatch()">▶ Enter Your Match</button>
+        </div>
+        <div class="card" id="tDetailRegisterCard">
+            <button class="btn btn-p" id="tRegisterBtn" onclick="registerForTournament()">Register</button>
+            <div id="tTeamPickBox" style="display:none;margin-top:8px">
+                <div class="row">
+                    <button class="btn btn-s btn-sm" onclick="registerForTournament('A')">Join <span id="tTeamAName">Team A</span></button>
+                    <button class="btn btn-red btn-sm" onclick="registerForTournament('B')">Join <span id="tTeamBName">Team B</span></button>
+                </div>
+            </div>
+            <button class="btn-g btn-sm" id="tUnregisterBtn" style="margin-top:8px;display:none" onclick="leaveTournamentReg()">Leave Tournament</button>
+            <button class="btn btn-g btn-sm" id="tSwitchToSpecBtn" style="margin-top:8px;display:none" onclick="switchPlayerToSpec()">🔁 Switch to Spectator</button>
+            <button class="btn btn-g btn-sm" id="tJoinSpecBtn" style="margin-top:8px;display:none" onclick="joinTournamentAsSpectator()">👁 Join as Spectator</button>
+            <button class="btn btn-p btn-sm" id="tSwitchToPlayerBtn" style="margin-top:8px;display:none" onclick="switchSpecToPlayer()">🔁 Switch to Player</button>
+            <button class="btn-g btn-sm" id="tLeaveSpecBtn" style="margin-top:8px;display:none" onclick="leaveTournamentSpectating()">Stop Spectating</button>
+            <button class="btn btn-g btn-sm" id="tSpectateBtn" style="margin-top:8px;display:none" onclick="spectateTournamentMatch()">👁️ Spectate Live Match</button>
+            <div id="tHostControls" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)">
+                <div class="row" id="tHostTimeRow">
+                    <input id="tNewStartAt" type="datetime-local" style="flex:1">
+                    <button class="btn-g btn-sm" style="flex:0 0 110px" onclick="hostChangeTournamentTime()">Change time</button>
+                </div>
+                <button class="btn btn-red btn-sm" style="margin-top:8px;width:100%" onclick="hostCancelTournament()">🗑️ Cancel Tournament</button>
+            </div>
+        </div>
+        <div class="card" id="tSpectatorsCardWrap" style="display:none">
+            <h2 class="section-h">👁 Spectators <span id="tSpecCount" class="muted"></span></h2>
+            <div id="tDetailSpectators"></div>
+        </div>
+        <div class="card">
+            <h2 class="section-h">Players Registered <span id="tPlayerCount" class="muted"></span></h2>
+            <div id="tTeamsWrap" style="display:none">
+                <div class="row3" style="align-items:start">
+                    <div><b id="tTeamALabel" style="font-size:10px;color:var(--teamA)">Team A</b><button class="icon-btn" style="padding:2px 5px;font-size:9px" onclick="renameTeam('A')">✎</button><div id="tDetailPlayersA"></div></div>
+                    <div style="text-align:center;padding-top:10px;color:var(--muted);font-size:9px">VS</div>
+                    <div><b id="tTeamBLabel" style="font-size:10px;color:var(--teamB)">Team B</b><button class="icon-btn" style="padding:2px 5px;font-size:9px" onclick="renameTeam('B')">✎</button><div id="tDetailPlayersB"></div></div>
+                </div>
+            </div>
+            <div id="tDetailPlayers"></div>
+        </div>
+        <div class="card" id="tBracketCard" style="display:none">
+            <h2 class="section-h">Bracket</h2>
+            <div class="bracket-scroll"><div class="bracket" id="tBracketWrap"></div></div>
+        </div>
+        <div class="card" id="tShareResultCard" style="display:none">
+            <button class="btn btn-gold" onclick="shareTournamentResultImage()">📤 Share Tournament Result</button>
+            <div id="tRecordsList" style="margin-top:10px"></div>
+        </div>
+        <div class="card" id="tRRCard" style="display:none">
+            <h2 class="section-h">Standings (Round Robin)</h2>
+            <div style="overflow-x:auto"><table class="rr-table" id="tRRTable"></table></div>
+        </div>
+        <div class="card">
+            <h2 class="section-h">💬 Tournament Lobby Chat</h2>
+            <p class="subtext"></p>
+            <div class="chat-wrap" style="height:30vh;margin-top:6px"><div class="chat-msgs" id="tChatMsgs"></div>
+                <div id="tChatTypingLine" class="muted" style="font-size:8px;padding:2px 8px;min-height:12px"></div>
+                <div class="chat-input-row"><input id="tChatInput" dir="ltr" placeholder="Say something…" oninput="onTournamentChatTyping()" onkeydown="if(event.key==='Enter')sendTournamentChat()"><button class="chat-send-btn" onclick="sendTournamentChat()">➤</button></div>
+            </div>
+        </div>
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <h2 class="section-h" style="margin:0">📋 Tournament Activity</h2>
+                <button class="icon-btn" style="padding:5px 8px;font-size:11px" onclick="clearTournamentActivity()" title="Clear (host only)">🗑️</button>
+            </div>
+            <div id="tActivityLog" style="margin-top:6px;max-height:220px;overflow-y:auto;display:flex;flex-direction:column-reverse;gap:5px"></div>
+        </div>
+    </div>
+
+    <!-- ===================== MATCH / GAMEPLAY SCREEN ===================== -->
+    <div class="screen" id="screen_match">
+        <div class="vs-header" id="matchVsHeader"></div>
+        <div id="matchHostKickWrap" style="display:none;text-align:center;margin-top:-4px;margin-bottom:6px"></div>
+        <div id="matchChatBanner" style="display:none;background:var(--card2);border:1.5px solid var(--accent);border-radius:10px;padding:6px 10px;margin-bottom:6px;font-size:10px;animation:fadeInDown .25s ease"></div>
+        <div class="team-panel" id="matchTeamPanel" style="display:none"></div>
+        <div id="matchSwitchWrap" style="display:none;text-align:center;margin-top:6px"></div>
+        <div class="card" id="mWaitBox" style="display:none;text-align:center;border:2px solid var(--accent)">
+            <div style="font-weight:900;font-size:13px;color:var(--accent);letter-spacing:0.4px">⏳ WAITING ROOM</div>
+            <div style="font-size:11px;margin-top:10px;color:var(--muted)" id="mWaitSpecNote"></div>
+            <div style="margin-top:10px;font-size:12.5px;font-weight:700" id="mWaitMeStatus"></div>
+            <div style="margin-top:6px;font-size:12.5px;font-weight:700;line-height:1.6" id="mWaitOppStatus"></div>
+            <button class="btn btn-gold" id="mWaitReadyBtn" style="margin-top:14px;width:100%" onclick="markMatchReady(currentMatchId)">✅ I'm Ready</button>
+            <div style="margin-top:10px;font-size:10.5px;color:var(--accent);font-weight:700" id="mWaitStatus"></div>
+        </div>
+        <div class="card" id="mTeamWaitBox" style="display:none;text-align:center;border:2px solid var(--accent)">
+            <div style="font-weight:900;font-size:13px;color:var(--accent);letter-spacing:0.4px">⏳ TEAM WAITING ROOM</div>
+            <div id="mTeamWaitRosters" style="margin-top:12px"></div>
+            <button class="btn btn-gold" id="mTeamWaitReadyBtn" style="margin-top:14px;width:100%" onclick="markMatchReady(currentMatchId)">✅ I'm Ready</button>
+            <button class="btn btn-gold" id="mTeamWaitStartBtn" style="margin-top:8px;width:100%;display:none" onclick="hostStartTeamWaitingMatch(currentMatchId, lastMatchSnapshot)">▶ Start Match (Host)</button>
+            <div style="margin-top:10px;font-size:10.5px;color:var(--accent);font-weight:700" id="mTeamWaitStatus"></div>
+        </div>
+        <div class="card" id="matchQuestionCard">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px">
+                <span id="mQc" class="muted"></span>
+                <span style="display:flex;align-items:center;gap:8px">
+                    <button id="mFlagBtn" class="icon-btn" style="padding:3px 7px;font-size:11px;color:var(--flag)" title="Flag this question" onclick="toggleMatchFlag()">🚩</button>
+                    <b id="mTimer" style="color:var(--accent)"></b>
+                </span>
+            </div>
+            <div style="height:5px;background:#0e1d42;border-radius:99px;overflow:hidden;margin:6px 0"><i id="mProg" style="display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--success));transition:width .2s linear"></i></div>
+            <div id="bonusRoundBanner" style="display:none;text-align:center;background:linear-gradient(135deg,#ffd700,#ffae00);color:#1a1300;font-weight:900;font-size:10.5px;padding:6px;border-radius:8px;margin:2px 0 6px">🌟 CO-OP BONUS ROUND — YOUR WHOLE TEAM MUST BE CORRECT!</div>
+            <button id="captainExtendBtn" class="btn btn-gold" style="display:none;margin-bottom:6px;padding:7px;font-size:9.5px" onclick="captainExtendTime()">⭐ Captain: +3s Review Time (once per match)</button>
+            <div id="mQt" style="font-weight:700;font-size:13px;margin:8px 0;line-height:1.5;color:var(--text);border-left:3px solid var(--accent);padding-left:8px"></div>
+            <div id="mResultBanner" style="display:none;padding:8px 10px;border-radius:9px;font-weight:800;font-size:11.5px;text-align:center;margin-bottom:7px"></div>
+            <div id="mOppResultLine" style="display:none;font-size:9.5px;font-weight:700;text-align:center;margin-bottom:7px"></div>
+            <div id="mOpts"></div>
+            <div class="powerup-bar" id="powerupBar"></div>
+            <div class="reaction-bar" id="reactionBar"></div>
+            <button class="btn btn-red btn-sm" id="claimWinBtn" style="width:100%;margin-top:8px;display:none" onclick="claimWinVsAfk()">🚩 Opponent's disconnected — Claim Win</button>
+        </div>
+        <div id="matchChatDock" style="position:fixed;right:10px;bottom:76px;z-index:850">
+            <button class="icon-btn" id="matchChatToggle" style="position:relative;width:44px;height:44px;border-radius:50%;font-size:18px" onclick="toggleMatchChatPanel()">💬<span id="matchChatBadge" class="badge-dot" style="display:none"></span></button>
+            <div id="matchChatPanel" style="display:none;position:absolute;bottom:52px;right:0;width:78vw;max-width:280px;background:var(--card2);border:1.5px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.5);overflow:hidden">
+                <div style="padding:7px 10px;background:var(--card);font-weight:800;font-size:10.5px;display:flex;justify-content:space-between;align-items:center">
+                    <span>Match Chat</span><span id="matchChatTypingLine" style="font-size:8px;color:var(--success);font-weight:700"></span>
+                </div>
+                <div class="chat-wrap" style="height:32vh"><div class="chat-msgs" id="matchChatMsgs"></div>
+                    <div class="chat-input-row"><input id="matchChatInput" dir="ltr" placeholder="Message…" oninput="onMatchChatTyping()" onkeydown="if(event.key==='Enter')sendMatchChat()"><button class="chat-send-btn" onclick="sendMatchChat()">➤</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== RESULTS SCREEN ===================== -->
+    <div class="screen" id="screen_results">
+        <div class="card" id="resultsSummaryCard"></div>
+        <div class="card">
+            <div class="row">
+                <button class="btn btn-p" id="resultsRematchBtn" onclick="requestRematch()">🔁 Rematch</button>
+                <button class="btn btn-g" onclick="showScreen('hub');refreshHub()">🏠 Back to dashboard</button>
+            </div>
+            <button class="btn btn-g" style="margin-top:8px" id="resultsReviewToggleBtn" onclick="toggleResultsReview()">📋 Quiz Review</button>
+            <button class="btn btn-gold" style="margin-top:8px" onclick="shareMatchResultImage()">📤 Share Result</button>
+            <button class="btn btn-gold" style="margin-top:8px" onclick="openSoloReview()">🔄 Practice These Questions Solo</button>
+        </div>
+        <div id="resultsReviewWrap" style="display:none">
+            <div class="card" id="resultsFlaggedCard" style="display:none">
+                <details>
+                    <summary style="cursor:pointer;font-size:11px;font-weight:700;color:var(--flag)">▶ Flagged Questions 🚩 <span id="resultsFlagCnt" style="color:var(--muted);font-weight:400"></span></summary>
+                    <div id="resultsFlaggedList" style="margin-top:8px"></div>
+                </details>
+            </div>
+            <div class="card" id="resultsBreakdownCard">
+                <h2 class="section-h">Question-by-Question Review</h2>
+                <div id="resultsBreakdown"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== PROFILE SCREEN ===================== -->
+    <div class="screen" id="screen_profile">
+        <div class="card">
+            <div style="display:flex;align-items:center;gap:12px">
+                <div class="fav" style="width:56px;height:56px;font-size:24px;cursor:pointer" id="profAvatar" onclick="toggleAvatarPicker()" title="Tap to change avatar">🎓</div>
+                <div>
+                    <div style="font-size:16px;font-weight:900" id="profName">—</div>
+                    <span class="elo-tier" id="profTier">Bronze</span>
+                    <span id="profTitleBadge" style="display:none;font-size:8.5px;font-weight:800;color:var(--accent);margin-left:6px"></span>
+                </div>
+            </div>
+            <div class="metric-container" style="margin-top:12px">
+                <div class="metric-box" style="cursor:pointer" onclick="eloInfo()"><val id="profElo">0</val><lbl>ELO Rating ℹ️</lbl></div>
+                <div class="metric-box"><val id="profWins">0</val><lbl>Wins</lbl></div>
+                <div class="metric-box"><val id="profLosses">0</val><lbl>Losses</lbl></div>
+                <div class="metric-box"><val id="profWinRate">0%</val><lbl>Win Rate</lbl></div>
+                <div class="metric-box"><val id="profStreak">0</val><lbl>Best Streak</lbl></div>
+                <div class="metric-box"><val id="profMatches">0</val><lbl>Matches</lbl></div>
+                <div class="metric-box"><val id="profXP">0</val><lbl>XP (Lv <span id="profLevel">1</span>)</lbl></div>
+                <div class="metric-box" style="cursor:pointer" onclick="openShopModal()"><val id="profCoins">0</val><lbl>Coins — tap to spend 🛍️</lbl></div>
+                <div class="metric-box"><val id="profLoginStreak">0</val><lbl>🔥 Daily Streak</lbl></div>
+            </div>
+            <div id="avatarPicker" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">
+                <div class="muted" style="font-size:9.5px;margin-bottom:6px">Choose your battle avatar:</div>
+                <div id="avatarGrid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px"></div>
+            </div>
+        </div>
+        <div class="card">
+            <h2 class="section-h">Achievements</h2>
+            <div id="profAchievements" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+        </div>
+        <div class="card">
+            <h2 class="section-h">Change Display Name</h2>
+            <div class="row" style="margin-top:6px">
+                <input id="profNewName" placeholder="New permanent username…">
+                <button class="btn btn-g" style="flex:0 0 90px" onclick="changeUsername()">Save</button>
+            </div>
+            <div class="input-hint">Changing your name frees up the old one for others.</div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <button class="nav-btn active" data-nav="hub" onclick="showScreen('hub')"><span class="ic">🏠</span>Home</button>
+        <button class="nav-btn" data-nav="friends" onclick="showScreen('friends')"><span class="ic">👥</span>Friends<span class="badge-dot" id="navFriendBadge">0</span></button>
+        <button class="nav-btn" data-nav="rooms" onclick="showScreen('rooms')"><span class="ic">🚪</span>Rooms</button>
+        <button class="nav-btn" data-nav="tournaments" onclick="showScreen('tournaments')"><span class="ic">🏅</span>Tournaments</button>
+        <button class="nav-btn" data-nav="profile" onclick="showScreen('profile')"><span class="ic">📊</span>Profile</button>
+    </div>
+
+    <div id="toast"></div>
+    <!-- ===================== USERNAME MODAL ===================== -->
+    <div id="nameModal" class="modal-overlay" style="z-index:8000">
+        <div class="modal-box">
+            <h2>CHOOSE YOUR ARENA NAME 🎮</h2>
+            <p class="subtext">This is your permanent multiplayer username. Max 10 characters, letters/numbers only.</p>
+            <label>Your Multiplayer Username</label>
+            <input id="mpNameInput" maxlength="10" placeholder="e.g. Scholar001" oninput="this.value=this.value.replace(/[^A-Za-z0-9_]/g,'').slice(0,10)">
+            <div id="mpNameErr" style="font-size:9px;color:var(--error);margin-top:4px;display:none"></div>
+            <button class="btn btn-p" style="margin-top:12px" onclick="confirmMPName()">Lock In Username</button>
+        </div>
+    </div>
+
+    <!-- ===================== QUICK MATCH MODAL ===================== -->
+    <div id="qmModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeModal('qmModal')">&times;</button>
+            <h2>⚡ Quick Match</h2>
+            <p class="subtext">Please remain in this page till the questions load, ensure you have a stable connection.</p>
+            <div class="select-btn-wrap">
+                <label>Subject(s)</label>
+                <div class="subj-dd" id="qmSubjectMini"></div>
+            </div>
+            <div class="row" style="margin-top:8px">
+                <div><label>Difficulty</label><select id="qmDiff"><option>Easy</option><option>Medium</option><option selected>Hard</option><option>Olympian</option></select></div>
+                <div><label>Mode</label><select id="qmMode"><option value="spak" selected>Spak (per-Q timer)</option><option value="speed">Sprint (total timer)</option></select></div>
+            </div>
+            <div class="row" style="margin-top:8px">
+                <div><label>Questions</label><input id="qmCount" type="number" value="10" min="3" max="30"></div>
+                <div><label id="qmTimeLbl">Seconds / Question</label><input id="qmTime" type="number" value="20" min="5" max="120"></div>
+            </div>
+            <button class="btn btn-blue" style="margin-top:14px" onclick="startQuickMatchSearch()">🔎 Find Opponent</button>
+            <div id="qmSearchStatus" style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted)"></div>
+        </div>
+    </div>
+
+    <!-- ===================== CREATE ROOM MODAL ===================== -->
+    <div id="crModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeModal('crModal')">&times;</button>
+            <h2 id="crModalTitle">⚔️ Create Room</h2>
+            <label>Subject(s)</label>
+            <div class="subj-dd" id="crSubjectMini"></div>
+            <div class="mode-row" style="margin-top:10px">
+                <div class="mode-card on" id="crm_spak" onclick="setCRMode('spak')"><b>Spak</b><span>Per-Q timer</span></div>
+                <div class="mode-card" id="crm_speed" onclick="setCRMode('speed')"><b>Sprint</b><span>Total timer</span></div>
+                <div class="mode-card" id="crm_free" onclick="setCRMode('free')"><b>Read mode</b><span>No timer (unranked)</span></div>
+            </div>
+            <div id="crRaceBox" style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 10px;background:var(--card2);border:1px solid var(--border);border-radius:9px">
+                <input type="checkbox" id="crRaceMode" style="width:16px;height:16px">
+                <label for="crRaceMode" style="margin:0;text-transform:none;font-size:10.5px;color:var(--text);cursor:pointer">⚡ Race variant — First to answer correctly wins the round and it moves on immediately (instead of waiting for everyone)</label>
+            </div>
+            <div class="row" style="margin-top:8px">
+                <div><label>Questions</label><input id="crCount" type="number" value="10" min="3" max="50"></div>
+                <div id="crTimeBox"><label id="crTimeLbl">Seconds / Question</label><input id="crTime" type="number" value="20" min="5" max="120"></div>
+            </div>
+            <div class="row" style="margin-top:8px">
+                <div><label>Visibility</label><select id="crVisibility"><option value="public" selected>Public (anyone can join)</option><option value="private">Private (code only)</option></select></div>
+                <div><label>Difficulty</label><select id="crDiff"><option>Easy</option><option>Medium</option><option selected>Hard</option><option>Olympian</option></select></div>
+            </div>
+            <div id="crTeamBox" style="display:none">
+                <label style="margin-top:8px">Team Size (each side)</label>
+                <select id="crTeamSize"><option value="2">2v2</option><option value="3">3v3</option><option value="4">4v4</option><option value="5">5v5</option></select>
+            </div>
+            <details style="margin-top:10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px">
+                <summary style="cursor:pointer;font-size:10.5px;font-weight:800;color:var(--accent)">⚙️ Advanced Settings</summary>
+                <div class="row" style="margin-top:8px">
+                    <div><label>Cognitive Behavior</label><select id="crSubMode"><option value="standard" selected>Standard</option><option value="conceptual">Conceptual</option><option value="numeric">Numeric-heavy</option><option value="exhaustive">Extreme Hard</option></select></div>
+                    <div><label>Power-ups</label><select id="crPowerups"><option value="on" selected>Enabled</option><option value="off">Disabled</option></select></div>
+                </div>
+                <label style="margin-top:8px">Show Explanations</label>
+                <select id="crShowExplain"><option value="on" selected>After each Q</option><option value="off">Hidden</option></select>
+            </details>
+            <button class="btn btn-p" style="margin-top:14px" onclick="createRoom()">Create &amp; Enter Lobby</button>
+        </div>
+    </div>
+
+    <!-- ===================== JOIN BY CODE MODAL ===================== -->
+    <div id="joinCodeModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeModal('joinCodeModal')">&times;</button>
+            <h2>🔑 Join Private Room</h2>
+            <label>Enter Room Code</label>
+            <input id="joinCodeInput" placeholder="e.g. ESI-1234" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+            <button class="btn btn-p" style="margin-top:12px" onclick="joinRoomByCode()">Join Room</button>
+        </div>
+    </div>
+
+    <!-- ===================== CHALLENGE FRIEND MODAL ===================== -->
+    <div id="challengeModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeModal('challengeModal')">&times;</button>
+            <h2>🎯 Challenge <span id="challengeFriendName">Friend</span></h2>
+            <p class="subtext">Your opponent will play under YOUR settings below.</p>
+            <label>Subject(s)</label>
+            <div class="subj-dd" id="chSubjectMini"></div>
+            <div class="row" style="margin-top:8px">
+                <div><label>Difficulty</label><select id="chDiff"><option>Easy</option><option>Medium</option><option selected>Hard</option><option>Olympian</option></select></div>
+                <div><label>Mode</label><select id="chMode"><option value="spak" selected>Spak</option><option value="speed">Sprint</option><option value="free">Casual</option></select></div>
+            </div>
+            <div class="row" style="margin-top:8px">
+                <div><label>Questions</label><input id="chCount" type="number" value="10" min="3" max="50"></div>
+                <div><label id="chTimeLbl">Seconds / Question</label><input id="chTime" type="number" value="20" min="5" max="120"></div>
+            </div>
+            <button class="btn btn-gold" style="margin-top:14px" onclick="sendChallenge()">🚀 Send Challenge</button>
+        </div>
+    </div>
+
+    <!-- ===================== INCOMING CHALLENGE MODAL ===================== -->
+    <div id="soloReviewModal" class="modal-overlay" style="z-index:8200">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeModal('soloReviewModal')">&times;</button>
+            <h2>🔄 Solo Practice</h2>
+            <p class="subtext" id="soloReviewProgress">Question 1</p>
+            <div id="soloReviewBody"></div>
+        </div>
+    </div>
+
+    <div id="shopModal" class="modal-overlay" style="z-index:8300">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeModal('shopModal')">&times;</button>
+            <h2>🛍️ Rewards Shop</h2>
+            <p class="subtext">Spend the coins you earn from matches on cosmetics — your name color and avatar frame, shown everywhere your name appears (leaderboard, lobby, profile).</p>
+            <div class="muted" style="font-size:12px;font-weight:800;color:var(--accent)" id="shopBalance">🪙 0 coins</div>
+            <h2 class="section-h" style="margin-top:10px">Name Colors</h2>
+            <div class="shop-grid" id="shopTagGrid"></div>
+            <h2 class="section-h" style="margin-top:10px">Avatar Frames</h2>
+            <div class="shop-grid" id="shopFrameGrid"></div>
+            <h2 class="section-h" style="margin-top:10px">PROFILE TITLES</h2>
+            <div class="shop-grid" id="shopTitleGrid"></div>
+            <h2 class="section-h" style="margin-top:10px">Bonus Reactions (in-match)</h2>
+            <div class="shop-grid" id="shopReactGrid"></div>
+            <h2 class="section-h" style="margin-top:10px">Victory Effects</h2>
+            <div class="shop-grid" id="shopEffectGrid"></div>
+        </div>
+    </div>
+
+    <div id="incomingChallengeModal" class="modal-overlay" style="z-index:8500">
+        <div class="modal-box">
+            <h2>⚔️ Challenge Received!</h2>
+            <p class="subtext" id="incomingChallengeText">Someone challenged you.</p>
+            <div class="room-meta" id="incomingChallengeSettings"></div>
+            <div class="row" style="margin-top:14px">
+                <button class="btn btn-red" onclick="respondChallenge(false)">✖ Reject</button>
+                <button class="btn btn-p" onclick="respondChallenge(true)">✓ Accept</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== CREATE TOURNAMENT MODAL ===================== -->
+    <div id="ctModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeModal('ctModal')">&times;</button>
+            <h2>🏅 Create Tournament</h2>
+            <label>Tournament Name</label>
+            <input id="ctName" maxlength="25" placeholder="e.g. WAR AGAINST JAMB...">
+            <label style="display:flex;align-items:center;gap:6px">Format
+                <button type="button" class="icon-btn" style="padding:2px 7px;font-size:13px" title="How do these formats work?" onclick="toggleFormatInfo()">⋮</button>
+            </label>
+            <select id="ctFormat" onchange="renderFormatInfoIfOpen()"><option value="single_elim" selected>Single Elimination</option><option value="round_robin">Round Robin (League)</option></select>
+            <div id="formatInfoBox" style="display:none;margin-top:6px;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;font-size:10.5px;line-height:1.6;color:var(--text)">
+                <b style="color:var(--accent)">⚔️ Single Elimination</b>
+                <div class="muted" style="margin-top:2px">Players are paired up in a bracket. Lose one match and you're out — win and you move to the next round. Fewer matches, faster to finish, one clean path to a champion. Best when you want a quick, high-stakes knockout.</div>
+                <b style="color:var(--accent);display:block;margin-top:8px">🔁 Round Robin (League)</b>
+                <div class="muted" style="margin-top:2px">Everyone plays everyone else once. Standings are ranked by total points/wins across all matches — the best overall performer wins, not just whoever got lucky in one bracket. Takes longer (more matches per player) but one bad round doesn't eliminate you.</div>
+            </div>
+            <label>Subject(s)</label>
+            <div class="subj-dd" id="ctSubjectMini"></div>
+            <div class="mode-row" style="margin-top:8px">
+                <div class="mode-card on" id="ctm_spak" onclick="setCTMode('spak')"><b>Spak</b><span>Per-Q timer</span></div>
+                <div class="mode-card" id="ctm_speed" onclick="setCTMode('speed')"><b>Sprint</b><span>Total timer</span></div>
+            </div>
+            <div id="ctRaceBox" style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 10px;background:var(--card2);border:1px solid var(--border);border-radius:9px">
+                <input type="checkbox" id="ctRaceMode" style="width:16px;height:16px">
+                <label for="ctRaceMode" style="margin:0;text-transform:none;font-size:10.5px;color:var(--text);cursor:pointer">⚡ Race variant — first to answer correctly wins the round and it moves on immediately (instead of waiting for everyone)
+                </label>
+            </div>
+            <div class="row" style="margin-top:8px">
+                <div><label>Difficulty</label><select id="ctDiff"><option>Easy</option><option>Medium</option><option selected>Hard</option><option>Olympian</option></select></div>
+                <div><label>Questions/Match</label><input id="ctCount" type="number" value="8" min="3" max="30"></div>
+            </div>
+            <div class="row" style="margin-top:8px">
+                <div id="ctTimeBox"><label id="ctTimeLbl">Seconds/Question</label><input id="ctTime" type="number" value="20" min="5" max="120"></div>
+                <div><label>Max Players</label><select id="ctMax"><option value="4">4</option><option value="8" selected>8</option><option value="16">16</option><option value="32">32</option></select></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 10px;background:var(--card2);border:1px solid var(--border);border-radius:9px">
+                <input type="checkbox" id="ctTeamMode" style="width:16px;height:16px" onchange="$('ctTeamSizeBox').style.display=this.checked?'block':'none'">
+                <label for="ctTeamMode" style="margin:0;text-transform:none;font-size:10.5px;color:var(--text);cursor:pointer">👥 Team tournament? — players register into Team A / Team B</label>
+            </div>
+            <div id="ctTeamSizeBox" style="display:none;margin-top:8px">
+                <label>Players per team</label>
+                <select id="ctTeamSize"><option value="2">2v2</option><option value="3" selected>3v3</option><option value="4">4v4</option><option value="5">5v5</option></select>
+            </div>
+            <div class="row" style="margin-top:8px">
+                <div><label>Visibility</label><select id="ctVisibility"><option value="public" selected>Public (anyone can see &amp; register)</option><option value="private">Private (code only)</option></select></div>
+                <div><label>Set start time</label><input id="ctStartAt" type="datetime-local"></div>
+            </div>
+            <label style="display:flex;align-items:center;gap:6px">Time limit per match (minutes)
+                <button type="button" class="icon-btn" style="padding:2px 7px;font-size:13px" title="How does the time limit work?" onclick="toggleGapInfo()">⋮</button>
+            </label>
+            <input id="ctGapMinutes" type="number" value="180" min="30" max="1440" step="5">
+            <div id="gapInfoBox" style="display:none;margin-top:6px;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:10px;font-size:10.5px;line-height:1.6;color:var(--text)">
+                <b style="color:var(--accent)">⏱ Time-limit rule</b>
+                <div class="muted" style="margin-top:2px">Once the tournament begins, every live match has this long to finish — starting with round 1. If a pair hasn't finished by the deadline, both players are automatically disqualified and the tournament moves on without them. As soon as a round ends, the app immediately announces who's playing next and starts a fresh countdown for that round — this notice stays pinned and can't be removed by anyone unless the host cancels the tournament. Minimum 30 minutes, maximum 24 hours (1440 minutes).</div>
+            </div>
+            <div class="input-hint">Registration stays open until the start time. If fewer than 2 people register, it auto-reschedules 24 hours later. Once it starts, settings lock — even for you.</div>
+            <button class="btn btn-gold" style="margin-top:14px" onclick="createTournament()">Create Tournament</button>
+        </div>
+    </div>
+
+    <!-- ===================== FRIEND CHAT MODAL ===================== -->
+    <div id="chatModal" class="modal-overlay">
+        <div class="modal-box" style="max-width:420px">
+            <button class="close-btn" onclick="closeChatModal()">&times;</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-right:26px">
+                <h2 id="chatModalName" style="margin:0">Chat</h2>
+                <button class="icon-btn" style="padding:5px 8px" title="Clear chat history" onclick="clearFriendChatHistory()">🗑️</button>
+            </div>
+            <div class="chat-wrap" style="margin-top:8px"><div class="chat-msgs" id="chatModalMsgs"></div>
+                <div id="chatTypingLine" style="font-size:10px;color:#0b1220;background:var(--success);font-weight:800;min-height:12px;margin:4px 6px 0;padding:3px 8px;border-radius:8px;display:inline-block;width:fit-content;max-width:90%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+                <div class="chat-input-row"><input id="chatModalInput" dir="ltr" placeholder="Message…" oninput="onChatTyping()" onkeydown="if(event.key==='Enter')sendFriendChat()"><button class="chat-send-btn" onclick="sendFriendChat()">➤</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== LEADERBOARD MODAL (mirrors single-player) ===================== -->
+    <div id="lbModal" class="modal-overlay" style="z-index:4500">
+        <div class="modal-box" style="max-width:560px;width:96%;max-height:90vh;overflow-y:auto">
+            <button class="close-btn" onclick="document.getElementById('lbModal').classList.remove('active')">&times;</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <h2 style="color:var(--accent);margin:0">🏆 Global Multiplayer Rankings</h2>
+                <button class="btn-g btn-sm" onclick="openLB()">🔄 REFRESH</button>
+            </div>
+            <div id="lbSyncStatus" style="font-size:9px;color:var(--muted);margin-top:4px"></div>
+            <p class="subtext" style="font-size:12px">RANKING IS BASED ON ELO RATING, WIN RATE, AND TOTAL MATCHES PLAYED.</p>
+            <p class="subtext" style="font-size:10px">At the end of every month, 1ST position gets ₦2,000, 2ND position gets ₦1,500 and 3RD position gets ₦1,000 as cash prizes.</p>
+             <p class="subtext" style="font-size:10px">Tap any username to send friend request automatically.</p>
+            
+            <div id="lbHOF"></div>
+            <div id="lbPodium"></div>
+            <div class="lb-table-wrap">
+                <table class="lb-table">
+                    <thead><tr><th>#</th><th>USERNAME</th><th>ELO</th><th>TIER LEVEL</th><th>WINS</th><th>LOSSES</th><th>WIN%</th><th>MATCHES</th><th>TEAM ADVT%</th></tr></thead>
+                    <tbody id="lbBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== POST-MATCH RESULT REVEAL OVERLAY ===================== -->
+    <div id="reactionFloatLayer" style="position:fixed;inset:0;pointer-events:none;z-index:7000"></div>
+
+    <!-- FEEDBACK PORT (carried over) -->
+    <button id="openSuggestionBtn" class="suggest-btn" style="position:fixed;left:15px;bottom:66px;z-index:1200;font-size:10px;padding:7px 12px;border:none;border-radius:10px;background:#1562ff;color:#fff;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3)">💡 Feedback port</button>
+    <div id="suggestionModal" class="modal-overlay">
+        <div class="modal-box">
+            <button id="closeModalBtn" class="close-btn" onclick="closeModal('suggestionModal')">&times;</button>
+            <h2>SUGGESTION BOX</h2>
+            <p class="subtext">Report bugs or suggest multiplayer features directly to administrators.</p>
+            <form id="suggestionForm">
+                <label>Select Category</label>
+                <select id="category" required>
+                    <option value="" disabled selected>Select category</option>
+                    <option>Matchmaking / Rooms</option>
+                    <option>Gameplay / Scoring</option>
+                    <option>Friends / Chat</option>
+                    <option>Tournaments</option>
+                    <option>Bug Report</option>
+                </select>
+                <label>Message</label>
+                <textarea id="message" placeholder="Describe the issue or idea…" rows="4" required></textarea>
+                <button type="submit" class="send-btn">Send Suggestion</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DRAGGABLE CALCULATOR (carried over) -->
+    <div id="calc" style="display:none;position:fixed;bottom:80px;right:14px;width:210px;background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:10px;z-index:3000;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+        <div id="calcH" style="background:var(--bg);border-radius:8px;padding:6px 8px;font-size:9px;color:var(--muted);display:flex;justify-content:space-between;align-items:center">
+            <span>🧮 Calculator</span><button onclick="toggleCalc()" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer">✕</button>
+        </div>
+        <input id="calcD" readonly style="margin-top:6px;text-align:right;font-size:15px">
+        <div id="cg" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:6px"></div>
+    </div>
+
+    <footer>
+        Elite Scholar Institute — Multiplayer Arena<br>
+        <span class="muted" style="font-size:11px"> Play fair, play fast.</span>
+    </footer>
+
+    </div>
+
+    
+
+    <script src="multiplayer.js"></script>
+</body>
+</html>

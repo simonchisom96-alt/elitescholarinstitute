@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#04142f" id="themeMeta">
+    <title>Elite Scholar Institute</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://js.puter.com/v2/"></script>
+    <script src="./app.js" defer></script>
+
+    <style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;-webkit-tap-highlight-color:transparent}
+        :root{
+            --bg:#020818; --card:#ffffff11; --card2:#08132e; --border:#1d356f; --border2:#ffffff1c;
+            --text:#fff; --muted:#8ea0c8; --muted2:#5d75ac; --accent:#ffd700; --success:#00ff88;
+            --error:#ff4757; --info:#00bfff; --flag:#ff8fa3;
+            --spak-color:#00ff88; --speed-color:#00bfff; --free-color:#ffd700;
+        }
+[data-theme="light"]{
+    --bg:#d7e2f0;
+    --card:#f9fbff;
+    --card2:#eef4fb;
+
+    --border:#8fa8c8;
+    --border2:#a7bdd9;
+
+    --text:#050b18;
+    --muted:#26364d;
+    --muted2:#43556d;
+
+    --accent:#d49d00;
+    --success:#00864f;
+    --error:#d1003a;
+    --info:#005fc4;
+    --flag:#ff0033;
+
+    --spak-color:#00864f;
+    --speed-color:#005fc4;
+    --free-color:#d49d00;
+}
+
+[data-theme="light"] body{
+    background:var(--bg);
+    color:var(--text);
+}
+
+[data-theme="light"] .card{
+    background:var(--card);
+    border:2px solid var(--border);
+    color:var(--text);
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+}
+
+[data-theme="light"] .muted{
+    color:var(--muted)!important;
+}
+
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] p,
+[data-theme="light"] label,
+[data-theme="light"] span,
+[data-theme="light"] td,
+[data-theme="light"] th{
+    color:var(--text);
+    font-weight:600;
+}
+
+[data-theme="light"] .chip-mini{
+    background:#c9daf7;
+    border:2px solid #6d91d4;
+    color:#06101f;
+}
+
+[data-theme="light"] .chip-mini i{
+    color:var(--flag);
+}
+
+[data-theme="light"] select,
+[data-theme="light"] input{
+    background:#ffffff;
+    color:var(--text);
+    border:2px solid var(--border);
+}
+
+[data-theme="light"] .mode-card{
+    background:var(--card2);
+    border:2px solid var(--border);
+    color:var(--text);
+}
+
+[data-theme="light"] .submode-chip{
+    background:var(--card);
+    color:var(--muted);
+    border:2px solid var(--border);
+}
+
+[data-theme="light"] .submode-chip.active{
+    background:rgba(212,157,0,.25);
+    border:2px solid var(--accent);
+    color:#000;
+}
+
+[data-theme="light"] #toast{
+    background:#f8fbff;
+    color:var(--text);
+    border:2px solid var(--border);
+}
+
+[data-theme="light"] .metric-box{
+    background:var(--card);
+    border:2px solid var(--border);
+}
+
+[data-theme="light"] .metric-box val{
+    color:var(--accent);
+    font-weight:700;
+}
+
+[data-theme="light"] .metric-box lbl{
+    color:var(--muted);
+}
+
+[data-theme="light"] .btn-g{
+    background:#ffffff;
+    color:var(--text);
+    border:2px solid var(--border);
+}
+
+[data-theme="light"] #calcH{
+    background:var(--bg);
+}
+
+[data-theme="light"] header{
+    background:rgba(215,226,240,.98);
+    border-bottom:2px solid var(--border2);
+}
+
+[data-theme="light"] .back-btn{
+    background:#c9daf7;
+    border:2px solid #6d91d4;
+    color:var(--text);
+}
+        .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:9999;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+        .modal-overlay.active{display:flex}
+        .modal-box{background:var(--card2);width:90%;max-width:420px;padding:24px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);position:relative;animation:popIn 0.2s ease;border:1px solid var(--border)}
+        @keyframes popIn{from{transform:scale(0.9);opacity:0}to{transform:scale(1);opacity:1}}
+
+        .suggest-btn{padding:12px 20px;border:none;border-radius:10px;background:#1562ff;color:#fff;font-weight:600;font-size:16px;cursor:pointer}
+        .close-btn{position:absolute;top:12px;right:14px;background:none;border:none;font-size:24px;cursor:pointer;color:var(--muted)}
+        .modal-box h2{margin:0 0 4px;font-size:20px;color:var(--text)}.subtext{margin:0 0 16px;color:var(--muted);font-size:14px}
+        .modal-box label{display:block;margin:10px 0 6px;font-weight:600;font-size:14px;color:var(--text)}
+        .modal-box select,.modal-box textarea{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;outline:none;background:var(--bg);color:var(--text)}
+        .send-btn{width:100%;margin-top:16px;padding:14px;border:none;border-radius:10px;background:#25D366;color:#fff;font-weight:700;font-size:16px;cursor:pointer}
+
+        footer{padding:45px 20px;background:rgba(0,0,0,0.45);text-align:center;line-height:2.2;font-size:14px}
+        @media(min-width:700px){.book-grid{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:62px}}
+        @media(min-width:1100px){.book-grid{grid-template-columns:repeat(3,1fr)}}
+
+        .graph-wrap{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-bottom:6px;margin-top:8px;}
+        .graph-wrap canvas{min-width:100%;height:90px!important;display:block}
+
+        html{height:100%;overflow-y:scroll;}
+        html, body {
+            min-height:100%;
+            background:var(--bg);
+            color:var(--text);
+            max-width:980px;
+            margin:0 auto;
+            padding:calc(64px + env(safe-area-inset-top)) 10px 12px;
+            overscroll-behavior-y:auto;
+            -webkit-user-select:none;
+            -ms-user-select:none;
+            user-select:none;
+            width:100%;
+            overflow-x:hidden;
+            -webkit-overflow-scrolling:touch;
+        }
+
+        header{
+            position:fixed;top:0;left:0;right:0;width:100%;
+            height:calc(56px + env(safe-area-inset-top));
+            padding-top:env(safe-area-inset-top);
+            background:rgba(4,20,47,0.96);
+            -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+            border-bottom:1px solid #ffffff14;
+            display:flex;align-items:center;justify-content:space-between;
+            padding-left:10px;padding-right:10px;z-index:1000;
+            -webkit-transform:translateZ(0);transform:translateZ(0);
+        }
+
+        .left{display:flex;align-items:center;gap:8px}
+        .logo-img{width:40px;height:40px;border-radius:50%;border:2px solid var(--accent);box-shadow:0 0 10px #ffd70066;object-fit:cover}
+        .logo-t{font-weight:900;font-size:12px;color:var(--accent);letter-spacing:.3px;line-height:1}
+        .back-btn{padding:5px 10px;border-radius:8px;background:#12204a;border:1px solid #2a4486;color:#8fb0ff;font-size:10px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+
+        .card{background:linear-gradient(180deg,var(--card),#ffffff07);border:1px solid var(--border2);border-radius:14px;padding:14px;margin-top:9px;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+        h2{font-size:13px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px}
+
+        .select-btn{width:100%;padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:10px;display:flex;justify-content:space-between;font-size:12px;cursor:pointer;color:var(--text);align-items:center}
+        .mini{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+        .chip-mini{display:inline-flex;gap:4px;padding:4px 9px;background:#10204a;border:1px solid #204080;border-radius:999px;font-size:9px;color:var(--text);align-items:center}
+
+        select,input{width:100%;padding:11px;background:var(--card2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:11px;outline:none;transition:all 0.2s ease}
+        select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 5px rgba(255,215,0,0.2)}
+        input::placeholder{color:var(--muted2);font-size:10px}
+
+        .row{display:flex;gap:6px}.row>*{flex:1}
+        label{font-size:9px;color:#8fb0ff;margin-bottom:3px;display:block;font-weight:600}
+        [data-theme="light"] label{color:#334155}
+
+        .btn{width:100%;padding:12px;border:0;border-radius:10px;font-weight:800;font-size:11px;cursor:pointer;transition:transform 0.1s ease,opacity 0.2s ease;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+        .btn:active{transform:scale(0.98)}
+        .btn-p{background:linear-gradient(135deg,#00e676,#00ff88);color:#001a0a;box-shadow:0 3px 12px rgba(0,255,136,0.2)}
+        .btn-g{background:#121f44;border:1px solid #22346e;color:#cfe0ff}
+
+        .mode-row{display:flex;gap:5px;margin-top:7px}
+        .mode-card{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px;position:relative;cursor:pointer;transition:all .2s ease}
+        .mode-card.on{border-color:var(--accent);box-shadow:0 0 0 1px #ffd70044 inset,0 0 14px #ffd70022}
+        .mode-card b{font-size:10.5px;display:block;color:var(--text);text-transform:capitalize}
+        .mode-card span{font-size:8px;color:var(--muted)}
+        .dots3{position:absolute;top:6px;right:8px;font-size:13px;color:#8fb0ff;cursor:pointer;width:16px;height:16px;display:grid;place-items:center}
+        .input-hint{font-size:8px;color:var(--muted2);margin-top:3px;line-height:1.2}
+
+        #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111e42;color:#cfe0ff;padding:8px 16px;border-radius:8px;font-size:10px;display:none;z-index:6000;border:1px solid #2a4486;box-shadow:0 4px 15px rgba(0,0,0,0.3);font-weight:600;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
+
+        .metric-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin:8px 0}
+        .metric-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center}
+        .metric-box val{display:block;font-size:13px;font-weight:900;color:var(--accent)}
+        .metric-box lbl{display:block;font-size:7.5px;color:var(--muted);text-transform:uppercase}
+
+        .realtime-badge{animation:pulse 1.5s infinite alternate;font-size:8px;padding:2px 5px;background:rgba(255,71,87,0.15);color:var(--error);border-radius:4px;border:1px solid var(--error)}
+        @keyframes pulse{from{opacity:0.5}to{opacity:1}}
+
+        .submode-container{display:flex;gap:4px;margin-top:6px;overflow-x:auto;padding-bottom:2px}
+        .submode-chip{padding:4px 8px;font-size:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;white-space:nowrap}
+        .submode-chip.active{background:rgba(255,215,0,0.1);border-color:var(--accent);color:var(--text)}
+.trophy-badge{
+  position:absolute; top:2px; right:2px;
+  width:9px; height:9px; border-radius:50%;
+  background:#ff2d55;
+  box-shadow:0 0 6px 2px rgba(255,45,85,.9);
+  display:none;
+  animation:trophyGlow 1.4s ease-in-out infinite;
+}
+.trophy-badge.show{display:block}
+@keyframes trophyGlow{
+  0%,100%{box-shadow:0 0 4px 1px rgba(255,45,85,.7);opacity:1}
+  50%{box-shadow:0 0 10px 4px rgba(255,45,85,1);opacity:.75}
+}
+        /* LEADERBOARD TABLE - consistent single blue color, no overflow, horizontal scroll, borders */
+        .lb-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #1e4080;border-radius:10px;margin-top:8px;max-width:100%}
+        .lb-table-wrap::-webkit-scrollbar{height:4px}
+        .lb-table-wrap::-webkit-scrollbar-thumb{background:#1e4080;border-radius:4px}
+        .lb-table{width:100%;font-size:11px;border-collapse:collapse;min-width:520px}
+        .lb-table thead{position:sticky;top:0;background:#0d2055;z-index:1}
+        .lb-table th{padding:9px 8px;color:#5ba3f5;font-weight:800;font-size:10px;border:1px solid #1e4080;white-space:nowrap;text-align:left}
+        .lb-table td{padding:8px 6px;border:1px solid #1e4080;color:#a8c8ff;word-break:break-word;white-space:normal;vertical-align:top}
+        .lb-table tbody tr{border-bottom:1px solid #1e4080}
+        .lb-table tbody tr:hover{background:rgba(30,64,128,0.3)}
+        tr.me{outline:2px solid var(--accent);background:rgba(255,215,0,0.08)!important}
+        .lb-table td:first-child,.lb-table th:first-child{min-width:32px;text-align:center}
+        .lb-table td:nth-child(2){min-width:100px;max-width:130px}
+        [data-theme="light"] .lb-table-wrap{border-color:#3b82f6}
+        [data-theme="light"] .lb-table thead{background:#e8f0fe}
+        [data-theme="light"] .lb-table th{color:#1e40af;border-color:#93c5fd}
+        [data-theme="light"] .lb-table td{color:#1e3a8a;border-color:#93c5fd}
+        [data-theme="light"] .lb-table tbody tr:hover{background:rgba(59,130,246,0.08)}
+
+        body *{box-sizing:border-box}
+        body{-webkit-user-select:none;user-select:none}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="left">
+            <a href="quiz.html" class="back-btn">← Back</a>
+            <img src="logo.jpg" class="logo-img" onerror="this.src='https://i.imgur.com/8Km9tLL.png'">
+            <div class="logo-t"></div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center">
+            <span id="net" style="width:8px;height:8px;border-radius:50%;display:inline-block"></span>
+            <span class="realtime-badge" id="rtBadge">CONNECTED</span>
+          <button id="trophyBtn" class="btn-g" style="width:auto;padding:6px 9px;position:relative" onclick="openLB()">🏆<span id="trophyBadge" class="trophy-badge"></span></button>
+            <button class="btn-g" style="width:auto;padding:6px 9px" onclick="toggleCalc()" title="Toggle Calculator">🧮</button>
+            <button class="btn-g" style="width:auto;padding:6px 9px" onclick="openS()" title="System Configuration">⚙️</button>
+        </div>
+    </header>
+
+    <div class="card" id="setup">
+        <h2>CBT Setup Panel</h2>
+        <div class="select-btn" onclick="openDrawer()" style="margin-top:6px">
+            <span style="color:var(--muted)">Select Your Subjects (Tap to add)</span>
+            <b id="selTxt" style="font-size:9.5px;color:var(--accent)">Choose Subject</b>
+        </div>
+        <div id="mini" class="mini"></div>
+
+        <div class="mode-row">
+            <div class="mode-card on" id="m_spak" onclick="setMode('spak')">
+                <div class="dots3" onclick="event.stopPropagation();infoMode('spak')">⋮</div>
+                <b>Spak Mode</b><span>Allocated time limit per Qs</span>
+            </div>
+            <div class="mode-card" id="m_speed" onclick="setMode('speed')">
+                <div class="dots3" onclick="event.stopPropagation();infoMode('speed')">⋮</div>
+                <b>Sprint Mode</b><span>Total time trial for total Qs allocated</span>
+            </div>
+            <div class="mode-card" id="m_free" onclick="setMode('free')">
+                <div class="dots3" onclick="event.stopPropagation();infoMode('free')">⋮</div>
+                <b>Read Mode</b><span>Unbounded Analysis, Zero timing</span>
+            </div>
+        </div>
+
+        <div style="margin-top:8px">
+            <label>Choose AI Cognitive Architecture Behavior</label>
+            <div class="submode-container" id="submodeWrapper">
+                <div class="submode-chip active" onclick="setSubMode('standard')">Standard Exam Prep</div>
+                <div class="submode-chip" onclick="setSubMode('conceptual')">Tricky / Conceptual Questions</div>
+                <div class="submode-chip" onclick="setSubMode('numeric')">Algorithmic heavy calculation.</div>
+                <div class="submode-chip" onclick="setSubMode('exhaustive')">Extreme Hard Mode</div>
+            </div>
+        </div>
+
+        <div class="row" style="margin-top:8px">
+            <div>
+                <label>Input Number of Questions</label>
+<input id="qcount" type="number" placeholder="e.g. 20 Questions" value="0" min="1" max="200" oninput="if(parseInt(this.value)>200){this.value=200; if(typeof toast==='function')toast('Maximum limit is 200 questions.');} else if(parseInt(this.value)<1 && this.value!==''){this.value=1;}">
+<div class="input-hint">Bound: 1-200 operations</div>
+            </div>
+            <div id="perBox">
+                <label>Input Time Limit Per Question</label>
+                <input id="per" type="number" placeholder="e.g 10 Seconds" value="0" min="1" oninput="if(parseInt(this.value)>200){this.value=200; if(typeof toast==='function')toast('Maximum limit is 200 seconds.');} else if(parseInt(this.value)<5 && this.value!==''){this.value=1;}">
+                <div class="input-hint">Seconds Allowed Allocation</div>
+            </div>
+            <div id="totBox" style="display:none">
+                <label>Input Total Exam Time</label>
+                <input id="tot" type="number" placeholder="e.g 10 minutes" value="0" min="1" oninput="if(parseInt(this.value)>200){this.value=200; if(typeof toast==='function')toast('Maximum limit is 200 minutes.');} else if(parseInt(this.value)<1 && this.value!==''){this.value=1;}">
+                <div class="input-hint">Total Minutes Allocation</div>            
+            </div>
+            <div>
+                <label>Choose Difficulty Level</label>
+                <select id="diff">
+                    <option value="Easy">Standard Foundation</option>
+                    <option value="Medium">Advanced Application</option>
+                    <option value="Hard" selected>Elite Masterclass (Ultra-Hard)</option>
+                    <option value="Olympian">Olympian Theoretical Tier (Extreme)</option>
+                </select>
+                <div class="input-hint">AI Thinking Depth</div>
+            </div>
+        </div>
+              
+        <button class="btn btn-p" id="go" onclick="gen()" style="margin-top:10px">⚡ CLICK TO START QUIZ.</button>
+        <div id="stat" style="font-size:9px;color:var(--accent);text-align:center;margin-top:6px;font-weight:600"></div>
+    </div>
+
+    <div class="card" id="quiz" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px">
+            <span id="qc" style="color:var(--muted);font-weight:600"></span>
+            <b id="tm" style="color:var(--accent);letter-spacing:0.5px"></b>
+        </div>
+        <div style="height:5px;background:#0e1d42;border-radius:99px;overflow:hidden;margin:6px 0">
+            <i id="pr" style="display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--success));transition:width 0.2s ease"></i>
+        </div>
+        <div class="metric-container" id="liveMetricsDeck">
+            <div class="metric-box"><val id="m_acc">--%</val><lbl>Est. Accuracy</lbl></div>
+            <div class="metric-box"><val id="m_speed_v">0.0s</val><lbl>Velocity/Q</lbl></div>
+            <div class="metric-box"><val id="m_conf">0.0</val><lbl>Confidence Index</lbl></div>
+        </div>
+        <div id="pal" style="display:flex;flex-wrap:wrap;gap:4px;margin:6px 0;max-height:64px;overflow-y:auto;padding-right:2px"></div>
+        <div id="qt" style="font-weight:700;font-size:13px;margin:6px 0;line-height:1.5;color:var(--text);border-left:3px solid var(--accent);padding-left:8px"></div>
+        <div id="op"></div>
+        <div id="ex" style="display:none;margin-top:6px;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:7px;font-size:9.5px;color:var(--muted);line-height:1.4"></div>
+        <div class="row" style="margin-top:8px">
+            <button class="btn btn-g" onclick="mv(-1)">⏮ Previous</button>
+            <button class="btn btn-g" style="color:var(--flag);border-color:rgba(255,143,163,0.3)" onclick="flag()">🚩 Flag</button>
+            <button class="btn btn-p" id="nextBtn" onclick="mv(1)">Next ⏭</button>
+            <button class="btn btn-p" id="submitBtn" onclick="end()" style="display:none;background:linear-gradient(135deg,#ffd700,#ffae00);color:#000">✓ Submit Exam</button>
+        </div>
+    </div>
+
+    <div class="card" id="res" style="display:none"></div>
+
+    <div class="card" id="historyWrap">
+        <h2>📜 History &amp; Performance</h2>
+        <details style="margin-top:6px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px" id="det_spak">
+            <summary style="cursor:pointer;font-size:11px;font-weight:700;color:#00ff88"> ▶Spak mode history<span id="cnt_spak" style="color:var(--muted);font-weight:400"></span></summary>
+            <div class="graph-wrap"><canvas id="g_spak" height="90"></canvas></div>
+            <div id="s_spak" style="font-size:8.5px;color:var(--muted);margin-top:4px"></div>
+            <div id="h_spak" style="font-size:9.5px;margin-top:6px;color:var(--text)"></div>
+        </details>
+        <details style="margin-top:6px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px" id="det_speed">
+            <summary style="cursor:pointer;font-size:11px;font-weight:700;color:#00bfff">▶Sprint mode history<span id="cnt_speed" style="color:var(--muted);font-weight:400"></span></summary>
+            <div class="graph-wrap"><canvas id="g_speed" height="90"></canvas></div>
+            <div id="s_speed" style="font-size:8.5px;color:var(--muted);margin-top:4px"></div>
+            <div id="h_speed" style="font-size:9.5px;margin-top:6px;color:var(--text)"></div>
+        </details>
+        <details style="margin-top:6px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px" id="det_free">
+            <summary style="cursor:pointer;font-size:11px;font-weight:700;color:#ffd700">▶ Read mode history <span id="cnt_free" style="color:var(--muted);font-weight:400"></span></summary>
+            <div class="graph-wrap"><canvas id="g_free" height="90"></canvas></div>
+            <div id="s_free" style="font-size:8.5px;color:var(--muted);margin-top:4px"></div>
+            <div id="h_free" style="font-size:9.5px;margin-top:6px;color:var(--text)"></div>
+        </details>
+        <details style="margin-top:6px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px">
+            <summary style="cursor:pointer;font-size:11px;font-weight:700;color:var(--flag)">▶ Flagged Questions 🚩 <span id="cnt_flag" style="color:var(--muted);font-weight:400"></span></summary>
+            <div id="h_flag" style="font-size:9.5px;margin-top:6px;color:var(--text)">NO FLAGGED QUESTION YET</div>
+        </details>
+        <button class="btn btn-g" style="margin-top:8px;font-size:9px;color:var(--error);border-color:rgba(255,71,87,0.3)" onclick="clrH()">CLEAR ALL HISTORY STORAGE</button>
+    </div>
+
+    <!-- SUBJECT DRAWER -->
+    <div id="drawer" style="position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;z-index:2000;align-items:flex-end" onclick="if(event.target===this)closeDrawer()">
+        <div style="width:100%;max-height:82vh;background:var(--card2);border-radius:16px 16px 0 0;padding:12px;overflow:auto;border:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center"><h2>Select One or More Matrix Knowledge Domains</h2><b onclick="closeDrawer()" style="cursor:pointer;color:var(--flag);font-size:16px">✕</b></div>
+            <input id="searchSub" placeholder="Filter target specialization nodes..." oninput="filterSubs()" style="margin:8px 0;padding:12px">
+            <div id="subList" style="display:grid;grid-template-columns:1fr;gap:4px"></div>
+            <button class="btn btn-p" style="margin-top:8px" onclick="closeDrawer()">Done (<span id="count">0</span>)</button>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="set" style="position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;place-items:center;padding:10px;z-index:3000">
+        <div style="width:100%;max-width:340px;background:var(--card2);border-radius:14px;padding:12px;border:1px solid var(--border)">
+            <h2>Global app settings</h2>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border2);font-size:11px;color:var(--text)"><span>Theme / Appearance</span><select id="themeSel" onchange="changeTheme(this.value)" style="width:130px;padding:6px"><option value="dark">Dark mode</option><option value="light">Light mode</option></select></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border2);font-size:11px;color:var(--text)"><span>Shuffle Question Order</span><input type="checkbox" id="sh" checked style="width:18px;height:18px"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border2);font-size:11px;color:var(--text)"><span>Auto-Advance to Next Question</span><input type="checkbox" id="an" checked style="width:18px;height:18px"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border2);font-size:11px;color:var(--text)"><span>Auto-Submit Exam</span><input type="checkbox" id="autoSub" checked style="width:18px;height:18px"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border2);font-size:11px;color:var(--text)"><span>Show Correct Answer Instantly</span><input type="checkbox" id="se" style="width:18px;height:18px"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:11px;color:var(--text)"><span>Load Saved Questions First (Save Data)</span><input type="checkbox" id="cachePriority" style="width:18px;height:18px"></div>
+            <button class="btn btn-p" style="margin-top:10px" onclick="closeS()">Save Settings</button>
+        </div>
+    </div>
+
+    <!-- INFO MODAL -->
+    <div id="info" style="position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;place-items:center;padding:12px;z-index:4000">
+        <div style="width:100%;max-width:300px;background:var(--card2);border-radius:12px;padding:12px;border:1px solid var(--border)">
+            <h2 id="infoT"></h2>
+            <div id="infoB" style="font-size:11px;color:var(--text);line-height:1.6;margin-top:6px"></div>
+            <button class="btn btn-p" style="margin-top:8px" onclick="document.getElementById('info').style.display='none'">Acknowledge Definition</button>
+        </div>
+    </div>
+
+    <!-- CALCULATOR -->
+    <div id="calc" style="position:fixed;right:10px;bottom:70px;width:210px;background:var(--card2);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 30px #000a;z-index:1500;display:none">
+        <div id="calcH" style="padding:8px;display:flex;justify-content:space-between;font-size:8px;font-weight:900;color:var(--accent);background:var(--bg);border-radius:12px 12px 0 0">
+            <span>ELITE CALCULATOR . DRAG TO MOVE</span>
+            <span onclick="hideCalc()" style="cursor:pointer;color:var(--flag)">✕</span>
+        </div>
+        <div style="padding:6px">
+            <input id="calcD" readonly style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--accent);text-align:right;font-weight:800;font-size:13px">
+            <div id="cg" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:6px"></div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <!-- NAME MODAL -->
+    <div id="nameModal" class="modal-overlay" style="z-index:5000">
+        <div class="modal-box">
+            <h2>JOIN THE LEADERSBOARD 🏆</h2>
+            <p class="subtext">Enter a real permanent username, no special characters.</p>
+            <input type="hidden" id="lbId">
+            <label>Your Display Name</label>
+            <input id="lbName" maxlength="10" placeholder="Please enter your name..." style="text-transform:capitalize" oninput="this.value=this.value.replace(/[^A-Za-z ]/g,'').replace(/ {2,}/g,' ').slice(0,10)">
+            <div id="nameErr" style="font-size:9px;color:var(--error);margin-top:4px;display:none"></div>
+            <button class="btn btn-p" style="margin-top:12px" onclick="confirmLBName()">Click to confirm permanent username</button>
+        </div>
+    </div>
+
+    <!-- LEADERBOARD MODAL -->
+    <div id="lbModal" class="modal-overlay" style="z-index:4500">
+        <div class="modal-box" style="max-width:520px;width:96%;max-height:90vh;overflow-y:auto">
+            <button class="close-btn" onclick="document.getElementById('lbModal').classList.remove('active')">&times;</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <h2 style="color:var(--accent);margin:0">🏆 Global Rankings</h2>
+                <button class="btn-g" style="width:auto;padding:6px 10px;font-size:10px;flex-shrink:0" onclick="openLB()">🔄 REFRESH</button>
+            </div>
+            <div id="lbSyncStatus" style="font-size:9px;color:var(--muted);margin-top:4px"></div>
+            <p class="subtext" style="font-size:12px">RANKING IS BASED ON ACCURACY, SPEED, CONSISTENCY AND TOTAL NUMBER OF QUESTIONS ANSWERED.</p>
+            <p class="subtext" style="font-size:8px">Elite Scholar Institute . Academic ecosystem</p>
+            <div id="lbHOF"></div>
+            <div id="lbPodium"></div>
+            <div class="lb-table-wrap">
+                <table class="lb-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>NAME</th>
+                            <th>AVG SCORE</th>
+                            <th>AVG TIME/Q</th>
+                            <th>TOTAL Qs ANSWERED</th>
+                            <th>QUIZZES DONE</th>
+                            <th>POINTS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lbBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- FEEDBACK PORT -->
+    <button id="openSuggestionBtn" class="suggest-btn" style="position:fixed;left:15px;bottom:15px;z-index:1200;font-size:11px;padding:8px 14px;box-shadow:0 4px 12px rgba(0,0,0,0.3)">💡 Feedback Port</button>
+
+    <div id="suggestionModal" class="modal-overlay">
+        <div class="modal-box">
+            <button id="closeModalBtn" class="close-btn">&times;</button>
+            <h2>SUGGESTION BOX</h2>
+            <p class="subtext">Provide performance analysis or platform anomalies directly to structural administrators.</p>
+            <form id="suggestionForm">
+                <label>Select Suggestion Class</label>
+                <select id="category" required>
+                    <option value="" disabled selected>Select class classification</option>
+                    <option>Design/UI Ergonomics</option>
+                    <option>Algorithmic Engine Speed</option>
+                    <option>Contextual Content Irregularities</option>
+                    <option>System Crash / Exception Token</option>
+                    <option>Empirical Review Systems</option>
+                </select>
+                <label>Input Structural Report Message</label>
+                <textarea id="message" placeholder="Provide raw operational logs or general contextual recommendations..." rows="4" required></textarea>
+                <button type="submit" class="send-btn">Send Suggestion</button>
+            </form>
+        </div>
+    </div>
+    <style>
+/* ===== GLOBAL SMOOTH PAGE SCROLL CONFIGURATION ===== */
+html {
+  height: 100%;
+  overflow-y: scroll; /* Forces a dedicated root scroll track so it slides freely */
+}
+
+body {
+  min-height: 100%; 
+  width: 100%; 
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Ensures snappy, native iOS inertia physics */
+  overscroll-behavior-y: auto; /* Restores free boundary bounce at both ends */
+}
+
+/* Base box modeling for child elements */
+body * {
+  box-sizing: border-box;
+}
+</style>
+
+<script src="./singleplay.js"></script>
+</body>
+</html>
