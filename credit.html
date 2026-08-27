@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Elite Scholar Institute</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+   
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;-webkit-tap-highlight-color:transparent}
+
+  :root{
+    --bg:#050b1a;
+    --card:#0d1b3e;
+    --blue:#1565ff;
+    --blue-light:#5b8def;
+    --gold:#ffd700;
+    --gold-light:#ffe27a;
+    --text:#f2f6ff;
+    --muted:#9db3dc;
+  }
+
+  html,body{height:100%;background:var(--bg);overflow:hidden}
+
+  /* ---------- NON-SELECTABLE & NON-ZOOMABLE CONFIGURATION ---------- */
+  body {
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* ---------- BACKGROUND & PARTICLES ---------- */
+  #bgLayer{
+    position:fixed;inset:0;
+    background:
+      linear-gradient(180deg, rgba(5,11,26,.88), rgba(5,11,26,.95)),
+      url('advert.jpg') center/cover no-repeat;
+    z-index:0;
+  }
+  canvas#particleCanvas{
+    position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.6;
+  }
+
+  /* ---------- REAL SCROLL CONTAINER ---------- */
+  /* ---------- REAL SCROLL CONTAINER ---------- */
+  #creditsWrap{
+    position: fixed; inset: 0; /* Replaces height: 100vh to fix Chrome sizing bugs */
+    z-index:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  
+  #creditsWrap::-webkit-scrollbar{ display:none; }
+
+  #creditsContent{
+    min-height:calc(100vh + 60px);
+    padding:100vh 24px 180px;
+    text-align:center;
+  }
+
+  /* ---------- TEXT STYLES ---------- */
+  .credit-title{
+    font-size:28px;font-weight:900;color:var(--gold);
+    letter-spacing:.8px;margin-bottom:6px;
+    text-shadow:0 0 22px rgba(255,215,0,.45);
+  }
+  .credit-subtitle{
+    font-size:13.5px;font-weight:600;color:var(--blue-light);
+    margin-bottom:44px;letter-spacing:.4px;
+  }
+
+  .credit-role{
+    font-size:12px;font-weight:700;color:var(--muted);
+    text-transform:uppercase;letter-spacing:1.8px;
+    margin-top:40px;margin-bottom:8px;
+  }
+  .credit-name{
+    font-size:14px;font-weight:800;color:var(--text);
+    margin-bottom:4px;
+    text-shadow:0 2px 10px rgba(0,0,0,.5);
+  }
+  .credit-name.gold{ color:var(--gold-light); text-shadow:0 0 16px rgba(255,215,0,.4); }
+
+  .credit-paragraph{
+    max-width:540px;margin:38px auto;
+    font-size:13px;line-height:2;color:var(--muted);
+  }
+  .credit-paragraph b{ color:var(--text); }
+
+  .divider{
+    width:70px;height:2px;margin:38px auto;
+    background:linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .badge-row{
+    display:flex;justify-content:center;gap:10px;flex-wrap:wrap;
+    margin:24px auto 12px;max-width:460px;
+  }
+  .badge-chip{
+    font-size:10.5px;font-weight:800;letter-spacing:.5px;
+    color:var(--gold-light);background:rgba(255,215,0,.1);
+    border:1px solid rgba(255,215,0,.4);border-radius:999px;
+    padding:7px 16px;box-shadow:0 4px 15px rgba(255,215,0,.15);
+  }
+
+  /* ---------- FINAL LOGO (larger circular crop) ---------- */
+  .logo-wrap{
+    margin:65px auto 22px;
+    width:190px;height:190px;
+    border-radius:50%;
+    overflow:hidden;
+    border:4px solid var(--gold);
+    box-shadow:0 0 40px rgba(255,215,0,.5);
+    animation:logoGlow 2.4s ease-in-out infinite;
+  }
+  @keyframes logoGlow{
+    0%,100%{ box-shadow:0 0 40px rgba(255,215,0,.5); }
+    50%{ box-shadow:0 0 60px rgba(255,215,0,.85); }
+  }
+    .logo-wrap video{
+    width:100%;height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  
+  .final-line{
+    font-size:15px;font-weight:800;color:var(--gold);
+    letter-spacing:.5px;margin-top:10px;
+  }
+  .final-sub{
+    font-size:11px;color:var(--muted);margin-top:5px;
+  }
+
+  /* ---------- BACK-TO-TOP ARROW ---------- */
+  #backToTopBtn{
+    position:fixed;
+    left:50%;
+    bottom:26px;
+    transform:translate(-50%, 20px);
+    z-index:50;
+    width:50px;height:50px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#0d1b3e,#123166);
+    border:1.5px solid var(--gold);
+    color:var(--gold);
+    font-size:22px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.6), 0 0 20px rgba(255,215,0,.3);
+    cursor:pointer;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .35s ease, transform .35s ease;
+  }
+  #backToTopBtn.show{
+    opacity:1;
+    pointer-events:auto;
+    transform:translate(-50%, 0);
+  }
+  #backToTopBtn:active{ transform:translate(-50%, 0) scale(.92); }
+
+  #backToTopBtn::after{
+    content:'';position:absolute;inset:-4px;border-radius:50%;
+    border:1.5px solid rgba(255,215,0,.5);
+    animation:ringPulse 1.8s ease-out infinite;
+  }
+  @keyframes ringPulse{
+    0%{ transform:scale(1); opacity:.9; }
+    100%{ transform:scale(1.4); opacity:0; }
+  }
+  
+  header{ position:sticky; top:0; padding:16px 18px; display:flex; justify-content:space-between; align-items:center; background: rgba(0,0,0,0.35); backdrop-filter:blur(14px); z-index:999; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.logo{ display:flex; align-items:center; gap:12px; }
+.logo img{ width:52px; height:52px; border-radius:50%; object-fit:cover; border: 2px solid #ffd700; box-shadow: 0 0 15px rgba(255,215,0,0.4); }
+.logo-text h1{ font-size:18px; font-weight:900; line-height:1.2; }
+.logo-text p{ font-size:11px; color:#cfe5ff; margin-top:4px; }
+.back-btn{ padding:12px 16px; border-radius:15px; text-decoration:none; font-size:14px; font-weight:800; background: linear-gradient( 135deg, #0066ff, #00bfff ); color:white; }
+  
+</style>
+</head>
+ <script src="./app.js" defer></script>
+<body>
+    
+    <header>
+  <div class="logo">
+    <img src="logo.jpg">
+    <div class="logo-text">
+      <h1><p>Elite Scholar Institute</p></h1>
+      <p>Academic Excellence Redefined</p>
+    </div>
+  </div>
+  <a href="index.html" class="back-btn">← Back</a>
+</header>
+
+
+<div id="bgLayer"></div>
+<canvas id="particleCanvas"></canvas>
+
+<div id="creditsWrap">
+  <div id="creditsContent">
+
+    <div class="credit-title">ELITE SCHOLAR INSTITUTE</div>
+    <div class="credit-subtitle">Academic Excellence Redefined</div>
+
+    <div class="credit-role">The Grand Genesis &amp; Visionary Pioneer</div>
+    <div class="credit-name gold">Sir Simon Chisom Daniel</div>
+    <div class="credit-subtitle" style="margin-bottom:18px;">(Formally called Simon Daniel) — Core Developer &amp; Founder</div>
+
+    <p class="credit-paragraph">
+      What stands before you today is the legendary fruition of a grueling, passionate <b>5-months intensive developmental project odyssey</b>. Born from a burning desire to completely shatter conventional limitations in digital learning, the core developer, Simon Chisom Daniel (Simon Daniel), dedicated his deep technical insight, architectural mastery, and sheer willpower to birth Elite Scholar Institute. Countless midnight oil burnings, debugging sessions through dawn, and meticulous structural planning went into making this secure, high-performance ecosystem a reality for every ambitious mind.
+    </p>
+
+    <div class="divider"></div>
+
+    <div class="credit-role">Executive Leadership &amp; Core Contributors</div>
+    
+    <div class="credit-role" style="font-size:10.5px; margin-top:18px;">1. Visionary Head &amp; Core Developer</div>
+    <div class="credit-name gold">Simon Daniel</div>
+
+    <div class="credit-role" style="font-size:10.5px; margin-top:18px;">2. Administrative Director &amp; Strategy Lead</div>
+    <div class="credit-name">Semiu Awwal</div>
+
+    <div class="credit-role" style="font-size:10.5px; margin-top:18px;">3. Curriculum &amp; Student Relations</div>
+    <div class="credit-name">Grace Shalom</div>
+
+    <div class="credit-role" style="font-size:10.5px; margin-top:18px;">4. Content Supervisory &amp; Graphic specialist</div>
+    <div class="credit-name">Olulade Eunice</div>
+
+    <div class="credit-role" style="font-size:10.5px; margin-top:18px;">5. Operations &amp; Resource Support Specialist</div>
+    <div class="credit-name">Abasiakara Mbuk</div>
+
+    <div class="divider"></div>
+
+    <p class="credit-paragraph">
+      Elite Scholar Institute was forged with a single vision and mission, uncompromising mandate — <b>
+      To raise every student into an elite unstoppable scholar through an absolute disciplined mastery and relentless training sections securing total legendary academic triumph without compromise.
+      </b><br>
+      Every single page, database query, layout parameter, interactive poll, and quiz drill was meticulously hand-crafted to ensure you possess a competitive edge that leaves no room for failure. We built this sanctuary so that when exam day arrives, you step into the hall not with anxiety, but with an energized calculating confidence.
+    </p>
+
+    <div class="credit-role">The Architectural Evolution of Learning</div>
+    <p class="credit-paragraph">
+      Building a platform of this magnitude required more than just technical skill; it required an intimate understanding of the academic battlefield. From structuring past questions to refining real-time notification streams and interactive testing interfaces, every update reflects months of iterative refinement, user-centered optimization, and an unwavering commitment to scholastic perfection.
+    </p>
+
+    <div class="divider"></div>
+
+    <div class="credit-role">Honoring Our Exceptional Faculty &amp; Mentors</div>
+    <p class="credit-paragraph">
+      Behind every soaring success story stands an anchor of profound wisdom. The exceptional teachers and faculty members of Elite Scholar Institute pour boundless passion, patience, and meticulous oversight into breaking down the most intimidating academic mountains. They transform confusion into absolute clarity, shaping raw potential into disciplined intellectual power.
+    </p>
+
+    <div class="divider"></div>
+
+    <div class="credit-role">Saluting Our Resolute Students</div>
+    <p class="credit-paragraph">
+      To the hardworking, visionary students who utilize Elite Scholar Institute: <b>You are the literal heartbeat of this entire ecosystem.</b><br>
+      To the late nights wrestling with tough past questions, the early morning revisions, and the refusal to settle for mediocrity — your dedication is truly inspiring. You embody the core definition of an elite scholar.
+    </p>
+
+    <div class="badge-row">
+      <span class="badge-chip">🏆 ELITE ACHIEVERS</span>
+      <span class="badge-chip">📚 UNCOMPROMISING STANDARDS</span>
+      <span class="badge-chip">🧠 ADVANCED DRILLS</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="credit-paragraph">
+      Thank you for placing your utmost trust in the Elite Scholar family.<br>
+      Through relentless teamwork, high standards, and shared ambition, we rise together.
+    </p>
+
+    <div class="credit-role">Engineered &amp; Powered By</div>
+    <div class="credit-name">Elite Scholar Team</div>
+
+    <div class="divider"></div>
+
+    <p class="credit-paragraph">
+      This platform is your digital fortress. This season belongs entirely to you.<br>
+      <b>Go forth, conquer, and claim your rightful place at the absolute peak.</b>
+    </p>
+
+        <div class="logo-wrap">
+      <video id="footerVideo" src="video.mp4" muted playsinline loop></video>
+      </div>
+     <div>
+        <div class="final-line">ACADEMIC EXCELLENCE REDEFINED</div>
+    <div class="final-sub">© 2026 · All Rights Reserved<br><br><br><b>First Launched 1st September, 2026.</b></div>
+    
+    </div>
+     
+<button id="backToTopBtn" aria-label="Back to top">^</button>
+<script>
+(function(){
+  /* ---------------- DISABLE COPY & CONTEXT MENU ---------------- */
+  document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'x' || e.key === 'u' || e.key === 's')) {
+      e.preventDefault();
+    }
+  });
+
+  const wrap = document.getElementById('creditsWrap');
+  const backBtn = document.getElementById('backToTopBtn');
+
+  /* ---------------- SUBTLE BACKGROUND PARTICLE SYSTEM ---------------- */
+  const canvas = document.getElementById('particleCanvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+
+  function resizeCanvas(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  for(let i=0; i<50; i++){
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      radius: Math.random() * 1.5 + 0.5,
+      speedY: (Math.random() * 0.3 + 0.1) * -1,
+      alpha: Math.random() * 0.5 + 0.2
+    });
+  }
+
+  function drawParticles(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffd700';
+    particles.forEach(p => {
+      ctx.globalAlpha = p.alpha;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fill();
+      p.y += p.speedY;
+      if(p.y < 0) { p.y = canvas.height; p.x = Math.random() * canvas.width; }
+    });
+    requestAnimationFrame(drawParticles);
+  }
+  drawParticles();
+
+  /* ---------------- AUTO-SCROLL ENGINE ---------------- */
+  const AUTO_SCROLL_SPEED = 0.4;    
+  const RESUME_DELAY_MS   = 2500;   
+
+  let autoScrollEnabled = true;
+  let resumeTimer = null;
+  let currentScrollPos = 0;
+
+  // Wait until layout is fully calculated before starting tick
+  window.addEventListener('load', () => {
+    currentScrollPos = wrap.scrollTop;
+  });
+
+  function tick(){
+    if(autoScrollEnabled){
+      const atBottom = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 4;
+      if(!atBottom){
+        currentScrollPos += AUTO_SCROLL_SPEED;
+        wrap.scrollTop = currentScrollPos;
+      } else {
+        currentScrollPos = wrap.scrollTop;
+      }
+    } else {
+      currentScrollPos = wrap.scrollTop;
+    }
+    updateArrowVisibility();
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  function pauseAutoScrollTemporarily(){
+    autoScrollEnabled = false;
+    clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(()=>{ 
+      autoScrollEnabled = true; 
+      currentScrollPos = wrap.scrollTop; 
+    }, RESUME_DELAY_MS);
+  }
+
+  ['wheel','touchstart','pointerdown'].forEach(evt=>{
+    wrap.addEventListener(evt, pauseAutoScrollTemporarily, { passive:true });
+  });
+  
+    
+  /* ---------------- BACK-TO-TOP ARROW ---------------- */
+  function updateArrowVisibility(){
+    const nearBottom = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 40;
+    backBtn.classList.toggle('show', nearBottom);
+  }
+
+  backBtn.addEventListener('click', ()=>{
+    autoScrollEnabled = false;
+    clearTimeout(resumeTimer);
+
+    wrap.scrollTo({ top: 0, behavior: 'smooth' });
+    currentScrollPos = 0;
+
+    setTimeout(()=>{ autoScrollEnabled = true; }, 900);
+  });
+})();
+const video = document.getElementById('footerVideo');
+  if (video) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      });
+    }, { threshold: 0.5 });
+    observer.observe(video);
+  }
+  
+  
+</script>
+
