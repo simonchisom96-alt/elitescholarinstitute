@@ -1,0 +1,998 @@
+<!--
+ELITE SCHOLAR INSTITUTE
+MOTIVATION HUB - CHAPTER 10
+PRO MAX VERSION
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    
+   <style>
+/* SLIM + CENTERED - paste in every HTML file */
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* This is the magic: lock the whole page width + center it */
+body {
+  max-width: 980px; /* CHANGE THIS: 980px = slimmer than normal. Try 900px if still too wide */
+  margin: 0 auto !important; /* centers left + right */
+  float: none !important;
+  width: 100%;
+}
+
+/* Make sure containers don’t break the lock */
+.container, .wrapper, main, section, header, footer {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+  box-sizing: border-box;
+}
+
+/* Images keep their size but won’t break layout */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Make page a little shorter vertically */
+html {
+  font-size: 15px; /* was probably 16px. Shrinks text/spacing slightly */
+}
+
+@media (max-width: 1024px) {
+  body {
+    max-width: 100%; /* on tablets/phones let it be full width */
+    padding: 0 16px;
+  }
+}
+</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#04142f">
+<meta name="description" content="ESI Motivation Hub - Chapter 10: Why Students Choose ESI Lessons">
+
+<title>Chapter 10 | ESI Motivation Hub</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+scroll-behavior:smooth;
+-webkit-tap-highlight-color:transparent;
+}
+
+html{
+overflow-x:hidden;
+}
+
+body{
+background:
+linear-gradient(rgba(2,8,28,0.96), rgba(3,10,35,0.97)),
+url("advert.png");
+background-size:cover;
+background-position:center;
+background-attachment:fixed;
+color:white;
+overflow-x:hidden;
+}
+
+.bg-circle{
+position:fixed;
+border-radius:50%;
+filter:blur(90px);
+z-index:-1;
+opacity:0.22;
+}
+.bg1{
+width:260px;
+height:260px;
+background:#0066ff;
+top:-80px;
+left:-70px;
+}
+.bg2{
+width:320px;
+height:320px;
+background:#00ff88;
+bottom:-120px;
+right:-120px;
+}
+
+header{
+position:sticky;
+top:0;
+left:0;
+width:100%;
+padding:15px 18px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:rgba(0,0,0,0.45);
+backdrop-filter:blur(15px);
+z-index:9999;
+border-bottom:1px solid rgba(255,255,255,0.08);
+box-shadow:0 4px 20px rgba(0,255,136,0.15);
+}
+
+.logo{
+display:flex;
+align-items:center;
+gap:12px;
+}
+.logo img{
+width:58px;
+height:58px;
+border-radius:50%;
+object-fit:cover;
+border:3px solid #ffd700;
+box-shadow:0 0 20px rgba(255,215,0,0.4);
+}
+.logo h2{
+font-size:17px;
+font-weight:800;
+line-height:1.3;
+}
+.logo p{
+font-size:11px;
+color:#b8d8ff;
+margin-top:3px;
+}
+
+.menu-btn{
+padding:12px 16px;
+border-radius:18px;
+text-decoration:none;
+font-size:22px;
+font-weight:800;
+background:linear-gradient(135deg, #00c853, #00ff88);
+color:black;
+box-shadow:0 8px 25px rgba(0,255,120,0.35);
+transition:0.3s;
+letter-spacing:3px;
+cursor:pointer;
+border:none;
+}
+.menu-btn:hover{
+transform:scale(1.04);
+}
+
+.sidebar{
+position:fixed;
+left:-320px;
+top:0;
+width:300px;
+height:100%;
+background:rgba(4,10,30,0.95);
+backdrop-filter:blur(20px);
+border-right:2px solid #00ff88;
+padding:90px 22px 30px;
+transition:0.4s ease;
+z-index:9998;
+overflow-y:auto;
+}
+.sidebar.active{
+left:0;
+}
+.sidebar h3{
+color:#00ff88;
+margin-bottom:25px;
+font-size:19px;
+border-bottom:1px solid rgba(0,255,136,0.3);
+padding-bottom:10px;
+text-shadow:0 0 10px rgba(0,255,136,0.4);
+}
+.sidebar a{
+display:block;
+color:#c8d6ff;
+text-decoration:none;
+padding:14px 16px;
+margin:10px 0;
+border-radius:7px;
+transition:0.3s;
+font-size:15.5px;
+line-height:1.5;
+border-left:3px solid transparent;
+}
+.sidebar a:hover{
+background:rgba(0,255,136,0.1);
+color:#00ff88;
+padding-left:24px;
+border-left:3px solid #00ff88;
+}
+.sidebar a.active{
+background:rgba(0,255,136,0.15);
+color:#00ff88;
+border-left:3px solid #00ff88;
+}
+
+.overlay{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.7);
+display:none;
+z-index:9997;
+}
+.overlay.active{
+display:block;
+}
+
+.container{
+max-width:780px;
+margin:0 auto;
+padding:15px 28px 60px;
+}
+
+.hero{
+padding:30px 15px 5px;
+text-align:center;
+}
+
+.hero-badge{
+display:inline-block;
+padding:10px 18px;
+border-radius:40px;
+background:linear-gradient(135deg, #ffd700, #ff9800);
+color:black;
+font-size:13px;
+font-weight:800;
+margin-bottom:18px;
+}
+.hero h1{
+font-size:44px;
+font-weight:900;
+line-height:1.2;
+margin-bottom:14px;
+color:#ffd700;
+text-shadow:0 0 20px rgba(255,215,0,0.4);
+}
+.hero p{
+font-size:15px;
+line-height:2;
+color:#dce8ff;
+max-width:900px;
+margin:auto;
+}
+
+.chapter{
+position:relative;
+background:rgba(255,255,255,0.06);
+border-radius:32px;
+overflow:hidden;
+border:1px solid rgba(255,255,255,0.08);
+backdrop-filter:blur(12px);
+transition:0.4s;
+box-shadow:0 15px 40px rgba(0,0,0,0.28);
+padding:32px 28px;
+margin:15px 0;
+}
+.chapter:hover{
+transform:translateY(-8px) scale(1.01);
+}
+
+.chapter-tag{
+position:absolute;
+top:18px;
+left:18px;
+padding:8px 15px;
+border-radius:40px;
+font-size:12px;
+font-weight:800;
+background:linear-gradient(135deg, #00c853, #00ff88);
+color:black;
+z-index:10;
+}
+
+.chapter h2{
+font-size:27px;
+font-weight:900;
+line-height:1.4;
+margin-bottom:22px;
+color:#00ff88;
+text-shadow:0 0 15px rgba(0,255,136,0.5);
+}
+
+.chapter p{
+margin:20px 0;
+font-size:17.5px;
+color:#d0dcff;
+text-align:justify;
+line-height:1.9;
+}
+
+.highlight-box{
+background:rgba(0,255,136,0.08);
+border:1px solid rgba(0,255,136,0.3);
+padding:24px;
+border-radius:10px;
+margin:28px 0;
+border-left:3px solid #00ff88;
+}
+
+.quote{
+text-align:center;
+font-style:italic;
+color:#00ff88;
+font-size:19px;
+margin:40px 0;
+padding:22px;
+border-top:1px solid rgba(0,255,136,0.3);
+border-bottom:1px solid rgba(0,255,136,0.3);
+text-shadow:0 0 10px rgba(0,255,136,0.4);
+}
+
+.nav-btn{
+display:flex;
+justify-content:space-between;
+margin-top:40px;
+gap:15px;
+}
+.back-btn{
+display:inline-flex;
+align-items:center;
+gap:10px;
+padding:18px 28px;
+text-decoration:none;
+border-radius:20px;
+font-size:16px;
+font-weight:800;
+background:rgba(255,255,255,0.08);
+color:#00ff88;
+border:2px solid #00ff88;
+transition:0.3s;
+}
+.back-btn:hover{
+background:rgba(0,255,136,0.15);
+}
+.proceed-btn{
+display:inline-flex;
+align-items:center;
+gap:10px;
+padding:18px 28px;
+text-decoration:none;
+border-radius:20px;
+font-size:16px;
+font-weight:800;
+background:linear-gradient(135deg, #00c853, #00ff88);
+color:black;
+box-shadow:0 10px 30px rgba(0,255,120,0.3);
+transition:0.3s;
+}
+.proceed-btn:hover{
+transform:scale(1.03);
+}
+
+footer{
+padding:45px 20px;
+background:rgba(0,0,0,0.45);
+text-align:center;
+line-height:2.2;
+font-size:14px;
+}
+
+/* FLOATING CHAT - Premium Glow + Merge Tooltip */
+.float-chat{
+position:fixed;
+right:18px;
+bottom:20px;
+width:65px;
+height:65px;
+border-radius:50%;
+background:linear-gradient(135deg,#00c853,#00ff88);
+display:flex;
+justify-content:center;
+align-items:center;
+font-size:30px;
+text-decoration:none;
+z-index:9999;
+box-shadow:0 0 0 0 rgba(0,255,120,0.7); /* for pulse animation */
+transition:0.3s cubic-bezier(0.4,0,0.2,1);
+pointer-events:auto;
+cursor:pointer;
+animation:pulse 2s infinite; /* BEAT effect */
+}
+
+/* PULSE GLOW ANIMATION */
+@keyframes pulse{
+0%{
+box-shadow:0 0 0 0 rgba(0,255,120,0.7);
+}
+70%{
+box-shadow:0 0 0 15px rgba(0,255,120,0);
+}
+100%{
+box-shadow:0 0 0 0 rgba(0,255,120,0);
+}
+}
+
+
+/* "Need help?" bubble - Nice round + merges with button */
+.float-chat::before{
+content:"Need advice?";
+position:absolute;
+bottom:75px; /* closer to button for merge effect */
+right:50%;
+transform:translateX(50%) translateY(10px);
+background:linear-gradient(135deg,#1e293b,#334155); /* dark gradient */
+color:white;
+padding:10px 16px;
+border-radius:20px; /* NICE ROUND CORNERS */
+font-size:13px;
+font-weight:700;
+font-family:Arial, sans-serif;
+white-space:nowrap;
+opacity:1;
+transition:0.4s cubic-bezier(0.4,0,0.2,1);
+pointer-events:none;
+box-shadow:0 8px 20px rgba(0,0,0,0.3), 0 0 15px rgba(0,255,120,0.2); /* glow */
+z-index:10000;
+}
+
+/* Merge effect: bubble drops down on hover/desktop */
+@media (min-width: 768px){
+.float-chat::before{
+opacity:0;
+transform:translateX(50%) translateY(20px);
+}
+.float-chat:hover::before{
+opacity:1;
+transform:translateX(50%) translateY(0);
+}
+}
+
+/* Arrow - now curved merge instead of sharp triangle */
+.float-chat::after{
+content:"";
+position:absolute;
+bottom:70px;
+right:50%;
+transform:translateX(50%);
+width:24px;
+height:12px;
+background:#1e293b;
+border-radius:0 0 12px 12px; /* ROUND bottom corners */
+opacity:1;
+transition:0.4s cubic-bezier(0.4,0,0.2,1);
+pointer-events:none;
+z-index:9999;
+}
+@media (min-width: 768px){
+.float-chat::after{
+opacity:0;
+transform:translateX(50%) translateY(-5px);
+}
+.float-chat:hover::after{
+opacity:1;
+transform:translateX(50%) translateY(0);
+}
+}
+
+/* Hover effect */
+.float-chat:hover{
+transform:scale(1.12);
+animation:none; /* stop pulse on hover for clean feel */
+box-shadow:0 12px 35px rgba(0,255,120,0.6);
+}
+
+/* Mobile touch */
+.float-chat:active{
+transform:scale(0.92);
+}
+
+/* Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.active { display: flex; }
+
+/* Box */
+.modal-box {
+  background: #fff;
+  width: 90%;
+  max-width: 420px;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  position: relative;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  animation: popIn 0.2s ease;
+}
+@keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* Button */
+.suggest-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  background:#6aff78;
+  color: #000000;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.suggest-btn:active { transform: scale(0.96); }
+
+/* Close */
+.close-btn {
+  position: absolute;
+  top: 12px; right: 14px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+}
+
+/* Text */
+.modal-box h2 { margin: 0 0 4px; font-size: 20px; }
+.subtext { margin: 0 0 16px; color: #666; font-size: 14px; }
+
+/* Form */
+.modal-box label { display: block; margin: 10px 0 6px; font-weight: 600; font-size: 14px; }
+.modal-box select,
+.modal-box textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1.5px solid #ddd;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.2s;
+  box-sizing: border-box;
+}
+.modal-box select:focus,
+.modal-box textarea:focus { border-color: #25D366; }
+
+.send-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: #25D366;
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+}
+.send-btn:hover { filter: brightness(0.95); }
+
+
+
+@media(max-width:768px){
+.container{padding:40px 20px 50px;}
+.chapter{padding:26px 20px;margin:30px 0;}
+.chapter h2{font-size:23px;}
+.chapter p{font-size:16.5px;}
+.sidebar{width:270px;}
+.hero h1{font-size:34px;}
+.hero{padding:30px 20px 20px;}
+.nav-btn{flex-direction:column;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="bg-circle bg1"></div>
+<div class="bg-circle bg2"></div>
+
+<header>
+<div class="logo">
+<img src="logo.jpg">
+<div>
+<h2>Elite Scholar Institute</h2>
+<p>Academic Excellence Redefined</p>
+</div>
+</div>
+
+<button class="menu-btn" onclick="toggleMenu()">☰</button>
+</header>
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+<div class="sidebar" id="sidebar">
+<h3>TEN CHAPTERS TO SUCCESS</h3>
+<a href="motivation.html" onclick="toggleMenu()">Chapter 1: Your Academic Journey & The Pressure You Feel</a>
+<a href="chapter2.html" onclick="toggleMenu()">Chapter 2: How to Read, Understand & Use Your Jotter</a>
+<a href="chapter3.html" onclick="toggleMenu()">Chapter 3: Past Questions, Speed & CBT Training</a>
+<a href="chapter4.html" onclick="toggleMenu()">Chapter 4: Early Prep & Study Routines That Work</a>
+<a href="chapter5.html" onclick="toggleMenu()">Chapter 5: Sleep, Food, Calm Mind & Mental Health</a>
+<a href="chapter6.html" onclick="toggleMenu()">Chapter 6: Friends, Distractions, Loyalty & Real Life Mistakes</a>
+<a href="chapter7.html" onclick="toggleMenu()">Chapter 7: Exam Hall Fear, Tension & Registration Mistakes</a>
+<a href="chapter8.html" onclick="toggleMenu()">Chapter 8: Subject Combinations & University Life Ahead</a>
+<a href="chapter9.html" onclick="toggleMenu()">Chapter 9: Prayer, God Factor, Fear of Failure & Moving On</a>
+<a href="chapter10.html" class="active" onclick="toggleMenu()">Chapter 10: Why Students Choose ESI Lessons</a>
+</div>
+
+<section class="hero">
+<div class="hero-badge">⚡<h3>Chapter 10 of 10</h3></div>
+<h1>Why Students Choose ESI Lessons</h1>
+<p>We’ve walked 9 chapters together. Now let’s talk about the home where champions are built.</p>
+</section>
+
+<div class="container">
+    <div class="chapter">
+        <div class="chapter-tag">CHAPTER 10</div>
+        
+        <h2><br>Why Students Choose ESI Lessons</br></h2>
+        <br>
+        
+        <p>Let me speak to you as your brother and mentor, not just as a teacher. For 9 chapters, we’ve walked this journey together. We’ve talked about reading, routine, health, friends, fear, faith, and the future. Now you deserve to know why thousands of students choose Elite Scholar Institute year after year. Not because we have the biggest building. Not because we shout loudest. But because we care about the whole student - your mind, your character, your future.</p>
+
+        <p>Many lesson centers will teach you formulas and run past questions. That’s good, but that’s not enough. At ESI, we believe JAMB is not just an exam. It’s a test of character, discipline, and vision. So we don’t just prepare you for CBT. We prepare you for life. That’s why students call ESI “home”. Because here, you’re not just a number. You’re family.</p>
+
+        <p>This is our 10th chapter, but for you it’s not the end. It’s the beginning. The beginning of a new mindset. The beginning of discipline. The beginning of a future you’re now equipped to build. So let me tell you, from the heart, why students who pass through ESI don’t just pass JAMB. They win at life.
+        <br>Everything you've been told in these chapters isn't enough to secure academic success. Rather, these chapters gives you the most important steps on how to build a solid foundation for your future. You would need to put them into practice, you would need to learn more about the academic battle field, how to tackle questions and eliminate wrong options even without knowing the answer, and you would need a guardian to walk you through, to show you tricks and steps on how to maneuver hard questions and tackle them effectively without fear or uncertainty.    Elite Scholar institute tutors has more than a million ways to give you what you desire no matter what it takes. Join us let's change your academic history from your current level to an elite unstoppable scholar without compromise.</p>
+
+        <div class="highlight-box">
+        <b>Here’s why Elite Scholar Institute is different:</b><br><br>
+
+        <b>1. We teach understanding, not cramming:</b> Anybody can make you memorize 1000 questions. But what happens when JAMB changes the wording? Our teachers break down concepts until you truly understand. When you understand, you can answer any question, even the ones you’ve never seen before. That’s why ESI students adapt fast in CBT halls.<br><br>
+
+        <b>2. We build character, not just grades:</b> We correct you when you’re wrong. We push you when you’re lazy. We counsel you when you’re broken. Because a 320 score means nothing if your character is 40/100. Employers don’t just hire certificates. They hire people with discipline, honesty, and grit. We build all three here.<br><br>
+
+        <b>3. CBT training from day 1:</b> You don’t wait till 2 weeks to exam before touching computer. From week 1, you’re practicing CBT. Speed training. Time management. How to use the mouse. How to skip questions. How to stay calm when network lags. By exam day, the computer feels like your friend, not your enemy.<br><br>
+
+        <b>4. Small classes, personal attention:</b> We don’t pack 200 students in one hall and call it teaching. Our classes are small so teachers know your name, know your weakness, and follow up with you. If you’re struggling with Quadratic Equations, we’ll sit with you until it clicks. You’re not invisible here.<br><br>
+
+        <b>5. Spiritual covering + mentorship:</b> We pray with you. We mentor you. We talk to you like family. Because we know strategy alone is not enough. You need grace. You need someone who believes in you when you doubt yourself. At ESI, our teachers are mentors first, instructors second. We’re invested in your success beyond JAMB.<br><br>
+
+        <b>6. Proven results, year after year:</b> Year after year, ESI students are topping their schools, scoring 300+, gaining admission to Medicine, Law, Engineering. Not by miracle. By method. By mentorship. By mindset. When you join ESI, you’re joining a track record of excellence. You’re not starting from scratch. You’re standing on shoulders of giants.
+        </div>
+
+        <p>Brothers and sisters, this is chapter 10. But your real chapter 11, 12, 13... starts now. The chapters you’ll write in university. The chapters you’ll write in your career. The chapters your children will read about you someday.  <br>In this life, if you actually want to achieve something, your determination must out-way your skill.</p>
+       
+
+
+        <p>Don’t let fear stop you. Don’t let past failures define you. Don’t let comparison kill your joy. You have everything you need: the strategy from these 10 chapters, the God factor we talked about, and now a family at ESI that will walk with you till you win. Having a strong academic future is a personal decision. Before you entered school, your parents must have given you all the advices ever, but adhering to those advices is your choice, your are responsible for your success and you are also responsible if you fail because it was all under your control. These ten chapters might not be enough for an advice that would guarantee your success, but I hope it would go a long way in your academic journey for whoever that reads this. </p>
+
+        <p>To every student reading this: You are not average. You are not “just another JAMB candidate”. You are a future leader, innovator, doctor, engineer, teacher, entrepreneur. The world is waiting for you. But first, you must conquer this season. I usually say to my students, so far you neva crace, no close that book, even if you don crace, so far they neva chain you continue to dey read that book. Early preparation never fails, the results would surprise you as far you did all the necessary things, no crown comes without a cross. I believe in you more than you believe in yourself because I have passed through these stages repeatedly. It's all about your mindset and how you structure and discipline yourself. I promise you this day that if you adhere strictly to all which you have learnt from these ten chapters, you would never fail and you would never regret reading this.</p>
+
+        <p>Walk with us chapter by chapter. Show up for classes. Do the work. Trust God. And watch what happens. We’re not promising it will be easy. We’re promising you won’t walk alone.</p>
+
+        <p>Thank you for reading all 10 chapters. Thank you for trusting us with your future. Now go and make us proud. Go and make your parents proud. Go and make God proud. Your time is now. It's your decision to make.</p>
+        
+       <div class="quote">
+        “Excellence is not an act, it’s a habit. And at ESI, we build that habit in you, one chapter at a time.”
+        </div>
+        
+        
+
+
+        <!-- NAV BUTTONS -->
+        <div class="nav-btn">
+            <a href="chapter9.html" class="back-btn">
+                ← Back to Chapter 9
+            </a>
+            <a href="index.html" class="proceed-btn">
+                Back to home →
+            </a>
+        </div>
+       <div style="text-align:center; margin:35px 0;">
+  
+  <div style="display:inline-block; padding:18px 24px; 
+              background:linear-gradient(135deg, rgba(20,30,50,0.8), rgba(10,15,30,0.9)); 
+              border:2px solid #00ff88; 
+              border-radius:8px;
+              box-shadow:0 0 0 1px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6);">
+    
+    <h4 style="margin:0 0 8px 0; font:900 21px 'Poppins', sans-serif; 
+               color:#ffd700; letter-spacing:2px; text-transform:uppercase;
+               text-shadow:2px 2px 0px rgba(0,0,0,0.8), 0 0 10px rgba(255,215,0,0.4);">
+      The 10 Chapters To Success
+    </h4>
+    
+    <p style="margin:0; font:700 12px 'Poppins', sans-serif; 
+              color:#00ff88; letter-spacing:1px; text-transform:uppercase;">
+      Composed by Simon Daniel. 
+    </p>
+  </div>
+</div>
+       
+    </div>
+</div>
+
+<!-- FLOATING CHAT - Elite Scholar Institute Motivational Guide -->
+<a
+class="float-chat"
+href="https://wa.me/2348108391083?text=Good%20day%20sir%2C%0A%0AI%20am%20going%20through%20the%20Elite%20Scholar%20Institute%20Motivational%20Guide%20and%20I%20need%20more%20explanations%2C%20practical%20advice%2C%20personal%20counselling%20and%20mentorship%20for%20my%20academic%20journey.%0A%0ASir%2C%20kindly%20guide%20me%20on%20study%20plans%2C%20how%20to%20handle%20pressure%2C%20CBT%20training%2C%20and%20the%20best%20next%20steps%20for%20my%20success.%0A%0AI%20am%20awaiting%20your%20response%20and%20guidance.%20Thank%20you%20sir."
+target="_blank"
+rel="noopener"
+aria-label="Chat with Elite Scholar Institute Counselor">
+💬
+</a>
+<!-- Suggestion -->
+<button id="openSuggestionBtn" class="suggest-btn"> Make suggestions</button>
+
+<!-- Suggestion Modal -->
+<div id="suggestionModal" class="modal-overlay">
+  <div class="modal-box">
+    <button id="closeModalBtn" class="close-btn">&times;</button>
+    <h2>Make Suggestions</h2>
+    <p class="subtext">Help us improve Elite Scholar Institute.</p>
+
+    <form id="suggestionForm">
+      <label for="category">Category</label>
+      <select id="category" required>
+        <option value="" disabled selected>Select category</option>
+        <option value="Design/UI">Design/UI</option>
+        <option value="Speed/Performance">Speed/Performance</option>
+        <option value="Content/Idea">Content/Idea</option>
+        <option value="Bug/Issue">Bug/Issue</option>
+        <option value="Ratings and reviews">Rate and review us</option>
+        <option value="Other">Others</option>
+      </select>
+
+      <label for="message">Your Suggestion</label>
+      <textarea id="message" placeholder="Tell us how we can grow..." rows="4" required></textarea>
+
+      <button type="submit" class="send-btn">Send suggestion.</button>
+    </form>
+  </div>
+</div>
+
+<footer>
+© 2026 Elite Scholar Institute | Academic Excellence Redefined<br>
+Walk with us chapter by chapter. You’re not alone.
+</footer>
+<script src="./app.js" defer></script>
+</body>
+</html>
+
+<style>
+/* ===== GLOBAL SMOOTH PAGE SCROLL CONFIGURATION ===== */
+html {
+  height: 100%;
+  overflow-y: scroll; /* Forces a dedicated root scroll track so it slides freely */
+}
+
+body {
+  min-height: 100%; 
+  width: 100%; 
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Ensures snappy, native iOS inertia physics */
+  overscroll-behavior-y: auto; /* Restores free boundary bounce at both ends */
+}
+
+/* Base box modeling for child elements */
+body * {
+  box-sizing: border-box;
+}
+</style>
+<style>
+  
+    
+    
+@keyframes blueGlow {
+ 0%, 100% { box-shadow:0 0 15px rgba(59,130,246,0.4); }
+ 50% { box-shadow:0 0 30px rgba(59,130,246,0.7); }
+}
+</style>
+
+
+
+
+<style>
+/* ===== GLOBAL SMOOTH PAGE SCROLL CONFIGURATION ===== */
+html {
+  height: 100%;
+  overflow-y: scroll; /* Forces a dedicated root scroll track so it slides freely */
+}
+
+body {
+  min-height: 100%; 
+  width: 100%; 
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Ensures snappy, native iOS inertia physics */
+  overscroll-behavior-y: auto; /* Restores free boundary bounce at both ends */
+}
+
+/* Base box modeling for child elements */
+body * {
+  box-sizing: border-box;
+}
+
+/* Prevent text selection across the entire website */
+body {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none;     /* IE 10 and Consumer Edge */
+  user-select: none;         /* Standard syntax for Chrome, Firefox, and Opera */
+}
+
+
+// Disable right-click context menu
+document.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+});
+
+// Disable copy keyboard shortcuts (Ctrl+C, Ctrl+X, Ctrl+U)
+document.addEventListener('keydown', function(e) {
+  // Disable Ctrl+C or Cmd+C (Copy)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+    e.preventDefault();
+  }
+  
+  // Disable Ctrl+X or Cmd+X (Cut)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+    e.preventDefault();
+  }
+
+  // Disable Ctrl+U or Cmd+U (View Source)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+    e.preventDefault();
+  }
+});
+
+
+
+
+
+</style>
+
+
+<script>
+/**
+ * REUSABLE SCROLL CONTROLLER FUNCTIONS
+ * Use these anywhere you need to manage background scroll locking 
+ * when custom popups, menus, or lightboxes trigger.
+ */
+
+// Call this when your modal/lightbox OPENS
+function lockBackgroundScroll() {
+  document.body.style.overflow = 'hidden';
+}
+
+// Call this when your modal/lightbox CLOSES
+function unlockBackgroundScroll() {
+  document.body.style.overflow = '';
+}
+
+
+/* ==========================================================================
+   EXAMPLE IMPLEMENTATION FOR YOUR MODAL / LIGHTBOX SCRIPTS:
+   ========================================================================== */
+
+// Example function for launching a popup
+function openYourCustomModal() {
+  // 1. Lock the page background from dragging
+  lockBackgroundScroll();
+  
+  // 2. Your actual display logic (e.g., adding an active class)
+  // myModalElement.classList.add('active');
+}
+
+// Example function for closing a popup
+function closeYourCustomModal() {
+  // 1. Re-enable free page scrolling natively
+  unlockBackgroundScroll();
+  
+  // 2. Your actual hiding logic (e.g., removing an active class)
+  // myModalElement.classList.remove('active');
+}
+</script>
+
+
+
+<script>
+/**
+ * REUSABLE SCROLL CONTROLLER FUNCTIONS
+ * Use these anywhere you need to manage background scroll locking 
+ * when custom popups, menus, or lightboxes trigger.
+ */
+
+// Call this when your modal/lightbox OPENS
+function lockBackgroundScroll() {
+  document.body.style.overflow = 'hidden';
+}
+
+// Call this when your modal/lightbox CLOSES
+function unlockBackgroundScroll() {
+  document.body.style.overflow = '';
+}
+
+
+/* ==========================================================================
+   EXAMPLE IMPLEMENTATION FOR YOUR MODAL / LIGHTBOX SCRIPTS:
+   ========================================================================== */
+
+// Example function for launching a popup
+function openYourCustomModal() {
+  // 1. Lock the page background from dragging
+  lockBackgroundScroll();
+  
+  // 2. Your actual display logic (e.g., adding an active class)
+  // myModalElement.classList.add('active');
+}
+
+// Example function for closing a popup
+function closeYourCustomModal() {
+  // 1. Re-enable free page scrolling natively
+  unlockBackgroundScroll();
+  
+  // 2. Your actual hiding logic (e.g., removing an active class)
+  // myModalElement.classList.remove('active');
+}
+</script>
+
+
+
+<script>
+function toggleMenu() {
+document.getElementById('sidebar').classList.toggle('active');
+document.getElementById('overlay').classList.toggle('active');
+}
+
+const WA_NUMBER = "2348108391083"; // Must be 234... no + or 0
+const openBtn = document.getElementById("openSuggestionBtn");
+const modal = document.getElementById("suggestionModal");
+const closeBtn = document.getElementById("closeModalBtn");
+const form = document.getElementById("suggestionForm");
+
+openBtn.addEventListener("click", () => modal.classList.add("active"));
+closeBtn.addEventListener("click", () => modal.classList.remove("active"));
+modal.addEventListener("click", (e) => { if(e.target === modal) modal.classList.remove("active"); });
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  
+  // NEW: CHECK INTERNET FIRST
+  if(!navigator.onLine){
+    showToast("Check your Internet connection and try again.");
+    return; // stop here
+  }  
+
+  const category = document.getElementById("category").value;
+  const message = document.getElementById("message").value.trim();
+
+  if(!category ||!message) {
+    alert("Please select a category and write a message.");
+    return;
+  }
+
+  const text = `*Website Suggestion*\n\n*Category:* ${category}\n*Message:* ${message}`;
+  const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
+
+  console.log("Opening:", url); // Check your browser console F12 to see this
+
+  // Try opening. If blocked, fallback to location.href
+  const newWindow = window.open(url, "_blank");
+  
+  if(!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+    // Popup blocked. Force same-tab redirect
+    window.location.href = url;
+  }
+
+  form.reset();
+  modal.classList.remove("active");
+});
+</script>
+
+</body>
+</html>
