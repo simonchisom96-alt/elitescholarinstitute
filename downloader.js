@@ -1,8 +1,8 @@
-/* Elite Scholar Institute — on-demand cache helper 36.2294 */
+/* Elite Scholar Institute — on-demand cache helper 36.2295 */
 (() => {
   'use strict';
 
-  const CACHE_NAME = 'elite-scholar-v36.2294';
+  const CACHE_NAME = 'elite-scholar-v36.2295';
   const toUrl = value => {
     try { const u = new URL(value, location.href); u.hash = ''; return u.href; }
     catch (_) { return null; }
@@ -51,8 +51,6 @@
       });
     });
 
-    // Cache the page itself after it has successfully loaded. This makes normal
-    // browsing progressively offline-capable without changing page navigation.
     if (navigator.serviceWorker?.controller) {
       navigator.serviceWorker.controller.postMessage({ type:'CACHE_URLS', urls:[location.href] });
     }
