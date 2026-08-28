@@ -42,8 +42,7 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            // Keep the Android wrapper identifiable without changing the web site's normal browser behavior.
-            userAgentString = "$userAgentString ESIAndroid/36.2293"
+            userAgentString = "$userAgentString ESIAndroid/36.2294"
         }
 
         CookieManager.getInstance().setAcceptCookie(true)
