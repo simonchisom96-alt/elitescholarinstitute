@@ -1,6 +1,8 @@
-const CACHE_NAME = 'elite-scholar-v36.2277';
+const CACHE_NAME = 'elite-scholar-v36.2278';
 const OFFLINE_URL = '/offline.html';
 
+// Precache the complete application shell. Resources not listed here are still
+// cached automatically the first time the app successfully requests them.
 const APP_SHELL = [
   '/', '/index.html',
   '/logo.jpg', '/advert.png', '/esi.jpg', '/founder.jpg',
@@ -27,50 +29,51 @@ const APP_SHELL = [
   '/video.mp4', '/firebase-config.js', '/multiplayer.js', '/singleplay.js'
 ];
 
-const SHELL_URLS = APP_SHELL.map(p => new URL(p, self.location.origin).href);
-
-function cleanPath(pathname) {
-  if (!pathname || pathname === '/') return '/';
-  return pathname.endsWith('.html') ? pathname.slice(0, -5) || '/' : pathname;
+function sameOrigin(url) {
+  return url.origin === self.location.origin;
 }
 
-function isUsable(response) {
-  return !!response && response.ok && !response.redirected;
+function usable(response) {
+  return !!response && response.ok;
 }
 
-async function putBoth(cache, requestedURL, response) {
-  if (!isUsable(response)) throw new Error(`HTTP ${response && response.status}`);
-  const url = new URL(requestedURL);
-  const canonicalPath = cleanPath(url.pathname);
-  const canonicalURL = new URL(canonicalPath, self.location.origin);
-  canonicalURL.search = url.search;
-
-  await cache.put(requestedURL, response.clone());
-  await cache.put(canonicalURL.href, response.clone());
-
-  if (url.pathname === '/' || url.pathname === '/index.html') {
-    await cache.put(new URL('/', self.location.origin).href, response.clone());
-    await cache.put(new URL('/index.html', self.location.origin).href, response.clone());
-  }
+function htmlAlias(pathname) {
+  if (!pathname || pathname === '/') return '/index.html';
+  return pathname.endsWith('.html') ? pathname : pathname + '.html';
 }
 
-async function downloadShell(path) {
+async function cacheResponse(cache, url, response) {
+  if (usable(response)) await cache.put(url, response.clone());
+}
+
+async function precacheOne(cache, path) {
   const requested = new URL(path, self.location.origin);
-  const canonical = new URL(cleanPath(requested.pathname), self.location.origin);
-  canonical.search = requested.search;
 
-  // Ask Pages for the canonical extensionless document, then cache the real 200 response
-  // under both the .html and extensionless URLs. Never cache a redirect response.
-  const target = requested.pathname.toLowerCase().endsWith('.html') ? canonical : requested;
-  const response = await fetch(new Request(target.href, {
+  // Always request the actual file for an HTML shell. This avoids depending on
+  // Cloudflare's extensionless redirect behavior during installation.
+  const fetchURL = requested.pathname === '/'
+    ? new URL('/index.html', self.location.origin)
+    : requested.pathname.endsWith('.html')
+      ? requested
+      : requested;
+
+  const response = await fetch(new Request(fetchURL.href, {
     method: 'GET',
     cache: 'reload',
     redirect: 'follow'
   }));
 
-  if (!isUsable(response)) throw new Error(`Failed to download ${path}: HTTP ${response.status}`);
-  const cache = await caches.open(CACHE_NAME);
-  await putBoth(cache, requested.href, response);
+  if (!usable(response)) {
+    throw new Error(`Shell download failed: ${path} (${response.status})`);
+  }
+
+  await cacheResponse(cache, requested.href, response);
+
+  // Keep / and /index.html interchangeable without ever storing a redirect.
+  if (requested.pathname === '/') {
+    await cacheResponse(cache, new URL('/index.html', self.location.origin).href, response);
+    await cacheResponse(cache, new URL('/', self.location.origin).href, response);
+  }
 }
 
 async function verifyShell() {
@@ -78,42 +81,51 @@ async function verifyShell() {
   for (const path of APP_SHELL) {
     const requested = new URL(path, self.location.origin);
     let hit = await cache.match(requested.href, {ignoreSearch: true});
-    if (!isUsable(hit)) {
-      const canonical = new URL(cleanPath(requested.pathname), self.location.origin);
-      hit = await cache.match(canonical.href, {ignoreSearch: true});
+
+    // / is satisfied by index.html as well.
+    if (!usable(hit) && requested.pathname === '/') {
+      hit = await cache.match(new URL('/index.html', self.location.origin).href);
     }
-    if (!isUsable(hit)) return false;
+
+    if (!usable(hit)) return false;
   }
   return true;
 }
 
-async function broadcast(data) {
-  const list = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
-  list.forEach(client => client.postMessage(data));
+async function notifyClients(message) {
+  const clientsList = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
+  clientsList.forEach(client => client.postMessage(message));
 }
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
-    // Remove only this version's stale entries, then download every shell item individually.
     const cache = await caches.open(CACHE_NAME);
-    for (const path of APP_SHELL) {
-      await cache.delete(new URL(path, self.location.origin).href);
-    }
-
     let completed = 0;
+
+    // Every shell item must succeed. If one fails, installation fails rather than
+    // pretending that the app was fully downloaded.
     for (const path of APP_SHELL) {
-      await downloadShell(path);
+      await precacheOne(cache, path);
       completed++;
-      await broadcast({
+      await notifyClients({
         type: 'DOWNLOAD_PROGRESS',
         completed,
         total: APP_SHELL.length,
-        percent: Math.round(completed / APP_SHELL.length * 100)
+        percent: Math.round((completed / APP_SHELL.length) * 100)
       });
     }
 
-    if (!await verifyShell()) throw new Error('APP SHELL VERIFICATION FAILED');
-    await broadcast({type: 'DOWNLOAD_SUCCESS', completed: APP_SHELL.length, total: APP_SHELL.length, percent: 100});
+    if (!(await verifyShell())) {
+      throw new Error('APP SHELL VERIFICATION FAILED');
+    }
+
+    await notifyClients({
+      type: 'DOWNLOAD_SUCCESS',
+      completed: APP_SHELL.length,
+      total: APP_SHELL.length,
+      percent: 100
+    });
+
     await self.skipWaiting();
   })());
 });
@@ -121,7 +133,9 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
+    await Promise.all(
+      keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+    );
     await self.clients.claim();
   })());
 });
@@ -131,12 +145,14 @@ self.addEventListener('message', event => {
     event.waitUntil(self.skipWaiting());
     return;
   }
+
   if (event.data && event.data.type === 'CHECK_DOWNLOAD_COMPLETE') {
     event.waitUntil((async () => {
       const complete = await verifyShell();
-      await broadcast(complete
+      await notifyClients(complete
         ? {type: 'DOWNLOAD_SUCCESS', completed: APP_SHELL.length, total: APP_SHELL.length, percent: 100}
-        : {type: 'DOWNLOAD_INCOMPLETE'});
+        : {type: 'DOWNLOAD_INCOMPLETE'}
+      );
     })());
   }
 });
@@ -146,11 +162,13 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
+  if (!sameOrigin(url)) return;
 
-  // CACHE FIRST for every same-origin asset. Anything successfully fetched is cached
-  // automatically, including images, CSS, JS, fonts, PDFs and media requested later.
-  if (request.destination !== 'document' && request.mode !== 'navigate') {
+  // CACHE FIRST for images, JS, CSS, fonts, PDFs, media and every other
+  // same-origin non-document request. A successful network response is cached
+  // automatically, so resources outside APP_SHELL become available offline
+  // after the user visits them once.
+  if (request.mode !== 'navigate' && request.destination !== 'document') {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
       const cached = await cache.match(request, {ignoreSearch: true});
@@ -158,53 +176,63 @@ self.addEventListener('fetch', event => {
 
       try {
         const response = await fetch(request);
-        if (isUsable(response)) await cache.put(request, response.clone());
+        if (usable(response)) await cache.put(request, response.clone());
         return response;
       } catch (error) {
-        return cached || Response.error();
+        return Response.error();
       }
     })());
     return;
   }
 
-  // Navigation: CACHE FIRST. Resolve both /page.html and /page so Cloudflare Pages
-  // extensionless routing cannot trap the browser in a redirect/offline failure.
+  // CACHE FIRST navigation. Exact URL first, then its .html counterpart.
+  // This deliberately avoids the old extension-stripping -> extensionless-fetch
+  // behavior that could trigger Cloudflare redirect failures on back navigation.
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
-    const requested = new URL(request.url);
     const candidates = [];
 
-    const add = href => { if (!candidates.includes(href)) candidates.push(href); };
-    add(requested.href);
+    const add = href => {
+      if (!candidates.includes(href)) candidates.push(href);
+    };
 
-    const canonical = new URL(cleanPath(requested.pathname), self.location.origin);
-    canonical.search = requested.search;
-    add(canonical.href);
+    add(url.href);
 
-    if (requested.pathname === '/' || requested.pathname === '/index.html') {
+    if (url.pathname === '/') {
       add(new URL('/index.html', self.location.origin).href);
-      add(new URL('/', self.location.origin).href);
+    } else if (!url.pathname.endsWith('.html')) {
+      add(new URL(htmlAlias(url.pathname), self.location.origin).href);
+    } else {
+      add(new URL(url.pathname.slice(0, -5) || '/', self.location.origin).href);
     }
 
-    for (const href of candidates) {
-      const cached = await cache.match(href, {ignoreSearch: true});
-      if (isUsable(cached)) return cached;
+    for (const candidate of candidates) {
+      const cached = await cache.match(candidate, {ignoreSearch: true});
+      if (usable(cached)) return cached;
     }
 
-    // If not cached, fetch the canonical path and cache the successful final response
-    // under the requested and canonical aliases for future offline use.
+    // Not cached yet: fetch the real HTML path, then cache the successful final
+    // response under both the requested URL and the .html alias.
     try {
-      const target = requested.pathname.toLowerCase().endsWith('.html') ? canonical : requested;
+      let target;
+      if (url.pathname === '/') target = new URL('/index.html', self.location.origin);
+      else if (url.pathname.endsWith('.html')) target = url;
+      else target = new URL(htmlAlias(url.pathname), self.location.origin);
+
       const response = await fetch(new Request(target.href, {
         method: 'GET',
         headers: request.headers,
         redirect: 'follow'
       }));
 
-      if (isUsable(response)) {
-        await putBoth(cache, requested.href, response);
-        return response;
+      if (usable(response)) {
+        await cache.put(url.href, response.clone());
+        await cache.put(target.href, response.clone());
+        if (url.pathname === '/') {
+          await cache.put(new URL('/index.html', self.location.origin).href, response.clone());
+        }
       }
+
       return response;
     } catch (error) {
       const offline = await cache.match(new URL(OFFLINE_URL, self.location.origin).href);
@@ -216,7 +244,9 @@ self.addEventListener('fetch', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   const target = event.notification.data && event.notification.data.url
-    ? event.notification.data.url : '/';
+    ? event.notification.data.url
+    : '/';
+
   event.waitUntil((async () => {
     const list = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
     for (const client of list) {
