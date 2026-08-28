@@ -1,19 +1,17 @@
-/* Elite Scholar Institute — application controller 36.2295 */
+/* Elite Scholar Institute — application controller 36.2296 */
 (() => {
   'use strict';
 
-  const BUILD = '36.2295';
-  const SW_URL = '/sw.js';
-  const INSTALL_DELAY = 8000;
+  const BUILD = '36.2296';
+  const SW_URL = '/sw.js?v=' + BUILD;
   let deferredInstall = null;
-  let installTimer = 0;
+  let installBox = null;
 
-  const isAndroidWrapper = new RegExp('ESIAndroid/' + BUILD.replace('.', '\\.') , 'i').test(navigator.userAgent);
   const isInstalled = () =>
-    isAndroidWrapper ||
     window.matchMedia?.('(display-mode: standalone)').matches ||
     window.matchMedia?.('(display-mode: window-controls-overlay)').matches ||
-    window.navigator.standalone === true;
+    window.navigator.standalone === true ||
+    /ESIAndroid\//i.test(navigator.userAgent);
 
   const toast = (message, background = '#111827') => {
     document.querySelectorAll('[data-esi-toast]').forEach(n => n.remove());
@@ -27,44 +25,37 @@
   window.showToast = toast;
 
   function createInstallUI() {
-    if (isInstalled() || document.getElementById('esi2295Install')) return;
+    if (isInstalled() || installBox) return;
     const css = document.createElement('style');
-    css.id = 'esi2295InstallCSS';
-    css.textContent = `#esi2295Install{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;width:min(92vw,400px);z-index:2147483646;background:#0f172a;color:#fff;border:1px solid #2563eb;border-radius:17px;padding:13px;box-shadow:0 12px 40px rgba(0,0,0,.38);opacity:0;visibility:hidden;pointer-events:none;transform:translate(-50%,-18px);transition:opacity .25s ease,transform .25s ease,visibility .25s ease}#esi2295Install.open{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0)}`;
+    css.id = 'esiInstallCSS2296';
+    css.textContent = `#esiInstall2296{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;width:min(92vw,400px);z-index:2147483646;background:#0f172a;color:#fff;border:1px solid #2563eb;border-radius:17px;padding:13px;box-shadow:0 12px 40px rgba(0,0,0,.38);opacity:0;visibility:hidden;pointer-events:none;transform:translate(-50%,-18px);transition:opacity .25s ease,transform .25s ease,visibility .25s ease}#esiInstall2296.open{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0)}`;
     document.head.appendChild(css);
-    const box = document.createElement('section');
-    box.id = 'esi2295Install';
-    box.innerHTML = `<button type="button" id="esi2295Close" aria-label="Close" style="position:absolute;right:8px;top:8px;width:27px;height:27px;border:0;border-radius:50%;background:rgba(255,255,255,.08);color:#cbd5e1;font-size:17px">×</button><div style="display:flex;align-items:center;gap:10px;padding-right:30px"><img src="/logo.jpg" alt="Elite Scholar Institute" style="width:40px;height:40px;border-radius:50%;object-fit:cover"><div><strong style="display:block;color:#60a5fa;font:700 13.5px system-ui,sans-serif">ELITE SCHOLAR INSTITUTE</strong><span style="display:block;margin-top:3px;color:#e5e7eb;font:400 12px/1.45 system-ui,sans-serif">Install the app for faster access and offline learning.</span></div></div><button type="button" id="esi2295InstallButton" style="display:block;width:100%;margin-top:11px;padding:11px;border:0;border-radius:11px;background:#2563eb;color:#fff;cursor:pointer;font:700 13px system-ui,sans-serif">Install Now</button>`;
-    document.body.appendChild(box);
-    box.querySelector('#esi2295Close').addEventListener('click', hideInstall);
-    box.querySelector('#esi2295InstallButton').addEventListener('click', installNow);
+    installBox = document.createElement('section');
+    installBox.id = 'esiInstall2296';
+    installBox.innerHTML = `<button type="button" data-close aria-label="Close" style="position:absolute;right:8px;top:8px;width:27px;height:27px;border:0;border-radius:50%;background:rgba(255,255,255,.08);color:#cbd5e1;font-size:17px">×</button><div style="display:flex;align-items:center;gap:10px;padding-right:30px"><img src="/logo.jpg" alt="Elite Scholar Institute" style="width:40px;height:40px;border-radius:50%;object-fit:cover"><div><strong style="display:block;color:#60a5fa;font:700 13.5px system-ui,sans-serif">ELITE SCHOLAR INSTITUTE</strong><span style="display:block;margin-top:3px;color:#e5e7eb;font:400 12px/1.45 system-ui,sans-serif">Install the app for faster access and offline learning.</span></div></div><button type="button" data-install style="display:block;width:100%;margin-top:11px;padding:11px;border:0;border-radius:11px;background:#2563eb;color:#fff;cursor:pointer;font:700 13px system-ui,sans-serif">Install Now</button>`;
+    document.body.appendChild(installBox);
+    installBox.querySelector('[data-close]').onclick = hideInstall;
+    installBox.querySelector('[data-install]').onclick = installNow;
   }
 
   function showInstall() {
     if (isInstalled()) return;
     createInstallUI();
-    const box = document.getElementById('esi2295Install');
-    if (!box) return;
-    box.classList.add('open');
-    clearTimeout(installTimer);
-    installTimer = setTimeout(hideInstall, 9000);
+    if (!installBox) return;
+    installBox.classList.add('open');
+    setTimeout(hideInstall, 10000);
   }
-
-  function hideInstall() {
-    const box = document.getElementById('esi2295Install');
-    if (box) box.classList.remove('open');
-    clearTimeout(installTimer);
-  }
+  function hideInstall() { if (installBox) installBox.classList.remove('open'); }
 
   async function installNow() {
-    if (!deferredInstall) {
-      toast('The browser has not supplied its native install prompt yet. Use the browser menu to install the app.', '#2563eb');
+    if (deferredInstall) {
+      const event = deferredInstall;
+      deferredInstall = null;
+      try { event.prompt(); await event.userChoice; } catch (_) {}
+      hideInstall();
       return;
     }
-    const event = deferredInstall;
-    deferredInstall = null;
-    try { event.prompt(); await event.userChoice; } catch (_) {}
-    hideInstall();
+    toast('Open your browser menu and choose Install app or Add to Home screen.', '#2563eb');
   }
 
   window.addEventListener('beforeinstallprompt', event => {
@@ -74,20 +65,17 @@
     window.__esiInstallAvailable = true;
     showInstall();
   });
-
   window.addEventListener('appinstalled', () => {
     deferredInstall = null;
     window.__esiInstallAvailable = false;
     hideInstall();
     toast('App installed successfully', '#16a34a');
-    navigator.serviceWorker?.controller?.postMessage({ type:'CHECK_DOWNLOAD_COMPLETE' });
   });
 
   function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     navigator.serviceWorker.addEventListener('message', event => {
       if (event.data?.type === 'DOWNLOAD_SUCCESS') toast('App files downloaded successfully', '#16a34a');
-      if (event.data?.type === 'DOWNLOAD_PARTIAL') window.__esiShellStatus = event.data;
     });
     navigator.serviceWorker.register(SW_URL, { scope:'/', updateViaCache:'none' })
       .then(reg => reg.update().catch(() => {}))
@@ -120,6 +108,8 @@
       vp.name = 'viewport';
       vp.content = 'width=device-width, initial-scale=1, viewport-fit=cover';
       document.head.appendChild(vp);
+    } else if (!/viewport-fit\s*=\s*cover/i.test(vp.content || '')) {
+      vp.content += ', viewport-fit=cover';
     }
     const setVH = () => document.documentElement.style.setProperty('--app-vh', `${innerHeight * .01}px`);
     setVH();
@@ -132,9 +122,8 @@
     viewportFix();
     registerSW();
     protectExternalOfflineLinks();
-    if (!isInstalled()) setTimeout(showInstall, INSTALL_DELAY);
+    if (!isInstalled()) setTimeout(showInstall, 8000);
   }
-
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once:true });
   else boot();
 })();
