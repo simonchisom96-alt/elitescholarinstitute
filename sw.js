@@ -1,4 +1,4 @@
-const CACHE_NAME = 'elite-scholar-v36.2280';
+const CACHE_NAME = 'elite-scholar-v36.2281';
 const OFFLINE_URL = '/offline.html';
 
 const APP_SHELL = [
@@ -27,60 +27,72 @@ const APP_SHELL = [
   '/multiplayer.js', '/singleplay.js'
 ];
 
-const sameOrigin = url => url.origin === self.location.origin;
-const good = response => response && response.ok;
-const absolute = path => new URL(path, self.location.origin).href;
+const isSameOrigin = request => new URL(request.url).origin === self.location.origin;
+const isUsable = response => response && response.ok;
 
-function htmlCandidates(url) {
-  const out = [url.href];
-  const path = url.pathname;
-  if (path === '/' || path === '') out.push(absolute('/index.html'));
-  else if (path.endsWith('.html')) out.push(absolute(path.slice(0, -5) || '/'));
-  else out.push(absolute(path + '.html'));
-  return [...new Set(out)];
+async function openAppCache() {
+  return caches.open(CACHE_NAME);
 }
 
-async function precacheItem(cache, path) {
-  const requested = new URL(path, self.location.origin);
-  const target = requested.pathname === '/' ? absolute('/index.html') : requested.href;
-  const response = await fetch(new Request(target, {
-    method: 'GET', cache: 'reload', redirect: 'follow'
-  }));
-  if (!good(response)) throw new Error(`Precache failed: ${path} (${response.status})`);
-  await cache.put(requested.href, response.clone());
-  if (requested.pathname === '/') await cache.put(absolute('/index.html'), response.clone());
-}
-
-async function shellComplete() {
-  const cache = await caches.open(CACHE_NAME);
-  for (const path of APP_SHELL) {
-    const url = new URL(path, self.location.origin);
-    let hit = await cache.match(url.href, { ignoreSearch: true });
-    if (!good(hit) && url.pathname === '/') hit = await cache.match(absolute('/index.html'), { ignoreSearch: true });
-    if (!good(hit)) return false;
-  }
+async function cacheOne(cache, path) {
+  const request = new Request(new URL(path, self.location.origin).href, {
+    method: 'GET',
+    cache: 'reload',
+    redirect: 'follow'
+  });
+  const response = await fetch(request);
+  if (!isUsable(response)) throw new Error(`${path}: HTTP ${response.status}`);
+  await cache.put(request.url, response.clone());
   return true;
 }
 
-async function tellClients(message) {
-  const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-  list.forEach(client => client.postMessage(message));
+async function verifyShell() {
+  const cache = await openAppCache();
+  let missing = 0;
+  for (const path of APP_SHELL) {
+    const hit = await cache.match(new URL(path, self.location.origin).href, { ignoreSearch: true });
+    if (!isUsable(hit)) missing++;
+  }
+  return { complete: missing === 0, missing };
+}
+
+async function messageClients(message) {
+  const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  clients.forEach(client => client.postMessage(message));
 }
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
+    const cache = await openAppCache();
     let completed = 0;
+
+    // Never let one bad/missing file destroy the entire service-worker install.
+    // Every successful shell item is retained; failures are reported and can be
+    // retried naturally when that resource is requested later.
     for (const path of APP_SHELL) {
-      await precacheItem(cache, path);
+      try {
+        await cacheOne(cache, path);
+      } catch (error) {
+        console.warn('[ESI SW] shell item failed:', path, error);
+      }
       completed++;
-      await tellClients({
-        type: 'DOWNLOAD_PROGRESS', completed, total: APP_SHELL.length,
+      await messageClients({
+        type: 'DOWNLOAD_PROGRESS',
+        completed,
+        total: APP_SHELL.length,
         percent: Math.round(completed * 100 / APP_SHELL.length)
       });
     }
-    if (!(await shellComplete())) throw new Error('Application shell verification failed');
-    await tellClients({ type: 'DOWNLOAD_SUCCESS', completed: APP_SHELL.length, total: APP_SHELL.length, percent: 100 });
+
+    const result = await verifyShell();
+    await messageClients({
+      type: result.complete ? 'DOWNLOAD_SUCCESS' : 'DOWNLOAD_INCOMPLETE',
+      completed: APP_SHELL.length - result.missing,
+      total: APP_SHELL.length,
+      percent: Math.round((APP_SHELL.length - result.missing) * 100 / APP_SHELL.length),
+      missing: result.missing
+    });
+
     await self.skipWaiting();
   })());
 });
@@ -98,75 +110,58 @@ self.addEventListener('message', event => {
     event.waitUntil(self.skipWaiting());
     return;
   }
+
   if (event.data && event.data.type === 'CHECK_DOWNLOAD_COMPLETE') {
     event.waitUntil((async () => {
-      const complete = await shellComplete();
-      await tellClients(complete
-        ? { type: 'DOWNLOAD_SUCCESS', completed: APP_SHELL.length, total: APP_SHELL.length, percent: 100 }
-        : { type: 'DOWNLOAD_INCOMPLETE' });
+      const result = await verifyShell();
+      await messageClients({
+        type: result.complete ? 'DOWNLOAD_SUCCESS' : 'DOWNLOAD_INCOMPLETE',
+        completed: APP_SHELL.length - result.missing,
+        total: APP_SHELL.length,
+        percent: Math.round((APP_SHELL.length - result.missing) * 100 / APP_SHELL.length),
+        missing: result.missing
+      });
     })());
   }
 });
 
 self.addEventListener('fetch', event => {
   const request = event.request;
-  if (request.method !== 'GET') return;
-  const url = new URL(request.url);
-  if (!sameOrigin(url)) return;
+  if (request.method !== 'GET' || !isSameOrigin(request)) return;
 
-  // Cache-first for every same-origin asset. A successful network miss is cached,
-  // including images and files that are not part of APP_SHELL.
-  if (request.mode !== 'navigate' && request.destination !== 'document') {
-    event.respondWith((async () => {
-      const cache = await caches.open(CACHE_NAME);
-      const cached = await cache.match(request, { ignoreSearch: true });
-      if (cached) return cached;
-      try {
-        const response = await fetch(request);
-        if (good(response)) await cache.put(request, response.clone());
-        return response;
-      } catch {
-        return Response.error();
-      }
-    })());
-    return;
-  }
-
-  // Cache-first HTML navigation. No forced reload and no controllerchange reload:
-  // this prevents the blank-page/back-navigation failure.
   event.respondWith((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    for (const candidate of htmlCandidates(url)) {
-      const cached = await cache.match(candidate, { ignoreSearch: true });
-      if (good(cached)) return cached;
-    }
+    const cache = await openAppCache();
+
+    // CACHE FIRST: use the exact URL requested. No .html -> extensionless
+    // rewriting. Cloudflare Pages is allowed to serve the real HTML path.
+    const cached = await cache.match(request, { ignoreSearch: true });
+    if (cached) return cached;
 
     try {
-      const target = url.pathname === '/'
-        ? absolute('/index.html')
-        : url.pathname.endsWith('.html') ? url.href : absolute(url.pathname + '.html');
-      const response = await fetch(new Request(target, {
-        method: 'GET', headers: request.headers, redirect: 'follow'
-      }));
-      if (good(response)) {
-        await cache.put(url.href, response.clone());
-        await cache.put(target, response.clone());
-        if (url.pathname === '/') await cache.put(absolute('/index.html'), response.clone());
+      const response = await fetch(request);
+      if (isUsable(response)) {
+        await cache.put(request, response.clone());
       }
       return response;
-    } catch {
-      const offline = await cache.match(absolute(OFFLINE_URL), { ignoreSearch: true });
-      return offline || Response.error();
+    } catch (error) {
+      if (request.mode === 'navigate' || request.destination === 'document') {
+        const offline = await cache.match(new URL(OFFLINE_URL, self.location.origin).href, { ignoreSearch: true });
+        return offline || Response.error();
+      }
+      return Response.error();
     }
   })());
 });
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const target = event.notification.data && event.notification.data.url ? event.notification.data.url : '/';
+  const target = event.notification.data && event.notification.data.url
+    ? event.notification.data.url
+    : '/';
+
   event.waitUntil((async () => {
-    const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const client of list) {
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clients) {
       if (client.url.startsWith(self.location.origin)) {
         await client.navigate(target);
         return client.focus();
