@@ -1,8 +1,7 @@
-/* Elite Scholar Institute — application controller 36.2301 */
+/* Elite Scholar Institute — application controller 36.2303 */
 (() => {
   'use strict';
-  const BUILD='36.2301';
-  const SW_URL='/sw.js?v='+BUILD;
+  const BUILD='36.2303';
   const NOTIF_DB_URL='https://elite-notification-default-rtdb.firebaseio.com';
   let deferredInstall=null, installBox=null, hideTimer=null, latestNotifications={};
   const isInstalled=()=>matchMedia?.('(display-mode: standalone)').matches||matchMedia?.('(display-mode: window-controls-overlay)').matches||navigator.standalone===true||/ESIAndroid\//i.test(navigator.userAgent);
@@ -20,7 +19,13 @@
   addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;window.__esiInstallAvailable=true;showInstall()});
   addEventListener('appinstalled',()=>{deferredInstall=null;window.__esiInstallAvailable=false;hideInstall();toast('App installed successfully','#16a34a')});
 
-  function setupSW(){if(!('serviceWorker'in navigator))return;navigator.serviceWorker.addEventListener('message',e=>{if(e.data?.type==='DOWNLOAD_PROGRESS')dispatchEvent(new CustomEvent('esiDownloadProgress',{detail:e.data}));if(e.data?.type==='DOWNLOAD_SUCCESS')toast('App downloaded successfully','#16a34a')});navigator.serviceWorker.register(SW_URL,{scope:'/',updateViaCache:'none'}).then(r=>r.update().catch(()=>{})).catch(e=>console.warn('[ESI SW]',e))}
+  // Service worker intentionally disabled. The website is served directly by Cloudflare Pages.
+  // This also removes any previously installed ESI worker so it cannot intercept navigation.
+  async function removeLegacyServiceWorkers(){
+    if(!('serviceWorker' in navigator))return;
+    try{const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(r=>r.unregister()));}catch(_){ }
+    try{const keys=await caches.keys();await Promise.all(keys.filter(k=>/^esi[-_]/i.test(k)).map(k=>caches.delete(k)));}catch(_){ }
+  }
 
   function ensureBell(){if(location.pathname.endsWith('/notification.html')||document.getElementById('notifBellBtn'))return;const s=document.createElement('style');s.textContent='#notifBellBtn{position:fixed;top:calc(260px + env(safe-area-inset-top));right:5px;z-index:9990;background:#0f172a;border:1px solid #2563eb;border-radius:50%;width:42px;height:42px;display:grid;place-items:center;font-size:19px;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35);cursor:pointer}#globalUnreadBadge{display:none;position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:#ff2d55;box-shadow:0 0 8px 2px rgba(255,45,85,.9)}#globalUnreadBadge.show{display:block}';document.head.appendChild(s);const b=document.createElement('button');b.id='notifBellBtn';b.setAttribute('aria-label','Notifications');b.innerHTML='🔔<span id="globalUnreadBadge"></span>';b.onclick=()=>location.href='/notification.html';document.body.appendChild(b)}
   function updateBell(){const b=document.getElementById('globalUnreadBadge');if(!b)return;let read=new Set();try{read=new Set(JSON.parse(localStorage.getItem('notif_read_ids')||'[]'))}catch(_){}const n=Object.keys(latestNotifications).filter(id=>!read.has(id)).length;b.classList.toggle('show',n>0&&!location.pathname.endsWith('/notification.html'))}
@@ -29,7 +34,7 @@
   function setupBell(){ensureBell();firebaseLoad(()=>{if(!window.firebase?.database||!window.firebase?.auth)return;let a;try{const c=window.FIREBASE_CONFIG||{apiKey:'AIzaSyDkjELsB4qeaumvsMAIDGIFZgNzl6eoBPM',authDomain:'elite-notification.firebaseapp.com',databaseURL:NOTIF_DB_URL,projectId:'elite-notification',storageBucket:'elite-notification.firebasestorage.app',messagingSenderId:'359910414254',appId:'1:359910414254:web:a1bafd3e23fd554a975a3f'};a=firebase.apps.find(x=>x.name==='notifications')||firebase.initializeApp(c,'notifications')}catch(_){return}const auth=a.auth(),db=a.database();(auth.currentUser?Promise.resolve():auth.signInAnonymously().catch(()=>null)).then(()=>db.ref('notifications').orderByChild('timestamp').limitToLast(50).on('value',snap=>{latestNotifications=snap.val()||{};updateBell()}))})}
 
   addEventListener('online',()=>toast('Back Online','#16a34a'));addEventListener('offline',()=>toast('You are offline','#dc2626'));
-  function boot(){manifest();viewport();setupSW();setupBell();createInstall();if(!isInstalled())setTimeout(showInstall,8000)}
+  async function boot(){manifest();viewport();await removeLegacyServiceWorkers();setupBell();createInstall();if(!isInstalled())setTimeout(showInstall,8000)}
   addEventListener('pageshow',()=>{if(!isInstalled())setTimeout(showInstall,500)});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
