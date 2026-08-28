@@ -36,7 +36,7 @@ header *,[class*="header" i] *,[id*="header" i] *,[class*="topbar" i] *,[class*=
 [class*="bottom-nav" i],[class*="tab-bar" i],[class*="tabbar" i],[class*="footer-nav" i],[class*="bottombar" i],[class*="bottom-bar" i]{padding-bottom:max(8px,env(safe-area-inset-bottom)) !important;box-sizing:border-box !important;flex-shrink:0}`;
   document.head.appendChild(style);
 
-  const CACHE_VERSION = 'elite-scholar-v36.2272';
+  const CACHE_VERSION = 'elite-scholar-v36.2275';
 
   // ===== NOTIFICATION SYSTEM CONFIG =====
   // Hung on window so BOTH this IIFE and the separate bell-badge IIFE below can
@@ -242,7 +242,7 @@ header *,[class*="header" i] *,[id*="header" i] *,[class*="topbar" i] *,[class*=
     p.style.display = 'block';
     requestAnimationFrame(() => p.classList.add('show'));
     clearTimeout(hideTimer);
-    hideTimer = setTimeout(() => hideInstallPopup(), 4500);
+    hideTimer = setTimeout(() => hideInstallPopup(), 7000);
   }
 
   function hideInstallPopup() {
@@ -282,7 +282,6 @@ header *,[class*="header" i] *,[id*="header" i] *,[class*="topbar" i] *,[class*=
       else { el.style.transform = ''; el.style.opacity = ''; }
     });
   })();
-
   // FIX (the real gap): 'load' does NOT reliably fire when a page is restored from the
   // browser's back/forward cache — hitting the browser's own back button after leaving a
   // page very often restores it instantly from memory with zero 'load' event at all. That
@@ -369,7 +368,7 @@ header *,[class*="header" i] *,[id*="header" i] *,[class*="topbar" i] *,[class*=
   }
 
   async function handleOnlineEvent() {
-    if (!isAppMode() || Notification.permission!== 'granted') return;
+    if (!isAppMode() || !('Notification' in window) || Notification.permission !== 'granted') return;
     let i = parseInt(localStorage.getItem('esiNotifIndex') || '0');
     if (i >= NOTIFICATIONS.length) i = 0;
     const d = NOTIFICATIONS[i];
@@ -691,3 +690,4 @@ function loadFirebaseSDKThen(callback){
 
 
 
+    
