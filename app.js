@@ -24,7 +24,7 @@
   if (window.visualViewport) window.visualViewport.addEventListener('resize', esiSetRealVH);
   // Real app optimization
   const style = document.createElement('style');
-  style.textContent = `html,body{overflow-x:hidden;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;min-height:100vh;min-height:calc(var(--app-vh,1vh) * 100);min-height:100dvh}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}img{content-visibility:auto}@media(display-mode:standalone){body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}::-webkit-scrollbar{display:none}}
+  style.textContent = `html,body{overflow-x:visible;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;min-height:100vh;min-height:calc(var(--app-vh,1vh) * 100);min-height:100dvh}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}img{content-visibility:auto}@media(display-mode:standalone){body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}::-webkit-scrollbar{display:none}}
 header,[class*="header" i],[id*="header" i],[class*="topbar" i],[class*="top-bar" i],[id*="topbar" i],[class*="navbar" i],[class*="nav-bar" i],[class*="appbar" i],[class*="app-bar" i]{padding-top:max(12px,env(safe-area-inset-top)) !important;padding-left:max(0px,env(safe-area-inset-left)) !important;padding-right:max(0px,env(safe-area-inset-right)) !important;box-sizing:border-box !important;flex-shrink:0}
 header *,[class*="header" i] *,[id*="header" i] *,[class*="topbar" i] *,[class*="top-bar" i] *,[class*="navbar" i] *,[class*="appbar" i] *{min-width:0}
 [class*="logo-box" i],[class*="header-title" i],[class*="header-row" i]{flex-wrap:nowrap;min-width:0}
@@ -36,7 +36,7 @@ header *,[class*="header" i] *,[id*="header" i] *,[class*="topbar" i] *,[class*=
 [class*="bottom-nav" i],[class*="tab-bar" i],[class*="tabbar" i],[class*="footer-nav" i],[class*="bottombar" i],[class*="bottom-bar" i]{padding-bottom:max(8px,env(safe-area-inset-bottom)) !important;box-sizing:border-box !important;flex-shrink:0}`;
   document.head.appendChild(style);
 
-  const CACHE_VERSION = 'elite-scholar-v36.2276';
+  const CACHE_VERSION = 'elite-scholar-v36.2277';
 
   // ===== NOTIFICATION SYSTEM CONFIG =====
   // Hung on window so BOTH this IIFE and the separate bell-badge IIFE below can
