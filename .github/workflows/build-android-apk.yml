@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'android/**'
+      - 'app.js'
       - '.github/workflows/build-android-apk.yml'
   workflow_dispatch:
 
@@ -40,7 +41,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: EliteScholarInstitute-36.2304-debug
+          name: EliteScholarInstitute-36.2306-debug
           path: EliteScholarInstitute.apk
           if-no-files-found: error
           retention-days: 30
@@ -49,9 +50,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="android-36.2304-${GITHUB_RUN_NUMBER}"
+          TAG="android-36.2306-${GITHUB_RUN_NUMBER}"
           gh release create "$TAG" EliteScholarInstitute.apk \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "Elite Scholar Institute Android 36.2304" \
+            --title "Elite Scholar Institute Android 36.2306" \
             --notes "Android APK build for Elite Scholar Institute."
