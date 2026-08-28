@@ -1,18 +1,22 @@
-/* Elite Scholar Institute — on-demand cache helper 36.2293 */
+/* Elite Scholar Institute — on-demand cache helper 36.2294 */
 (() => {
   'use strict';
 
-  const CACHE_NAME = 'elite-scholar-v36.2293';
-  const toUrl = value => { try { const u = new URL(value, location.href); u.hash=''; return u.href; } catch (_) { return null; } };
+  const CACHE_NAME = 'elite-scholar-v36.2294';
+  const toUrl = value => {
+    try { const u = new URL(value, location.href); u.hash = ''; return u.href; }
+    catch (_) { return null; }
+  };
 
   async function cacheOne(rawUrl) {
     const url = toUrl(rawUrl);
     if (!url || new URL(url).origin !== location.origin) throw new Error('Only same-origin resources can be cached.');
     const cache = await caches.open(CACHE_NAME);
-    if (await cache.match(url, {ignoreSearch:true})) return true;
-    const response = await fetch(new Request(url, {method:'GET', cache:'no-store', redirect:'follow'}));
+    if (await cache.match(url, { ignoreSearch: true })) return true;
+    const response = await fetch(new Request(url, { method:'GET', cache:'no-store', redirect:'follow' }));
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     await cache.put(url, response.clone());
+    navigator.serviceWorker?.controller?.postMessage({ type:'CACHE_URLS', urls:[url] });
     return true;
   }
 
@@ -20,7 +24,11 @@
     for (const url of urls) { try { await cacheOne(url); } catch (error) { console.warn('[ESI cache]', url, error); } }
   }
 
-  window.ESICache = { cache:cacheOne, cacheMany:cacheUrls, cacheCurrentPage:() => cacheOne(location.href) };
+  window.ESICache = {
+    cache: cacheOne,
+    cacheMany: cacheUrls,
+    cacheCurrentPage: () => cacheOne(location.href)
+  };
 
   function init() {
     document.querySelectorAll('.download-btn').forEach(button => {
@@ -33,11 +41,23 @@
         const target = toUrl(raw);
         if (!target) return;
         event.preventDefault();
-        try { await cacheOne(target); location.href = target; }
-        catch (error) { console.warn('[ESI downloader]', error); window.showToast?.('Unable to cache this file. Check your connection.'); }
+        try {
+          await cacheOne(target);
+          location.href = target;
+        } catch (error) {
+          console.warn('[ESI downloader]', error);
+          window.showToast?.('Unable to cache this file. Check your connection.');
+        }
       });
     });
+
+    // Cache the page itself after it has successfully loaded. This makes normal
+    // browsing progressively offline-capable without changing page navigation.
+    if (navigator.serviceWorker?.controller) {
+      navigator.serviceWorker.controller.postMessage({ type:'CACHE_URLS', urls:[location.href] });
+    }
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true}); else init();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once:true });
+  else init();
 })();
