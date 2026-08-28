@@ -1,91 +1,60 @@
-/* Elite Scholar Institute — clean on-demand downloader 36.2290 */
+/* Elite Scholar Institute — on-demand cache helper 36.2292 */
 (() => {
   'use strict';
 
-  const CACHE_NAME = 'elite-scholar-v36.2290';
+  const CACHE_NAME = 'elite-scholar-v36.2292';
 
-  const absoluteUrl = value => {
+  const toUrl = value => {
     try {
-      const url = new URL(value, location.href);
-      url.hash = '';
-      return url.href;
-    } catch (_) {
-      return null;
-    }
+      const u = new URL(value, location.href);
+      u.hash = '';
+      return u.href;
+    } catch (_) { return null; }
   };
 
-  async function getCache() {
-    return caches.open(CACHE_NAME);
-  }
-
-  async function setState(button, text, success = false) {
-    const label = button.querySelector('.btn-text');
-    const percent = button.querySelector('.percent');
-    button.classList.remove('loading');
-    button.classList.toggle('success', success);
-    if (label) label.textContent = text;
-    if (percent) percent.textContent = '';
-  }
-
-  async function cacheResource(url) {
-    const cache = await getCache();
-    const existing = await cache.match(url, { ignoreSearch:true });
-    if (existing) return true;
-
-    if (!navigator.onLine) throw new Error('offline');
-    const response = await fetch(url, { method:'GET', cache:'no-store', redirect:'follow' });
+  async function cacheOne(rawUrl) {
+    const url = toUrl(rawUrl);
+    if (!url || new URL(url).origin !== location.origin) throw new Error('Only same-origin resources can be cached.');
+    const cache = await caches.open(CACHE_NAME);
+    if (await cache.match(url, { ignoreSearch:true })) return true;
+    const response = await fetch(new Request(url, { method:'GET', cache:'no-store', redirect:'follow' }));
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     await cache.put(url, response.clone());
     return true;
   }
 
+  async function cacheUrls(urls) {
+    for (const url of urls) {
+      try { await cacheOne(url); } catch (error) { console.warn('[ESI cache]', url, error); }
+    }
+  }
+
+  // Expose a small API for existing pages without requiring HTML changes.
+  window.ESICache = {
+    cache: cacheOne,
+    cacheMany: cacheUrls,
+    cacheCurrentPage: () => cacheOne(location.href)
+  };
+
+  // If a page already uses .download-btn + data-url, keep that behavior.
   function init() {
     document.querySelectorAll('.download-btn').forEach(button => {
-      const card = button.closest('.book-card');
-      const raw = card?.dataset.url;
-      const url = raw ? absoluteUrl(raw) : null;
-      if (!url) return;
-
-      getCache().then(cache => cache.match(url, { ignoreSearch:true }))
-        .then(hit => { if (hit) setState(button, '✓ Open', true); })
-        .catch(() => {});
+      if (button.dataset.esiDownloaderReady === '1') return;
+      const holder = button.closest('[data-url]');
+      const raw = holder?.dataset.url || button.dataset.url;
+      if (!raw) return;
+      button.dataset.esiDownloaderReady = '1';
 
       button.addEventListener('click', async event => {
+        const target = toUrl(raw);
+        if (!target) return;
         event.preventDefault();
-        if (button.classList.contains('loading')) return;
-
-        const target = absoluteUrl(card?.dataset.url);
-        if (!target || card?.dataset.url?.includes('PASTE_')) {
-          window.showToast?.('PDF link is not configured');
-          return;
-        }
-
-        const cache = await getCache();
-        const already = await cache.match(target, { ignoreSearch:true });
-        if (already) {
-          location.href = target;
-          return;
-        }
-
-        if (!navigator.onLine) {
-          window.showToast?.('Connect to the internet to download this file first');
-          return;
-        }
-
-        button.classList.add('loading');
-        const label = button.querySelector('.btn-text');
-        if (label) label.textContent = 'Downloading...';
-
         try {
-          const response = await fetch(target, { method:'GET', cache:'no-store', redirect:'follow' });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          await cache.put(target, response.clone());
-          await setState(button, '✓ Open', true);
-          setTimeout(() => { location.href = target; }, 200);
+          await cacheOne(target);
+          location.href = target;
         } catch (error) {
-          console.error('[ESI downloader]', error);
-          await setState(button, '⬇ Download Now');
-          window.showToast?.('Download failed. Check your internet connection');
+          console.warn('[ESI downloader]', error);
+          window.showToast?.('Unable to cache this file. Check your connection.');
         }
       });
     });
