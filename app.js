@@ -1,94 +1,66 @@
-/* Elite Scholar Institute — clean application controller 36.2290 */
+/* Elite Scholar Institute — application controller 36.2292 */
 (() => {
   'use strict';
 
-  const BUILD = '36.2290';
+  const BUILD = '36.2292';
   const SW_URL = '/sw.js';
   const INSTALL_DELAY = 8000;
-  let installEvent = null;
+  let deferredInstall = null;
   let installTimer = 0;
 
-  const installed = () =>
+  const isInstalled = () =>
     window.matchMedia?.('(display-mode: standalone)').matches ||
     window.matchMedia?.('(display-mode: window-controls-overlay)').matches ||
     window.navigator.standalone === true;
 
   const toast = (message, background = '#111827') => {
-    document.querySelectorAll('[data-esi-toast]').forEach(node => node.remove());
-    const node = document.createElement('div');
-    node.dataset.esiToast = '1';
-    node.textContent = message;
-    node.style.cssText = `position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:2147483647;max-width:92%;padding:12px 18px;border-radius:12px;background:${background};color:#fff;font:600 14px system-ui,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,.28);text-align:center`;
-    (document.body || document.documentElement).appendChild(node);
-    setTimeout(() => node.remove(), 4000);
+    document.querySelectorAll('[data-esi-toast]').forEach(n => n.remove());
+    const n = document.createElement('div');
+    n.dataset.esiToast = '1';
+    n.textContent = message;
+    n.style.cssText = `position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:2147483647;max-width:92%;padding:12px 18px;border-radius:12px;background:${background};color:#fff;font:600 14px system-ui,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,.28);text-align:center`;
+    (document.body || document.documentElement).appendChild(n);
+    setTimeout(() => n.remove(), 4000);
   };
   window.showToast = toast;
 
-  function installStyles() {
-    if (document.getElementById('esi2290Style')) return;
-    const style = document.createElement('style');
-    style.id = 'esi2290Style';
-    style.textContent = `
-      html,body{min-height:100%;min-height:100dvh;overflow-x:hidden}
-      *,*::before,*::after{box-sizing:border-box}
-      #esi2290Install{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;width:min(92vw,400px);z-index:2147483646;background:#0f172a;color:#fff;border:1px solid #2563eb;border-radius:17px;padding:13px;box-shadow:0 12px 40px rgba(0,0,0,.38);opacity:0;visibility:hidden;pointer-events:none;transform:translate(-50%,-18px);transition:opacity .25s ease,transform .25s ease,visibility .25s ease}
-      #esi2290Install.esi-open{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0)}
-      #esi2290Install button{font:700 13px system-ui,sans-serif}
-    `;
-    document.head.appendChild(style);
-  }
-
   function createInstallUI() {
-    if (document.getElementById('esi2290Install')) return;
+    if (document.getElementById('esi2292Install') || isInstalled()) return;
+    const css = document.createElement('style');
+    css.id = 'esi2292InstallCSS';
+    css.textContent = `#esi2292Install{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;width:min(92vw,400px);z-index:2147483646;background:#0f172a;color:#fff;border:1px solid #2563eb;border-radius:17px;padding:13px;box-shadow:0 12px 40px rgba(0,0,0,.38);opacity:0;visibility:hidden;pointer-events:none;transform:translate(-50%,-18px);transition:opacity .25s ease,transform .25s ease,visibility .25s ease}#esi2292Install.open{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0)}`;
+    document.head.appendChild(css);
     const box = document.createElement('section');
-    box.id = 'esi2290Install';
-    box.setAttribute('aria-label', 'Install Elite Scholar Institute');
-    box.innerHTML = `
-      <button type="button" id="esi2290Close" aria-label="Close" style="position:absolute;right:8px;top:8px;width:27px;height:27px;border:0;border-radius:50%;background:rgba(255,255,255,.08);color:#cbd5e1;font-size:17px">×</button>
-      <div style="display:flex;align-items:center;gap:10px;padding-right:30px">
-        <img src="/logo.jpg" alt="Elite Scholar Institute" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex:0 0 auto">
-        <div style="min-width:0">
-          <strong style="display:block;color:#60a5fa;font:700 13.5px system-ui,sans-serif">ELITE SCHOLAR INSTITUTE</strong>
-          <span style="display:block;margin-top:3px;color:#e5e7eb;font:400 12px/1.45 system-ui,sans-serif">Install the app for faster access and offline learning.</span>
-        </div>
-      </div>
-      <button type="button" id="esi2290InstallButton" style="display:block;width:100%;margin-top:11px;padding:11px;border:0;border-radius:11px;background:#2563eb;color:#fff;cursor:pointer">Install Now</button>
-    `;
+    box.id = 'esi2292Install';
+    box.innerHTML = `<button type="button" id="esi2292Close" aria-label="Close" style="position:absolute;right:8px;top:8px;width:27px;height:27px;border:0;border-radius:50%;background:rgba(255,255,255,.08);color:#cbd5e1;font-size:17px">×</button><div style="display:flex;align-items:center;gap:10px;padding-right:30px"><img src="/logo.jpg" alt="Elite Scholar Institute" style="width:40px;height:40px;border-radius:50%;object-fit:cover"><div><strong style="display:block;color:#60a5fa;font:700 13.5px system-ui,sans-serif">ELITE SCHOLAR INSTITUTE</strong><span style="display:block;margin-top:3px;color:#e5e7eb;font:400 12px/1.45 system-ui,sans-serif">Install the app for faster access and offline learning.</span></div></div><button type="button" id="esi2292InstallButton" style="display:block;width:100%;margin-top:11px;padding:11px;border:0;border-radius:11px;background:#2563eb;color:#fff;cursor:pointer;font:700 13px system-ui,sans-serif">Install Now</button>`;
     document.body.appendChild(box);
-    box.querySelector('#esi2290Close').addEventListener('click', hideInstall);
-    box.querySelector('#esi2290InstallButton').addEventListener('click', installNow);
+    box.querySelector('#esi2292Close').addEventListener('click', hideInstall);
+    box.querySelector('#esi2292InstallButton').addEventListener('click', installNow);
   }
 
   function showInstall() {
-    if (installed()) return;
+    if (isInstalled()) return;
     createInstallUI();
-    const box = document.getElementById('esi2290Install');
+    const box = document.getElementById('esi2292Install');
     if (!box) return;
-    box.classList.add('esi-open');
+    box.classList.add('open');
     clearTimeout(installTimer);
     installTimer = setTimeout(hideInstall, 9000);
   }
 
   function hideInstall() {
-    const box = document.getElementById('esi2290Install');
-    if (box) box.classList.remove('esi-open');
+    const box = document.getElementById('esi2292Install');
+    if (box) box.classList.remove('open');
     clearTimeout(installTimer);
   }
 
   async function installNow() {
-    if (!installEvent) {
-      try {
-        const registration = await navigator.serviceWorker?.getRegistration('/');
-        await registration?.update();
-      } catch (_) {}
-      await new Promise(resolve => setTimeout(resolve, 350));
-      if (installEvent) return installNow();
-      toast('The browser has not supplied its native install prompt yet. Use the browser Install App command.', '#2563eb');
+    if (!deferredInstall) {
+      toast('Chrome has not made the native install prompt available for this page yet. Use the browser menu → Install app.', '#2563eb');
       return;
     }
-
-    const event = installEvent;
-    installEvent = null;
+    const event = deferredInstall;
+    deferredInstall = null;
     try {
       event.prompt();
       await event.userChoice;
@@ -98,13 +70,13 @@
 
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
-    installEvent = event;
+    deferredInstall = event;
     window.__esiInstallAvailable = true;
     showInstall();
   });
 
   window.addEventListener('appinstalled', () => {
-    installEvent = null;
+    deferredInstall = null;
     window.__esiInstallAvailable = false;
     hideInstall();
     toast('App installed successfully', '#16a34a');
@@ -122,7 +94,7 @@
       .catch(error => console.warn('[ESI SW]', error));
   }
 
-  function offlineExternalProtection() {
+  function protectExternalOfflineLinks() {
     document.addEventListener('click', event => {
       const link = event.target.closest?.('a[href]');
       if (!link || navigator.onLine) return;
@@ -141,7 +113,14 @@
     });
   }
 
-  function setupViewport() {
+  function viewportFix() {
+    let vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) {
+      vp = document.createElement('meta');
+      vp.name = 'viewport';
+      vp.content = 'width=device-width, initial-scale=1, viewport-fit=cover';
+      document.head.appendChild(vp);
+    }
     const setVH = () => document.documentElement.style.setProperty('--app-vh', `${innerHeight * .01}px`);
     setVH();
     addEventListener('resize', setVH, { passive:true });
@@ -149,31 +128,11 @@
     if (window.visualViewport) visualViewport.addEventListener('resize', setVH, { passive:true });
   }
 
-  function showWhatsappPopup(item) {
-    document.getElementById('whatsappPopupBanner')?.remove();
-    const node = document.createElement('div');
-    node.id = 'whatsappPopupBanner';
-    node.style.cssText='position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:92%;max-width:400px;z-index:2147483640;background:#0f172a;color:#f8fafc;border:1px solid #2563eb;border-radius:16px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);font:400 12.5px/1.45 system-ui,sans-serif;cursor:pointer';
-    const author = document.createElement('strong');
-    author.style.color = '#60a5fa';
-    author.textContent = item?.author || 'Elite Scholar Admin';
-    const body = document.createElement('div');
-    body.style.marginTop = '5px';
-    body.textContent = item?.body || 'New broadcast message received.';
-    node.append(author, body);
-    node.addEventListener('click', () => { if (item?.url) location.href = item.url; });
-    document.body.appendChild(node);
-    setTimeout(() => node.remove(), 7500);
-  }
-  window.showWhatsappPopup = showWhatsappPopup;
-  window.closePopupBanner = () => document.getElementById('whatsappPopupBanner')?.remove();
-
   function boot() {
-    installStyles();
-    setupViewport();
+    viewportFix();
     registerSW();
-    offlineExternalProtection();
-    if (!installed()) setTimeout(showInstall, INSTALL_DELAY);
+    protectExternalOfflineLinks();
+    if (!isInstalled()) setTimeout(showInstall, INSTALL_DELAY);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once:true });
