@@ -1,99 +1,103 @@
-document.addEventListener('DOMContentLoaded', async function(){
-  const CACHE_NAME = 'elite-scholar-v36.2279';
-  const cache = await caches.open(CACHE_NAME);
-  const btns = document.querySelectorAll('.download-btn');
+(() => {
+  const CACHE_NAME = 'elite-scholar-v36.2280';
 
-  const getCleanUrl = (url) => {
-    const clean = new URL(url, location.origin);
-    return clean.origin + clean.pathname;
-  };
-
-  for(const btn of btns){
-    const card = btn.closest('.book-card');
-    if(!card) continue;
-    const url = card.dataset.url;
-    if(!url) continue;
-    const absoluteUrl = getCleanUrl(url);
-    const btnText = btn.querySelector('.btn-text');
-    const cached = await cache.match(absoluteUrl);
-    if(cached && btnText){
-      btn.classList.add('success');
-      btnText.textContent = '✓ Open';
-    }
+  function cleanUrl(value) {
+    try {
+      const u = new URL(value, location.href);
+      u.hash = '';
+      return u.href;
+    } catch (_) { return value; }
   }
 
-  btns.forEach(btn => {
-    btn.addEventListener('click', async function(e){
-      e.preventDefault();
-      if(btn.classList.contains('loading')) return;
+  async function openCache() {
+    return caches.open(CACHE_NAME);
+  }
+
+  async function markButton(btn, text, success) {
+    const label = btn.querySelector('.btn-text');
+    const percent = btn.querySelector('.percent');
+    btn.classList.toggle('success', !!success);
+    btn.classList.remove('loading');
+    if (label) label.textContent = text;
+    if (percent) percent.textContent = '';
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const cache = await openCache();
+    const buttons = document.querySelectorAll('.download-btn');
+
+    // Show already cached PDFs immediately.
+    for (const btn of buttons) {
       const card = btn.closest('.book-card');
-      if(!card) return;
-      const url = card.dataset.url;
-      const btnText = btn.querySelector('.btn-text');
+      const raw = card?.dataset.url;
+      if (!raw) continue;
+      const url = cleanUrl(raw);
+      if (await cache.match(url, { ignoreSearch: true })) await markButton(btn, '✓ Open', true);
+    }
+
+    buttons.forEach(btn => btn.addEventListener('click', async e => {
+      e.preventDefault();
+      if (btn.classList.contains('loading')) return;
+
+      const card = btn.closest('.book-card');
+      const raw = card?.dataset.url;
+      const label = btn.querySelector('.btn-text');
       const percent = btn.querySelector('.percent');
-      if(!url || url.includes('PASTE_')){
-        window.showToast('❌ PDF link not set yet');
+      if (!raw || raw.includes('PASTE_')) {
+        window.showToast?.('❌ PDF link not set yet');
         return;
       }
-      const absoluteUrl = getCleanUrl(url);
-      const cached = await cache.match(absoluteUrl);
-      if(cached){
-        location.href = absoluteUrl;
+
+      const url = cleanUrl(raw);
+      const cached = await cache.match(url, { ignoreSearch: true });
+      if (cached) {
+        location.href = url;
         return;
       }
-      if(!navigator.onLine){
-        window.showToast("Connect your internet to download first");
+      if (!navigator.onLine) {
+        window.showToast?.('Connect your internet to download first');
         return;
       }
+
       btn.classList.add('loading');
-      if(btnText) btnText.textContent = 'Downloading...';
-      if(percent) percent.textContent = '0%';
+      if (label) label.textContent = 'Downloading...';
+      if (percent) percent.textContent = '0%';
+
       try {
-        const res = await fetch(absoluteUrl, {cache: 'no-store'});
-        if(!res.ok) throw new Error('Fetch failed');
-        if (!res.body) {
-          const blob = await res.blob();
-          await cache.put(absoluteUrl, new Response(blob, {headers: {'Content-Type': 'application/pdf'}}));
-          if(percent) percent.textContent = '100%';
-        } else {
-          const totalBytes = parseInt(res.headers.get('content-length'), 10) || 0;
-          let receivedBytes = 0;
-          const reader = res.body.getReader();
+        const response = await fetch(url, { cache: 'no-store', redirect: 'follow' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        // Stream into a Blob so the progress indicator works where the server
+        // exposes Content-Length. The final response is then stored in the same
+        // cache used by the service worker.
+        if (response.body) {
+          const reader = response.body.getReader();
           const chunks = [];
-          while(true) {
-            const {done, value} = await reader.read();
-            if(done) break;
-            chunks.push(value);
-            receivedBytes += value.length;
-            if(totalBytes > 0 && percent) {
-              const currentPercent = Math.round((receivedBytes / totalBytes) * 100);
-              percent.textContent = currentPercent + '%';
-            }
+          const total = Number(response.headers.get('content-length')) || 0;
+          let received = 0;
+          while (true) {
+            const part = await reader.read();
+            if (part.done) break;
+            chunks.push(part.value);
+            received += part.value.byteLength;
+            if (total && percent) percent.textContent = `${Math.min(100, Math.round(received * 100 / total))}%`;
           }
-          const allChunks = new Uint8Array(receivedBytes);
-          let position = 0;
-          for(const chunk of chunks) {
-            allChunks.set(chunk, position);
-            position += chunk.length;
-          }
-          const blob = new Blob([allChunks], {type: 'application/pdf'});
-          await cache.put(absoluteUrl, new Response(blob, {headers: {'Content-Type': 'application/pdf'}}));
-          if(percent) percent.textContent = '100%';
+          const bytes = new Uint8Array(received);
+          let offset = 0;
+          for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+          await cache.put(url, new Response(new Blob([bytes], { type: response.headers.get('content-type') || 'application/pdf' })));
+        } else {
+          await cache.put(url, response.clone());
         }
-        setTimeout(() => {
-          btn.classList.remove('loading');
-          btn.classList.add('success');
-          if(btnText) btnText.textContent = '✓ Open';
-          if(percent) percent.textContent = '';
-          location.href = absoluteUrl;
-        }, 300);
-      } catch(err) {
-        console.error('Download error:', err);
-        btn.classList.remove('loading');
-        if(btnText) btnText.textContent = '⬇ Download Now';
-        if(percent) percent.textContent = '';
-        window.showToast('Download failed. Check internet');
+
+        if (percent) percent.textContent = '100%';
+        await markButton(btn, '✓ Open', true);
+        setTimeout(() => { location.href = url; }, 250);
+      } catch (err) {
+        console.error('[ESI downloader]', err);
+        await markButton(btn, '⬇ Download Now', false);
+        window.showToast?.('Download failed. Check your internet connection');
       }
-    });
+    }));
   });
-});
+})();
