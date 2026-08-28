@@ -1,4 +1,4 @@
-const CACHE_NAME = 'elite-scholar-v36.2271';
+const CACHE_NAME = 'elite-scholar-v36.2272';
 const OFFLINE_URL = '/offline.html';
 
 const APP_SHELL = [
