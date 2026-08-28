@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/36.2304"
+            userAgentString = "$userAgentString ESIAndroid/36.2306"
         }
 
         CookieManager.getInstance().setAcceptCookie(true)
