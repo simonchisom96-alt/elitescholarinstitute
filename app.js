@@ -36,7 +36,7 @@ header *,[class*="header" i] *,[id*="header" i] *,[class*="topbar" i] *,[class*=
 [class*="bottom-nav" i],[class*="tab-bar" i],[class*="tabbar" i],[class*="footer-nav" i],[class*="bottombar" i],[class*="bottom-bar" i]{padding-bottom:max(8px,env(safe-area-inset-bottom)) !important;box-sizing:border-box !important;flex-shrink:0}`;
   document.head.appendChild(style);
 
-  const CACHE_VERSION = 'elite-scholar-v36.2269';
+  const CACHE_VERSION = 'elite-scholar-v36.2270';
 
   // ===== NOTIFICATION SYSTEM CONFIG =====
   // Hung on window so BOTH this IIFE and the separate bell-badge IIFE below can
