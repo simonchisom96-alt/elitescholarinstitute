@@ -147,10 +147,10 @@ self.addEventListener('fetch', (e) => {
     e.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
       let ch = await cache.match(req, { ignoreSearch: true });
-      if (ch) return ch;
+      if (ch && !ch.redirected) return ch;
       if (!u.pathname.endsWith('/') && !u.pathname.includes('.')) {
         ch = await cache.match(u.pathname + '.html');
-        if (ch) return ch;
+        if (ch && !ch.redirected) return ch;
       }
       if (u.pathname === '/' || u.pathname === '/index.html') {
         ch = await cache.match('/index.html');
