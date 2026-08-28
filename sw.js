@@ -1,4 +1,4 @@
-const CACHE_NAME = 'elite-scholar-v36.2270';
+const CACHE_NAME = 'elite-scholar-v36.2271';
 const OFFLINE_URL = '/offline.html';
 
 const APP_SHELL = [
@@ -157,7 +157,7 @@ self.addEventListener('fetch', (e) => {
         if (ch) return ch;
       }
       try {
-        const r = await fetch(req);
+        const r = await fetch(new Request(req, { redirect: 'follow' }));
         if (r.ok) cache.put(req, r.clone());
         return r;
       } catch {
