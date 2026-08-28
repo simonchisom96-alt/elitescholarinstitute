@@ -6,10 +6,8 @@ import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
 import android.webkit.CookieManager
-import android.webkit.ServiceWorkerClient
 import android.webkit.ServiceWorkerController
 import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -28,8 +26,8 @@ class MainActivity : ComponentActivity() {
         webView = WebView(this)
         webView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         setContentView(webView)
-        configureServiceWorker()
 
+        configureServiceWorker()
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -42,7 +40,7 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/36.2294"
+            userAgentString = "$userAgentString ESIAndroid/36.2296"
         }
 
         CookieManager.getInstance().setAcceptCookie(true)
@@ -59,7 +57,9 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) webView.loadUrl(home) else webView.restoreState(savedInstanceState)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() { if (webView.canGoBack()) webView.goBack() else finish() }
+            override fun handleOnBackPressed() {
+                if (webView.canGoBack()) webView.goBack() else finish()
+            }
         })
 
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -70,8 +70,8 @@ class MainActivity : ComponentActivity() {
     private fun configureServiceWorker() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
         val controller = ServiceWorkerController.getInstance()
-        controller.setServiceWorkerClient(object : ServiceWorkerClient() {
-            override fun shouldInterceptRequest(request: WebResourceRequest): WebResourceResponse? = null
+        controller.setServiceWorkerClient(object : android.webkit.ServiceWorkerClient() {
+            override fun shouldInterceptRequest(request: WebResourceRequest): android.webkit.WebResourceResponse? = null
         })
         controller.serviceWorkerWebSettings.cacheMode = WebSettings.LOAD_DEFAULT
     }
