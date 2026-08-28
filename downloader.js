@@ -1,8 +1,8 @@
-/* Elite Scholar Institute — on-demand cache helper 36.2295 */
+/* Elite Scholar Institute — on-demand cache helper 36.2296 */
 (() => {
   'use strict';
 
-  const CACHE_NAME = 'elite-scholar-v36.2295';
+  const CACHE_NAME = 'elite-scholar-v36.2296';
   const toUrl = value => {
     try { const u = new URL(value, location.href); u.hash = ''; return u.href; }
     catch (_) { return null; }
@@ -21,7 +21,10 @@
   }
 
   async function cacheUrls(urls) {
-    for (const url of urls) { try { await cacheOne(url); } catch (error) { console.warn('[ESI cache]', url, error); } }
+    for (const url of urls) {
+      try { await cacheOne(url); }
+      catch (error) { console.warn('[ESI cache]', url, error); }
+    }
   }
 
   window.ESICache = {
