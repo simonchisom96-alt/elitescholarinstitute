@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function(){
-  const CACHE_NAME = 'elite-scholar-v36.2276';
+  const CACHE_NAME = 'elite-scholar-v36.2277';
   const cache = await caches.open(CACHE_NAME);
   const btns = document.querySelectorAll('.download-btn');
 
@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', async function(){
     return clean.origin + clean.pathname;
   };
 
-  // 1. On load: mark already downloaded files
   for(const btn of btns){
     const card = btn.closest('.book-card');
     if(!card) continue;
@@ -17,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async function(){
 
     const absoluteUrl = getCleanUrl(url);
     const btnText = btn.querySelector('.btn-text');
-    const cached = await cache.match(absoluteUrl); // Simplified: removed redundant new Request()
+    const cached = await cache.match(absoluteUrl);
 
     if(cached && btnText){
       btn.classList.add('success');
@@ -25,13 +24,10 @@ document.addEventListener('DOMContentLoaded', async function(){
     }
   }
 
-  // 2. Click handler
   btns.forEach(btn => {
     btn.addEventListener('click', async function(e){
       e.preventDefault();
-
-      // FIXED: Only return early if loading. Allowing 'success' to fall through lets users open the cached file}.
-      if(btn.classList.contains('loading')) return; 
+      if(btn.classList.contains('loading')) return;
 
       const card = btn.closest('.book-card');
       if(!card) return;
@@ -48,13 +44,11 @@ document.addEventListener('DOMContentLoaded', async function(){
       const absoluteUrl = getCleanUrl(url);
       const cached = await cache.match(absoluteUrl);
 
-      // If it's already cached, navigate to it immediately (works online or with a service worker offline)
       if(cached){
         location.href = absoluteUrl;
         return;
       }
 
-      // Offline check (Only runs if the file isn't cached yet)
       if(!navigator.onLine){
         window.showToast("Connect your internet to download first");
         return;
@@ -119,4 +113,3 @@ document.addEventListener('DOMContentLoaded', async function(){
     });
   });
 });
-      
