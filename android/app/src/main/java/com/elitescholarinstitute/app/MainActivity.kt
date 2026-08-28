@@ -2,10 +2,6 @@ package com.elitescholarinstitute.app
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
@@ -17,11 +13,11 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private val home = "https://elitescholarinstitute.pages.dev/"
 
@@ -63,7 +59,7 @@ class MainActivity : AppCompatActivity() {
                 return if (uri.scheme == "http" || uri.scheme == "https") {
                     false
                 } else {
-                    try { startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (_: Exception) {}
+                    try { startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri)) } catch (_: Exception) {}
                     true
                 }
             }
@@ -79,7 +75,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         if (Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
         }
     }
@@ -88,11 +84,7 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
         val controller = ServiceWorkerController.getInstance()
         controller.setServiceWorkerClient(object : ServiceWorkerClient() {
-            override fun shouldInterceptRequest(request: WebResourceRequest): WebResourceResponse? {
-                // Return null so Android WebView can use the site's own Service Worker.
-                // The website worker implements cache-first behavior for same-origin GETs.
-                return null
-            }
+            override fun shouldInterceptRequest(request: WebResourceRequest): WebResourceResponse? = null
         })
         controller.serviceWorkerWebSettings.cacheMode = WebSettings.LOAD_DEFAULT
     }
