@@ -1,17 +1,15 @@
-/* Elite Scholar Institute — clean offline engine 36.2300 */
+/* Elite Scholar Institute — clean offline engine 36.2301 */
 'use strict';
 
-const BUILD = '36.2300';
+const BUILD = '36.2301';
 const CACHE_NAME = 'esi-runtime-' + BUILD;
 const OFFLINE_URL = '/offline.html';
-const PRECACHE = ['/offline.html'];
+const GITHUB_ROOT = 'https://raw.githubusercontent.com/simonchisom96-alt/elitescholarinstitute/main/';
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await Promise.all(PRECACHE.map(async url => {
-      try { await cache.add(url); } catch (_) {}
-    }));
+    try { await cache.add(new Request(OFFLINE_URL, { cache: 'no-store' })); } catch (_) {}
     await self.skipWaiting();
   })());
 });
@@ -24,93 +22,88 @@ self.addEventListener('activate', event => {
   })());
 });
 
-function sameOrigin(request) {
+const ownRequest = request => {
   try { return new URL(request.url).origin === self.location.origin; } catch (_) { return false; }
+};
+const navigation = request => request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
+const good = response => !!response && response.ok && (response.type === 'basic' || response.type === 'cors');
+
+async function save(request, response) {
+  if (!good(response)) return;
+  try { const c = await caches.open(CACHE_NAME); await c.put(request, response.clone()); } catch (_) {}
 }
 
-function isNavigation(request) {
-  return request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
+function githubUrl(request) {
+  const u = new URL(request.url);
+  let path = u.pathname.replace(/^\/+/, '');
+  if (!path || path.endsWith('/')) path += 'index.html';
+  return GITHUB_ROOT + path;
 }
 
-function cacheable(response) {
-  return response && response.ok && (response.type === 'basic' || response.type === 'cors');
-}
-
-async function put(request, response) {
-  if (!cacheable(response)) return;
+async function navigationRequest(request) {
+  // Always try the live Cloudflare page first. This prevents stale/broken HTML
+  // from becoming the normal response after a deployment.
   try {
-    const cache = await caches.open(CACHE_NAME);
-    await cache.put(request, response.clone());
-  } catch (_) {}
-}
-
-async function network(request) {
-  return fetch(request, { cache: 'no-cache' });
-}
-
-async function navigation(request) {
-  // Never let a broken cached HTML response take priority over a live page.
-  try {
-    const response = await network(request);
-    await put(request, response);
-    return response;
+    const live = await fetch(request, { cache: 'no-store', redirect: 'follow' });
+    if (live.ok) { await save(request, live); return live; }
   } catch (_) {}
 
+  // If Cloudflare is unavailable, use the exact page previously cached.
   const cache = await caches.open(CACHE_NAME);
   const url = new URL(request.url);
   const cached = await cache.match(request) || await cache.match(url.pathname);
   if (cached) return cached;
 
-  // A page that has never been visited can still be obtained from the repository.
+  // Last-resort GitHub copy of the exact requested path.
   try {
-    const ghUrl = githubFallbackUrl(url);
-    const response = await fetch(ghUrl, { cache: 'no-store', mode: 'cors' });
-    if (response.ok) {
-      await put(request, response);
-      return response;
-    }
+    const source = await fetch(githubUrl(request), { cache: 'no-store', mode: 'cors' });
+    if (source.ok) { await save(request, source); return source; }
   } catch (_) {}
 
   const offline = await cache.match(OFFLINE_URL);
   if (offline) return offline;
-  return new Response('Offline', { status: 503, headers: {'Content-Type':'text/plain'} });
+  return new Response('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Elite Scholar Institute</title><body><h3>Offline</h3><p>This page has not been cached yet.</p></body>', { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 }
 
-function githubFallbackUrl(url) {
-  let path = url.pathname.replace(/^\/+/, '');
-  if (!path || path.endsWith('/')) path += 'index.html';
-  return 'https://raw.githubusercontent.com/simonchisom96-alt/elitescholarinstitute/main/' + path;
-}
-
-async function asset(request) {
+async function resourceRequest(request) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request);
   if (cached) return cached;
 
   try {
-    const response = await fetch(request);
-    await put(request, response);
-    return response;
+    const live = await fetch(request, { redirect: 'follow' });
+    if (good(live)) await save(request, live);
+    return live;
   } catch (_) {}
 
+  // Same-origin assets that were not previously cached can be recovered from GitHub.
   try {
-    const url = new URL(request.url);
-    const response = await fetch(githubFallbackUrl(url), {cache:'no-store', mode:'cors'});
-    if (response.ok) {
-      await put(request, response);
-      return response;
-    }
+    const source = await fetch(githubUrl(request), { cache: 'no-store', mode: 'cors' });
+    if (source.ok) { await save(request, source); return source; }
   } catch (_) {}
 
-  throw new Error('ESI asset unavailable');
+  return new Response('', { status: 504, statusText: 'Offline' });
 }
 
 self.addEventListener('fetch', event => {
   const request = event.request;
-  if (request.method !== 'GET' || !sameOrigin(request)) return;
-  event.respondWith(isNavigation(request) ? navigation(request) : asset(request));
+  if (request.method !== 'GET' || !ownRequest(request)) return;
+  event.respondWith(navigation(request) ? navigationRequest(request) : resourceRequest(request));
 });
 
 self.addEventListener('message', event => {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
+  if (event.data?.type === 'CACHE_URLS' && Array.isArray(event.data.urls)) {
+    event.waitUntil((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      for (const raw of event.data.urls) {
+        try {
+          const url = new URL(raw, self.location.origin);
+          if (url.origin !== self.location.origin) continue;
+          const response = await fetch(new Request(url.href, { method:'GET', cache:'no-store' }));
+          if (good(response)) await cache.put(url.href, response.clone());
+        } catch (_) {}
+      }
+    })());
+  }
 });
