@@ -146,19 +146,34 @@ self.addEventListener('fetch', (e) => {
   if (req.mode === 'navigate') {
     e.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
+      const isHtmlPage = u.pathname.endsWith('.html');
+      const canonicalPath = isHtmlPage ? u.pathname.slice(0, -5) : u.pathname;
+      const canonicalUrl = new URL(canonicalPath || '/', self.location.origin);
+      canonicalUrl.search = u.search;
+
       let ch = await cache.match(req, { ignoreSearch: true });
       if (ch && !ch.redirected) return ch;
-      if (!u.pathname.endsWith('/') && !u.pathname.includes('.')) {
-        ch = await cache.match(u.pathname + '.html');
+
+      if (canonicalUrl.pathname !== u.pathname) {
+        ch = await cache.match(canonicalUrl.href, { ignoreSearch: true });
         if (ch && !ch.redirected) return ch;
       }
-      if (u.pathname === '/' || u.pathname === '/index.html') {
+
+      if (canonicalUrl.pathname === '/' || canonicalUrl.pathname === '/index.html') {
         ch = await cache.match('/index.html');
-        if (ch) return ch;
+        if (ch && !ch.redirected) return ch;
       }
+
       try {
-        const r = await fetch(new Request(req, { redirect: 'follow' }));
-        if (r.ok) cache.put(req, r.clone());
+        const networkRequest = new Request(canonicalUrl.href, {
+          method: 'GET',
+          headers: req.headers,
+          redirect: 'follow'
+        });
+        const r = await fetch(networkRequest);
+        if (r.ok && !r.redirected) {
+          cache.put(canonicalUrl.href, r.clone());
+        }
         return r;
       } catch {
         return await cache.match(OFFLINE_URL);
