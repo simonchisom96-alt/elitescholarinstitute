@@ -6,7 +6,6 @@ import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
 import android.webkit.CookieManager
-import android.webkit.ServiceWorkerController
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -27,7 +26,6 @@ class MainActivity : ComponentActivity() {
         webView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         setContentView(webView)
 
-        configureServiceWorker()
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -40,7 +38,7 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/36.2296"
+            userAgentString = "$userAgentString ESIAndroid/36.2304"
         }
 
         CookieManager.getInstance().setAcceptCookie(true)
@@ -50,7 +48,10 @@ class MainActivity : ComponentActivity() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
                 return if (uri.scheme == "http" || uri.scheme == "https") false
-                else { try { startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri)) } catch (_: Exception) {}; true }
+                else {
+                    try { startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri)) } catch (_: Exception) {}
+                    true
+                }
             }
         }
 
@@ -67,15 +68,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun configureServiceWorker() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
-        val controller = ServiceWorkerController.getInstance()
-        controller.setServiceWorkerClient(object : android.webkit.ServiceWorkerClient() {
-            override fun shouldInterceptRequest(request: WebResourceRequest): android.webkit.WebResourceResponse? = null
-        })
-        controller.serviceWorkerWebSettings.cacheMode = WebSettings.LOAD_DEFAULT
+    override fun onSaveInstanceState(outState: Bundle) {
+        webView.saveState(outState)
+        super.onSaveInstanceState(outState)
     }
 
-    override fun onSaveInstanceState(outState: Bundle) { webView.saveState(outState); super.onSaveInstanceState(outState) }
-    override fun onDestroy() { webView.stopLoading(); webView.webChromeClient = null; (webView.parent as? ViewGroup)?.removeView(webView); webView.destroy(); super.onDestroy() }
+    override fun onDestroy() {
+        webView.stopLoading()
+        webView.webChromeClient = null
+        (webView.parent as? ViewGroup)?.removeView(webView)
+        webView.destroy()
+        super.onDestroy()
+    }
 }
