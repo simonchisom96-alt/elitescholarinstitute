@@ -1,18 +1,18 @@
 {
   "name": "Elite Scholar Institute",
   "short_name": "ESI",
+  "id": "/",
   "description": "Academic Excellence Redefined",
-  "start_url": "/?source=pwa",
+  "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0d47a1",
   "theme_color": "#0d47a1",
-  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "display_override": ["standalone", "browser"],
   "launch_handler": {
     "client_mode": "navigate-existing"
   },
-  "handle_links": "preferred",
   "icons": [
     {
       "src": "/logo.jpg",
@@ -38,6 +38,5 @@
       "type": "image/jpeg",
       "purpose": "maskable"
     }
-  ],
-  "screenshots": []
+  ]
 }
