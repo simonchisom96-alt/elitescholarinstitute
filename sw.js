@@ -1,4 +1,4 @@
-const CACHE_NAME = 'elite-scholar-v36.2272';
+const CACHE_NAME = 'elite-scholar-v36.2275';
 const OFFLINE_URL = '/offline.html';
 
 const APP_SHELL = [
@@ -109,7 +109,19 @@ self.addEventListener('message', async (e) => {
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await cache.addAll(APP_SHELL.map(url => new Request(url, { cache: 'reload' })));
+    // Cache each file individually instead of cache.addAll(): addAll is all-or-nothing,
+    // so one missing/renamed file (e.g. a picture that isn't uploaded yet, or a filename
+    // case-mismatch) used to fail the WHOLE install silently — meaning nothing got
+    // cached and offline mode never turned on. Now every file that exists still gets
+    // cached first as normal; a missing one is just skipped and logged, and will cache
+    // itself the moment it's actually reachable (via the fetch handler below).
+    await Promise.allSettled(
+      APP_SHELL.map(url =>
+        cache.add(new Request(url, { cache: 'reload' })).catch(err => {
+          console.warn('[SW] Precache skipped (not found on host yet):', url, err && err.message);
+        })
+      )
+    );
     self.skipWaiting();
   })());
 });
@@ -146,34 +158,19 @@ self.addEventListener('fetch', (e) => {
   if (req.mode === 'navigate') {
     e.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
-      const isHtmlPage = u.pathname.endsWith('.html');
-      const canonicalPath = isHtmlPage ? u.pathname.slice(0, -5) : u.pathname;
-      const canonicalUrl = new URL(canonicalPath || '/', self.location.origin);
-      canonicalUrl.search = u.search;
-
       let ch = await cache.match(req, { ignoreSearch: true });
-      if (ch && !ch.redirected) return ch;
-
-      if (canonicalUrl.pathname !== u.pathname) {
-        ch = await cache.match(canonicalUrl.href, { ignoreSearch: true });
-        if (ch && !ch.redirected) return ch;
+      if (ch) return ch;
+      if (!u.pathname.endsWith('/') && !u.pathname.includes('.')) {
+        ch = await cache.match(u.pathname + '.html');
+        if (ch) return ch;
       }
-
-      if (canonicalUrl.pathname === '/' || canonicalUrl.pathname === '/index.html') {
+      if (u.pathname === '/' || u.pathname === '/index.html') {
         ch = await cache.match('/index.html');
-        if (ch && !ch.redirected) return ch;
+        if (ch) return ch;
       }
-
       try {
-        const networkRequest = new Request(canonicalUrl.href, {
-          method: 'GET',
-          headers: req.headers,
-          redirect: 'follow'
-        });
-        const r = await fetch(networkRequest);
-        if (r.ok && !r.redirected) {
-          cache.put(canonicalUrl.href, r.clone());
-        }
+        const r = await fetch(req);
+        if (r.ok) cache.put(req, r.clone());
         return r;
       } catch {
         return await cache.match(OFFLINE_URL);
@@ -192,3 +189,4 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
+  
