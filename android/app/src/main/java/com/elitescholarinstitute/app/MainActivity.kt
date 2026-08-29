@@ -15,11 +15,19 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import java.io.ByteArrayInputStream
+import java.io.File
 import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
+import java.security.MessageDigest
 
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private val offlineHome = "https://appassets.androidplatform.net/index.html"
+    private val onlineOrigin = "https://elitescholarinstitute.pages.dev"
+    private val diskCache by lazy { File(cacheDir, "esi-web-cache").apply { mkdirs() } }
 
     private fun mimeType(path: String): String {
         val ext = path.substringAfterLast('.', "").lowercase()
@@ -46,19 +54,64 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun localAsset(request: WebResourceRequest): WebResourceResponse? {
+    private fun cacheKey(pathAndQuery: String): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(pathAndQuery.toByteArray())
+        return digest.joinToString("") { "%02x".format(it) }
+    }
+
+    private fun bundledAsset(path: String): WebResourceResponse? = try {
+        val stream = assets.open("site/$path")
+        WebResourceResponse(mimeType(path), "UTF-8", stream)
+    } catch (_: FileNotFoundException) {
+        null
+    } catch (_: Exception) {
+        null
+    }
+
+    private fun cachedAsset(pathAndQuery: String, path: String): WebResourceResponse? {
+        val file = File(diskCache, cacheKey(pathAndQuery))
+        if (!file.isFile || file.length() == 0L) return null
+        return try {
+            WebResourceResponse(mimeType(path), "UTF-8", file.inputStream())
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun networkAsset(pathAndQuery: String, path: String): WebResourceResponse? {
+        return try {
+            val connection = (URL(onlineOrigin + pathAndQuery).openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 9000
+                readTimeout = 15000
+                useCaches = true
+                instanceFollowRedirects = true
+            }
+            if (connection.responseCode !in 200..299) {
+                connection.disconnect()
+                return null
+            }
+            val bytes = connection.inputStream.use { it.readBytes() }
+            connection.disconnect()
+            if (bytes.isEmpty()) return null
+            FileOutputStream(File(diskCache, cacheKey(pathAndQuery))).use { it.write(bytes) }
+            WebResourceResponse(mimeType(path), "UTF-8", ByteArrayInputStream(bytes))
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun localOrCachedAsset(request: WebResourceRequest): WebResourceResponse? {
         val uri = request.url
         if (uri.host != "appassets.androidplatform.net") return null
         val path = uri.path?.removePrefix("/") ?: return null
         if (path.isEmpty()) return null
-        return try {
-            val stream = assets.open("site/$path")
-            WebResourceResponse(mimeType(path), "UTF-8", stream)
-        } catch (_: FileNotFoundException) {
-            null
-        } catch (_: Exception) {
-            null
-        }
+
+        // The exact APK shell is bundled. Everything else is progressively cached on disk.
+        bundledAsset(path)?.let { return it }
+        val pathAndQuery = path.let { if (uri.query.isNullOrEmpty()) "/$it" else "/$it?${uri.query}" }
+        cachedAsset(pathAndQuery, path)?.let { return it }
+        return networkAsset(pathAndQuery, path)
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -81,7 +134,7 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/36.2311"
+            userAgentString = "$userAgentString ESIAndroid/36.2312"
         }
 
         CookieManager.getInstance().setAcceptCookie(true)
@@ -89,7 +142,7 @@ class MainActivity : ComponentActivity() {
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
-                return localAsset(request) ?: super.shouldInterceptRequest(view, request)
+                return localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
             }
 
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
