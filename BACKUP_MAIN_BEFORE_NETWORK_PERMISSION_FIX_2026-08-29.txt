@@ -1,0 +1,3 @@
+Backup marker: main branch state before the targeted network permission fix.
+Original main commit: ad6c043685e40427d92958d6fe7ac76dc9a757de
+No application source content is altered by this marker.
