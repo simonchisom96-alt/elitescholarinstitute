@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function(){
-  const CACHE_NAME = 'esi-cache-36.2334';
+  const CACHE_NAME = 'esi-pdf-cache-36.2335';
   const cache = await caches.open(CACHE_NAME);
   const btns = document.querySelectorAll('.download-btn');
 
@@ -135,19 +135,16 @@ document.addEventListener('DOMContentLoaded', async function(){
       if(percent) percent.textContent = '0%';
 
       try {
-        // Use a dedicated PDF fetch URL so the service worker cannot reuse a stale
-        // cached response stored under the normal PDF URL. The downloaded bytes
-        // are still stored under the clean/canonical URL in our PDF cache below.
-        const networkUrl = new URL(absoluteUrl, location.href);
-        networkUrl.searchParams.set('esi_pdf_fetch', '1');
-        const res = await fetch(networkUrl.href, { method: 'GET', credentials: 'same-origin', cache: 'reload' });
+        // Service worker deliberately bypasses PDF requests. This is the real
+        // PDF URL, so the response is fetched directly instead of through the
+        // generic HTML/runtime cache.
+        const res = await fetch(absoluteUrl, { method: 'GET', credentials: 'same-origin', cache: 'no-store' });
         if(!res.ok) throw new Error('PDF request failed: ' + res.status);
 
         const blob = await res.blob();
         if(!(await isPdfBlob(blob))) throw new Error('Server did not return a PDF');
 
-        const pdfResponse = new Response(blob, {headers:{'Content-Type':'application/pdf'}});
-        await cache.put(absoluteUrl, pdfResponse.clone());
+        await cache.put(absoluteUrl, new Response(blob, {headers:{'Content-Type':'application/pdf'}}));
 
         if(percent) percent.textContent = '100%';
         btn.classList.remove('loading');
