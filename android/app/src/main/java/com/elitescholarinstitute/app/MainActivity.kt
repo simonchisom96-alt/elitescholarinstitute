@@ -20,6 +20,7 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileNotFoundException
@@ -37,12 +38,22 @@ class MainActivity : ComponentActivity() {
     private var lastNetworkState: Boolean? = null
 
     private companion object {
-        const val NOTIFICATION_PERMISSION_REQUEST = 1001
         const val PERMISSION_PREFS = "esi_notification_permission"
         const val ASKED = "asked"
         const val DENIED_AT = "denied_at"
         const val RETRY_AFTER_MS = 50L * 60L * 60L * 1000L
     }
+
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            val prefs = getSharedPreferences(PERMISSION_PREFS, MODE_PRIVATE)
+            if (granted) {
+                prefs.edit().remove(DENIED_AT).apply()
+                NativeNotificationScheduler.initialize(this)
+            } else {
+                prefs.edit().putLong(DENIED_AT, System.currentTimeMillis()).apply()
+            }
+        }
 
     private fun mimeType(path: String): String {
         val ext = path.substringAfterLast('.', "").lowercase()
@@ -190,14 +201,14 @@ class MainActivity : ComponentActivity() {
 
         if (!asked) {
             prefs.edit().putBoolean(ASKED, true).apply()
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST)
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             return
         }
 
         val retryDue = deniedAt > 0L && System.currentTimeMillis() - deniedAt >= RETRY_AFTER_MS
         if (retryDue && shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
             prefs.edit().putLong(DENIED_AT, System.currentTimeMillis()).apply()
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST)
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
@@ -249,19 +260,6 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         requestNotificationPermissionIfDue()
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode != NOTIFICATION_PERMISSION_REQUEST) return
-        val granted = grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
-        val prefs = getSharedPreferences(PERMISSION_PREFS, MODE_PRIVATE)
-        if (granted) {
-            prefs.edit().remove(DENIED_AT).apply()
-            NativeNotificationScheduler.initialize(this)
-        } else {
-            prefs.edit().putLong(DENIED_AT, System.currentTimeMillis()).apply()
-        }
     }
 
     override fun onNewIntent(intent: Intent) {
