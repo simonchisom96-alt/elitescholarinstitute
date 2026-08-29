@@ -1,19 +1,17 @@
 document.addEventListener('DOMContentLoaded', async function(){
-  const CACHE_NAME = 'esi-cache-36.2331';
+  const CACHE_NAME = 'esi-cache-36.2332';
   const cache = await caches.open(CACHE_NAME);
   const btns = document.querySelectorAll('.download-btn');
 
   const getCleanUrl = (url) => {
     const clean = new URL(url, location.origin);
-    // In the Android WebView, route same-site Pages URLs back through the
-    // appassets origin so MainActivity can serve/cache the binary PDF.
     if (/ESIAndroid\//i.test(navigator.userAgent) && clean.origin === 'https://elitescholarinstitute.pages.dev') {
       return location.origin + clean.pathname;
     }
     return clean.origin + clean.pathname;
   };
 
-  const openPdfBlob = async (blob) => {
+  const openPdfBlob = async (blob, fileName = 'document.pdf') => {
     if(window.ESIAndroid && typeof window.ESIAndroid.openPdf === 'function'){
       const reader = new FileReader();
       await new Promise((resolve, reject) => {
@@ -22,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async function(){
             const result = String(reader.result || '');
             const comma = result.indexOf(',');
             const base64 = comma >= 0 ? result.slice(comma + 1) : result;
-            window.ESIAndroid.openPdf('document.pdf', base64);
+            window.ESIAndroid.openPdf(fileName, base64);
             resolve();
           } catch(err) { reject(err); }
         };
@@ -41,11 +39,9 @@ document.addEventListener('DOMContentLoaded', async function(){
     if(!card) continue;
     const url = card.dataset.url;
     if(!url) continue;
-
     const absoluteUrl = getCleanUrl(url);
     const btnText = btn.querySelector('.btn-text');
     const cached = await cache.match(absoluteUrl);
-
     if(cached && btnText){
       btn.classList.add('success');
       btnText.textContent = '✓ Open';
@@ -56,14 +52,11 @@ document.addEventListener('DOMContentLoaded', async function(){
     btn.addEventListener('click', async function(e){
       e.preventDefault();
       if(btn.classList.contains('loading')) return;
-
       const card = btn.closest('.book-card');
       if(!card) return;
-
       const url = card.dataset.url;
       const btnText = btn.querySelector('.btn-text');
       const percent = btn.querySelector('.percent');
-
       if(!url || url.includes('PASTE_')){
         window.showToast('❌ PDF link not set yet');
         return;
@@ -71,14 +64,9 @@ document.addEventListener('DOMContentLoaded', async function(){
 
       const absoluteUrl = getCleanUrl(url);
       const cached = await cache.match(absoluteUrl);
-
       if(cached){
-        try {
-          await openPdfBlob(await cached.blob());
-        } catch(err) {
-          console.error('Cached PDF open error:', err);
-          window.showToast('Unable to open cached PDF');
-        }
+        try { await openPdfBlob(await cached.blob(), absoluteUrl.split('/').pop() || 'document.pdf'); }
+        catch(err) { console.error('Cached PDF open error:', err); window.showToast('Unable to open cached PDF'); }
         return;
       }
 
@@ -93,55 +81,35 @@ document.addEventListener('DOMContentLoaded', async function(){
 
       try {
         const res = await fetch(absoluteUrl, {cache: 'no-store'});
-        if(!res.ok) throw new Error('Fetch failed');
-
-        if (!res.body) {
-          const blob = await res.blob();
-          await cache.put(absoluteUrl, new Response(blob, {headers: {'Content-Type': 'application/pdf'}}));
-          if(percent) percent.textContent = '100%';
+        if(!res.ok) throw new Error('Fetch failed: ' + res.status);
+        let blob;
+        if(!res.body){
+          blob = await res.blob();
         } else {
           const totalBytes = parseInt(res.headers.get('content-length'), 10) || 0;
           let receivedBytes = 0;
           const reader = res.body.getReader();
           const chunks = [];
-
-          while(true) {
+          while(true){
             const {done, value} = await reader.read();
             if(done) break;
             chunks.push(value);
             receivedBytes += value.length;
-            if(totalBytes > 0 && percent) {
-              percent.textContent = Math.round((receivedBytes / totalBytes) * 100) + '%';
-            }
+            if(totalBytes > 0 && percent) percent.textContent = Math.round((receivedBytes / totalBytes) * 100) + '%';
           }
-
           const allChunks = new Uint8Array(receivedBytes);
           let position = 0;
-          for(const chunk of chunks) {
-            allChunks.set(chunk, position);
-            position += chunk.length;
-          }
-
-          const blob = new Blob([allChunks], {type: 'application/pdf'});
-          await cache.put(absoluteUrl, new Response(blob, {headers: {'Content-Type': 'application/pdf'}}));
-          if(percent) percent.textContent = '100%';
+          for(const chunk of chunks){ allChunks.set(chunk, position); position += chunk.length; }
+          blob = new Blob([allChunks], {type:'application/pdf'});
         }
 
-        setTimeout(() => {
-          btn.classList.remove('loading');
-          btn.classList.add('success');
-          if(btnText) btnText.textContent = '✓ Open';
-          if(percent) percent.textContent = '';
-
-          cache.match(absoluteUrl).then(async cachedResponse => {
-            if (!cachedResponse) throw new Error('PDF was not cached');
-            await openPdfBlob(await cachedResponse.blob());
-          }).catch(err => {
-            console.error('Cached PDF open error:', err);
-            window.showToast('PDF downloaded but could not be opened');
-          });
-        }, 300);
-
+        await cache.put(absoluteUrl, new Response(blob, {headers:{'Content-Type':'application/pdf'}}));
+        if(percent) percent.textContent = '100%';
+        btn.classList.remove('loading');
+        btn.classList.add('success');
+        if(btnText) btnText.textContent = '✓ Open';
+        if(percent) percent.textContent = '';
+        await openPdfBlob(blob, absoluteUrl.split('/').pop() || 'document.pdf');
       } catch(err) {
         console.error('Download error:', err);
         btn.classList.remove('loading');
