@@ -1,5 +1,5 @@
 /* Elite Scholar Institute service worker — offline shell + runtime cache */
-const CACHE_VERSION = 'esi-cache-36.2345';
+const CACHE_VERSION = 'esi-cache-36.2346';
 const APP_SHELL = [
   '/', '/index.html', '/logo.jpg', '/advert.png', '/esi.jpg', '/founder.jpg',
   '/manifest.json', '/offline.html', '/app.js', '/downloader.js',
@@ -55,6 +55,12 @@ self.addEventListener('fetch', event => {
   if (!isGet(request) || !isSameOrigin(request)) return;
   const url = new URL(request.url);
   if (url.pathname.startsWith('/api/')) return;
+
+  // PDFs have their own download/cache pipeline. In the APK, PDF URLs use
+  // the appassets origin so MainActivity can retrieve the real Pages PDF.
+  // Let those requests reach the native resource handler instead of this
+  // generic runtime cache.
+  if (/\.pdf$/i.test(url.pathname)) return;
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
