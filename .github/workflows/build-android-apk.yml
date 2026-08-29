@@ -130,10 +130,21 @@ jobs:
             test -f "$file" || { echo "Missing required shell file: $file"; exit 1; }
           done < /tmp/esi-shell.txt
           rsync -a --files-from=/tmp/esi-shell.txt ./ android/app/src/main/assets/site/
-          # Use the exact website logo.jpg as the Android launcher icon source.
           cp -f logo.jpg android/app/src/main/res/drawable/logo.jpg
           echo "Bundled shell file count: $(find android/app/src/main/assets/site -type f | wc -l)"
           echo "Bundled shell size: $(du -sh android/app/src/main/assets/site | cut -f1)"
+
+      - name: Verify notification engine is fully removed
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -R -nE 'POST_NOTIFICATIONS|NativeNotificationScheduler|EsiNotificationReceiver|EsiStatusNotification|EsiNetworkReceiver|EsiBootReceiver|const[[:space:]]+NOTIFICATIONS' android app.js
+          test ! -f android/app/src/main/java/com/elitescholarinstitute/app/NativeNotificationScheduler.kt
+          test ! -f android/app/src/main/java/com/elitescholarinstitute/app/EsiNotificationReceiver.kt
+          test ! -f android/app/src/main/java/com/elitescholarinstitute/app/EsiStatusNotification.kt
+          test ! -f android/app/src/main/java/com/elitescholarinstitute/app/EsiNetworkReceiver.kt
+          test ! -f android/app/src/main/java/com/elitescholarinstitute/app/EsiBootReceiver.kt
+          echo "Notification engine check passed: notification.html remains the website notification page; native/app.js notification delivery is removed."
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -147,7 +158,7 @@ jobs:
         with:
           gradle-version: '8.11.1'
 
-      - name: Build ESI APK
+      - name: Build ESI APK v1.2
         working-directory: android
         run: gradle :app:assembleDebug --no-daemon --stacktrace
 
@@ -157,14 +168,14 @@ jobs:
           set -euo pipefail
           test -s android/app/build/outputs/apk/debug/app-debug.apk
           mkdir -p release
-          cp android/app/build/outputs/apk/debug/app-debug.apk release/ESI.apk
-          ls -lh release/ESI.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk release/ESI-v1.2.apk
+          ls -lh release/ESI-v1.2.apk
 
       - name: Upload temporary Actions artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ESI-APK
-          path: release/ESI.apk
+          name: ESI-APK-v1.2
+          path: release/ESI-v1.2.apk
           if-no-files-found: error
           retention-days: 30
 
@@ -173,9 +184,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="esi-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
-          gh release create "$TAG" release/ESI.apk \
+          TAG="esi-v1.2-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          gh release create "$TAG" release/ESI-v1.2.apk \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "ESI Android APK" \
-            --notes "ESI Android APK. Contains only the defined ESI offline shell; additional same-origin resources are cached by the service worker when accessed."
+            --title "ESI Android APK v1.2" \
+            --notes "ESI Android APK v1.2. Native/app.js notification delivery was removed; notification.html remains the sole website notification surface. The defined offline shell and exact logo.jpg are bundled."
