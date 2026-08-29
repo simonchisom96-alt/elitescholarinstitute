@@ -22,7 +22,7 @@ object NativeNotificationScheduler {
     private val messages = arrayOf(
         "Dear Scholar, Your future is built today through persistent reading 🔥|You have come too far to stop now, so open your textbooks right now and continue the rewarding journey of academic excellence.|/Textbooks.html",
         "Rise high in the leader's board right now! 📊|Train yourself intensely with others to rise above all competitors in the leader's board.|/quiz.html",
-        "You have a brand new urgent notification waiting 🗨️|View our elite announcement channel for daily updates, quiz drills, live classes, and more.|/notification.html",
+        "You have a brand new urgent notification waiting 🗨️|View the elite notification channel for daily updates, quiz drills, live classes, and more.|/notification.html",
         "A smarter and faster way to prepare properly 📚|Learn how elite top scorers prepare differently for exams. Your post UTME success guide is ready.|/postutme.html",
         "Stay strictly on the right track every single day 📃|Your detailed syllabus guide is waiting to lead you through your examination preparation.|/syllables.html",
         "Small daily wins matter for your exams 🧠|Answer challenging questions today and build confidence for tomorrow's challenges.|/quiz.html",
@@ -44,7 +44,7 @@ object NativeNotificationScheduler {
 
     fun initialize(context: Context) {
         createChannel(context)
-        scheduleNext(context, 60_000L)
+        scheduleNext(context, INTERVAL_MS)
     }
 
     fun showNext(context: Context) {
@@ -52,6 +52,7 @@ object NativeNotificationScheduler {
             scheduleNext(context, INTERVAL_MS)
             return
         }
+        createChannel(context)
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val index = prefs.getInt(INDEX, 0).coerceIn(0, messages.lastIndex)
         val parts = messages[index].split('|', limit = 3)
