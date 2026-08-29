@@ -1,5 +1,5 @@
 /* Elite Scholar Institute service worker — offline shell + runtime cache */
-const CACHE_VERSION = 'esi-cache-36.2309';
+const CACHE_VERSION = 'esi-cache-36.2311';
 const APP_SHELL = [
   '/', '/index.html', '/logo.jpg', '/advert.png', '/esi.jpg', '/founder.jpg',
   '/manifest.json', '/offline.html', '/app.js', '/downloader.js',
@@ -22,14 +22,12 @@ const APP_SHELL = [
   '/quiz.html', '/video.mp4', '/firebase-config.js', '/multiplayer.js', '/singleplay.js'
 ];
 
-const CACHEABLE = new Set(APP_SHELL);
 const isSameOrigin = request => new URL(request.url).origin === self.location.origin;
 const isGet = request => request.method === 'GET';
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_VERSION);
-    // Cache each shell item independently so one missing optional asset cannot abort installation.
     await Promise.all(APP_SHELL.map(async url => {
       try {
         const response = await fetch(new Request(url, { cache: 'reload' }));
@@ -56,8 +54,6 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   if (!isGet(request) || !isSameOrigin(request)) return;
   const url = new URL(request.url);
-
-  // Never cache Firebase/API mutations or non-document navigation redirects here.
   if (url.pathname.startsWith('/api/')) return;
 
   if (request.mode === 'navigate') {
@@ -81,15 +77,11 @@ self.addEventListener('fetch', event => {
     const cache = await caches.open(CACHE_VERSION);
     const cached = await cache.match(request);
     if (cached) {
-      // Static shell stays instantly available. Refresh cache in the background.
-      fetch(request).then(response => {
-        if (response.ok) cache.put(request, response.clone()).catch(() => {});
-      }).catch(() => {});
+      fetch(request).then(response => { if (response.ok) cache.put(request, response.clone()).catch(() => {}); }).catch(() => {});
       return cached;
     }
     try {
       const response = await fetch(request);
-      // Cache same-origin GET assets including PDFs/images/video when the browser permits it.
       if (response.ok) cache.put(request, response.clone()).catch(() => {});
       return response;
     } catch (_) {
