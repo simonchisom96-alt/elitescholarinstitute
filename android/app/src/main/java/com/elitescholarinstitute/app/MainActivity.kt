@@ -2,6 +2,7 @@ package com.elitescholarinstitute.app
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.app.Dialog
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -32,6 +33,7 @@ import java.security.MessageDigest
 
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
+    private var authPopup: Dialog? = null
     private val offlineHome = "https://appassets.androidplatform.net/index.html"
     private val onlineOrigin = "https://elitescholarinstitute.pages.dev"
     private val diskCache by lazy { File(cacheDir, "esi-web-cache").apply { mkdirs() } }
@@ -137,6 +139,10 @@ class MainActivity : ComponentActivity() {
         (function(){
           if(!window.ESIAndroid || window.__esiAndroidBridgeInstalled) return;
           window.__esiAndroidBridgeInstalled = true;
+          navigator.canShare = function(data){
+            data = data || {};
+            return !!(data.files && data.files.length) || !!data.text || !!data.url;
+          };
           navigator.share = function(data){
             data = data || {};
             if(data.files && data.files.length){
@@ -168,9 +174,7 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 val safeUrl = if (url.startsWith("https://appassets.androidplatform.net/")) {
                     onlineOrigin + url.removePrefix("https://appassets.androidplatform.net")
-                } else {
-                    url
-                }
+                } else url
                 val body = if (safeUrl.isBlank()) text else if (text.isBlank()) safeUrl else "$text\n$safeUrl"
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
@@ -267,13 +271,13 @@ class MainActivity : ComponentActivity() {
             databaseEnabled = true
             allowFileAccess = false
             allowContentAccess = false
-            javaScriptCanOpenWindowsAutomatically = false
-            setSupportMultipleWindows(false)
+            javaScriptCanOpenWindowsAutomatically = true
+            setSupportMultipleWindows(true)
             cacheMode = WebSettings.LOAD_DEFAULT
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/2.1"
+            userAgentString = "$userAgentString ESIAndroid/2.2"
         }
 
         webView.addJavascriptInterface(androidBridge, "ESIAndroid")
@@ -300,13 +304,45 @@ class MainActivity : ComponentActivity() {
                     .show()
                 return true
             }
+
+            override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
+                if (!isUserGesture || resultMsg == null) return false
+                val popup = WebView(this@MainActivity).apply {
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    settings.databaseEnabled = true
+                    settings.javaScriptCanOpenWindowsAutomatically = true
+                    settings.setSupportMultipleWindows(true)
+                    CookieManager.getInstance().setAcceptCookie(true)
+                    CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+                    webViewClient = WebViewClient()
+                    webChromeClient = this@object
+                }
+                val dialog = Dialog(this@MainActivity)
+                dialog.setContentView(popup)
+                dialog.setOnDismissListener {
+                    popup.stopLoading()
+                    popup.destroy()
+                    authPopup = null
+                }
+                dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                authPopup = dialog
+                dialog.show()
+                dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                (resultMsg.obj as? WebView.WebViewTransport)?.webView = popup
+                resultMsg.sendToTarget()
+                return true
+            }
+
+            override fun onCloseWindow(window: WebView?) {
+                authPopup?.dismiss()
+                authPopup = null
+            }
         }
 
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldInterceptRequest(
-                view: WebView,
-                request: WebResourceRequest
-            ): WebResourceResponse? = localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
+                localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
 
             override fun onPageFinished(view: WebView, url: String?) {
                 super.onPageFinished(view, url)
@@ -329,11 +365,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        if (savedInstanceState == null) {
-            webView.loadUrl(offlineHome)
-        } else {
-            webView.restoreState(savedInstanceState)
-        }
+        if (savedInstanceState == null) webView.loadUrl(offlineHome) else webView.restoreState(savedInstanceState)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -348,6 +380,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        authPopup?.dismiss()
+        authPopup = null
         webView.removeJavascriptInterface("ESIAndroid")
         webView.stopLoading()
         webView.webChromeClient = null
