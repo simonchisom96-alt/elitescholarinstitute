@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function(){
-  const CACHE_NAME = 'esi-pdf-cache-36.2340';
+  const CACHE_NAME = 'esi-pdf-cache-36.2341';
   const cachePromise = caches.open(CACHE_NAME);
 
   const getPdfUrl = (btn) => {
@@ -109,10 +109,9 @@ document.addEventListener('DOMContentLoaded', function(){
         await cache.delete(url);
       }
 
-      if(!navigator.onLine){
-        window.showToast && window.showToast('Connect your internet to download first');
-        return;
-      }
+      // Do not use navigator.onLine here. Android WebView can report false
+      // while the native app has a valid network connection. Let the actual
+      // PDF request decide whether the connection works.
 
       btn.classList.add('loading');
       if(text) text.textContent = 'Downloading...';
