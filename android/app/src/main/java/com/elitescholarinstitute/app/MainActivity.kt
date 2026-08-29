@@ -36,6 +36,14 @@ class MainActivity : ComponentActivity() {
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private var lastNetworkState: Boolean? = null
 
+    private companion object {
+        const val NOTIFICATION_PERMISSION_REQUEST = 1001
+        const val PERMISSION_PREFS = "esi_notification_permission"
+        const val ASKED = "asked"
+        const val DENIED_AT = "denied_at"
+        const val RETRY_AFTER_MS = 50L * 60L * 60L * 1000L
+    }
+
     private fun mimeType(path: String): String {
         val ext = path.substringAfterLast('.', "").lowercase()
         return when (ext) {
@@ -159,6 +167,40 @@ class MainActivity : ComponentActivity() {
         EsiNetworkReceiver.schedule(this)
     }
 
+    private fun injectAppJs() {
+        try {
+            val source = assets.open("site/app.js").bufferedReader().use { it.readText() }
+            webView.evaluateJavascript("javascript:(function(){if(window.__esiAppJsInjected)return;window.__esiAppJsInjected=true;$source})()", null)
+        } catch (_: Exception) { }
+    }
+
+    private fun requestNotificationPermissionIfDue() {
+        if (Build.VERSION.SDK_INT < 33) {
+            NativeNotificationScheduler.initialize(this)
+            return
+        }
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            NativeNotificationScheduler.initialize(this)
+            return
+        }
+
+        val prefs = getSharedPreferences(PERMISSION_PREFS, MODE_PRIVATE)
+        val asked = prefs.getBoolean(ASKED, false)
+        val deniedAt = prefs.getLong(DENIED_AT, 0L)
+
+        if (!asked) {
+            prefs.edit().putBoolean(ASKED, true).apply()
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST)
+            return
+        }
+
+        val retryDue = deniedAt > 0L && System.currentTimeMillis() - deniedAt >= RETRY_AFTER_MS
+        if (retryDue && shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+            prefs.edit().putLong(DENIED_AT, System.currentTimeMillis()).apply()
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST)
+        }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -178,13 +220,17 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/36.2313"
+            userAgentString = "$userAgentString ESIAndroid/1.0"
         }
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
                 localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
+            override fun onPageFinished(view: WebView, url: String?) {
+                super.onPageFinished(view, url)
+                injectAppJs()
+            }
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
                 if (uri.scheme == "http" || uri.scheme == "https") return false
@@ -196,12 +242,21 @@ class MainActivity : ComponentActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() { if (webView.canGoBack()) webView.goBack() else finish() }
         })
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
-        } else {
-            NativeNotificationScheduler.initialize(this)
-        }
+        requestNotificationPermissionIfDue()
         monitorNetwork()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != NOTIFICATION_PERMISSION_REQUEST) return
+        val granted = grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
+        val prefs = getSharedPreferences(PERMISSION_PREFS, MODE_PRIVATE)
+        if (granted) {
+            prefs.edit().remove(DENIED_AT).apply()
+            NativeNotificationScheduler.initialize(this)
+        } else {
+            prefs.edit().putLong(DENIED_AT, System.currentTimeMillis()).apply()
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
