@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function(){
-  const CACHE_NAME = 'esi-cache-36.2314';
+  const CACHE_NAME = 'esi-cache-36.2315';
   const cache = await caches.open(CACHE_NAME);
   const btns = document.querySelectorAll('.download-btn');
 
@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', async function(){
     return clean.origin + clean.pathname;
   };
 
-  // 1. On load: mark already downloaded files
   for(const btn of btns){
     const card = btn.closest('.book-card');
     if(!card) continue;
@@ -25,11 +24,9 @@ document.addEventListener('DOMContentLoaded', async function(){
     }
   }
 
-  // 2. Click handler
   btns.forEach(btn => {
     btn.addEventListener('click', async function(e){
       e.preventDefault();
-
       if(btn.classList.contains('loading')) return;
 
       const card = btn.closest('.book-card');
@@ -48,12 +45,20 @@ document.addEventListener('DOMContentLoaded', async function(){
       const cached = await cache.match(absoluteUrl);
 
       if(cached){
-        location.href = absoluteUrl;
+        try {
+          const blob = await cached.blob();
+          const objectUrl = URL.createObjectURL(blob);
+          window.location.assign(objectUrl);
+          setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+        } catch(err) {
+          console.error('Cached PDF open error:', err);
+          window.showToast('Unable to open cached PDF');
+        }
         return;
       }
 
       if(!navigator.onLine){
-        window.showToast("Connect your internet to download first");
+        window.showToast('Connect your internet to download first');
         return;
       }
 
@@ -81,8 +86,7 @@ document.addEventListener('DOMContentLoaded', async function(){
             chunks.push(value);
             receivedBytes += value.length;
             if(totalBytes > 0 && percent) {
-              const currentPercent = Math.round((receivedBytes / totalBytes) * 100);
-              percent.textContent = currentPercent + '%';
+              percent.textContent = Math.round((receivedBytes / totalBytes) * 100) + '%';
             }
           }
 
@@ -103,7 +107,17 @@ document.addEventListener('DOMContentLoaded', async function(){
           btn.classList.add('success');
           if(btnText) btnText.textContent = '✓ Open';
           if(percent) percent.textContent = '';
-          location.href = absoluteUrl;
+
+          cache.match(absoluteUrl).then(async cachedResponse => {
+            if (!cachedResponse) throw new Error('PDF was not cached');
+            const blob = await cachedResponse.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            window.location.assign(objectUrl);
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+          }).catch(err => {
+            console.error('Cached PDF open error:', err);
+            window.showToast('PDF downloaded but could not be opened');
+          });
         }, 300);
 
       } catch(err) {
