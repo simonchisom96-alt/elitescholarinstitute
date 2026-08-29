@@ -1,12 +1,13 @@
-/* Elite Scholar Institute — application controller 36.2306 — no service worker */
+/* Elite Scholar Institute — application controller 36.2308 — no service worker */
 (() => {
   'use strict';
 
-  const BUILD = '36.2306';
-  const APK_URL = 'https://github.com/simonchisom96-alt/elitescholarinstitute/releases/latest/download/EliteScholarInstitute.apk';
+  const BUILD = '36.2308';
+  const APK_URL = 'https://github.com/simonchisom96-alt/elitescholarinstitute/releases/latest/download/ESI.apk';
   const NOTIF_DB_URL = 'https://elite-notification-default-rtdb.firebaseio.com';
   let installBox = null;
   let hideTimer = null;
+  let installTimer = null;
   let deferredInstall = null;
   let notifications = {};
 
@@ -26,7 +27,7 @@
     const n = document.createElement('div');
     n.dataset.esiToast = '1';
     n.textContent = message;
-    n.style.cssText = `position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:2147483647;max-width:92%;padding:12px 18px;border-radius:12px;background:${background};color:#fff;font:600 14px system-ui,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,.28);text-align:center`;
+    n.style.cssText = `position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:2147483647;max-width:92%;padding:12px 18px;border-radius:12px;background:${background};color:#fff;font:600 14px system-ui,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,.28);text-align:center`;
     (document.body || document.documentElement).appendChild(n);
     setTimeout(() => n.remove(), 4500);
   }
@@ -51,11 +52,36 @@
     }
     const content = vp.getAttribute('content') || 'width=device-width, initial-scale=1';
     vp.setAttribute('content', /viewport-fit\s*=\s*cover/i.test(content) ? content : content + ', viewport-fit=cover');
-    const setVH = () => document.documentElement.style.setProperty('--app-vh', `${innerHeight * 0.01}px`);
+    const setVH = () => {
+      document.documentElement.style.setProperty('--app-vh', `${innerHeight * 0.01}px`);
+      document.documentElement.style.setProperty('--esi-safe-top', 'env(safe-area-inset-top, 0px)');
+      document.documentElement.style.setProperty('--esi-safe-bottom', 'env(safe-area-inset-bottom, 0px)');
+    };
     setVH();
     addEventListener('resize', setVH, { passive: true });
     addEventListener('orientationchange', () => setTimeout(setVH, 150), { passive: true });
     if (window.visualViewport) visualViewport.addEventListener('resize', setVH, { passive: true });
+
+    // Mobile layout guard. This is CSS injected by app.js so the HTML files remain untouched.
+    if (!document.getElementById('esiMobileCompatibilityCSS')) {
+      const s = document.createElement('style');
+      s.id = 'esiMobileCompatibilityCSS';
+      s.textContent = `
+        html,body{max-width:100%;overflow-x:hidden}
+        img,video,canvas,svg{max-width:100%}
+        input,textarea,select,button{max-width:100%}
+        #appHeader{padding-top:max(12px,var(--esi-safe-top))!important}
+        #notifBellBtn{top:calc(260px + var(--esi-safe-top))!important}
+        @media (max-width:600px){
+          header,.header,.app-header,#appHeader{max-width:100vw}
+          .filter-tabs,.filter-bar,.notification-filter,.quiz-filter,[class*="filter"]{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+          .filter-tabs>*,.filter-bar>*,.notification-filter>* ,.quiz-filter>*{flex:0 0 auto}
+          .quiz-container,.quiz-content,[class*="quiz-container"],[class*="quiz-content"]{min-width:0;max-width:100%;overflow-x:hidden}
+          pre,code{max-width:100%;overflow-x:auto}
+        }
+      `;
+      document.head.appendChild(s);
+    }
   }
 
   function createInstallUI() {
@@ -79,8 +105,8 @@
     const text = installBox.querySelector('[data-install-text]');
     const button = installBox.querySelector('[data-install]');
     if (isAndroid && !isInstalled()) {
-      text.textContent = 'Get the Android app directly. No browser install prompt is required.';
-      button.textContent = 'Download Android App';
+      text.textContent = 'Get the ESI Android app directly. No browser install prompt is required.';
+      button.textContent = 'Download ESI App';
     } else if (isIOS) {
       text.textContent = 'On iPhone or iPad, use Share → Add to Home Screen to install the website.';
       button.textContent = 'Show iPhone Instructions';
@@ -100,6 +126,15 @@
     installBox.style.transform = 'translate(-50%,0)';
     clearTimeout(hideTimer);
     hideTimer = setTimeout(hideInstall, 10000);
+  }
+
+  function scheduleInstall(delay = 12000) {
+    if (isInstalled() || installTimer) return;
+    clearTimeout(installTimer);
+    installTimer = setTimeout(() => {
+      installTimer = null;
+      showInstall();
+    }, delay);
   }
 
   function hideInstall() {
@@ -137,7 +172,7 @@
     event.preventDefault();
     deferredInstall = event;
     window.__esiInstallAvailable = true;
-    if (!isAndroid && !isIOS) showInstall();
+    if (!isAndroid && !isIOS) scheduleInstall(12000);
   });
 
   window.addEventListener('appinstalled', () => {
@@ -147,8 +182,6 @@
     toast('App installed successfully', '#16a34a');
   });
 
-  // Remove only legacy ESI service workers left on a device from older builds.
-  // No service worker is registered by this version.
   async function removeLegacyServiceWorkers() {
     if (!('serviceWorker' in navigator)) return;
     try {
@@ -223,6 +256,7 @@
         db.ref('notifications').orderByChild('timestamp').limitToLast(50).on('value', snap => {
           notifications = snap.val() || {};
           updateBell();
+          window.dispatchEvent(new CustomEvent('esi:notifications-updated', { detail: notifications }));
         });
       });
     });
@@ -238,11 +272,11 @@
     await removeLegacyServiceWorkers();
     setupBell();
     createInstallUI();
-    if (!isInstalled()) setTimeout(showInstall, 8000);
+    scheduleInstall(12000);
   }
 
   addEventListener('pageshow', () => {
-    if (!isInstalled()) setTimeout(showInstall, 500);
+    if (!isInstalled()) scheduleInstall(12000);
   });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
