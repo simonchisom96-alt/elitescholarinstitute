@@ -176,11 +176,11 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ESI-APK-v3.6
+          name: ESI-APK-v3.7
           path: release/ESI.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Confirm successful APK build
         shell: bash
-        run: echo "ESI v3.6 APK build and verification completed successfully."
+        run: echo "ESI v3.7 APK build and verification completed successfully."
