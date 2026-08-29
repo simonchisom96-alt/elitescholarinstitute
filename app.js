@@ -1,8 +1,8 @@
-/* Elite Scholar Institute — application controller 36.2311 */
+/* Elite Scholar Institute — application controller 36.2314 */
 (() => {
   'use strict';
 
-  const BUILD = '36.2313';
+  const BUILD = '36.2314';
   const APK_URL = 'https://github.com/simonchisom96-alt/elitescholarinstitute/releases/latest/download/ESI.apk';
   const NOTIF_DB_URL = 'https://elite-notification-default-rtdb.firebaseio.com';
   const SW_URL = '/sw.js?v=' + BUILD;
@@ -99,6 +99,15 @@
     window.addEventListener('resize', fixHorizontalTouchTargets, { passive: true });
   }
 
+  function releaseInitialLoader() {
+    const loader = document.getElementById('loader');
+    if (loader) loader.classList.add('fade-out');
+  }
+
+  function scheduleInitialLoaderFallback() {
+    setTimeout(releaseInitialLoader, 6000);
+  }
+
   function createInstallUI() {
     if (document.getElementById('esiInstallPopup')) { installBox = document.getElementById('esiInstallPopup'); return; }
     const p = document.createElement('section');
@@ -177,7 +186,7 @@
   addEventListener('offline', () => toast('You are offline', '#dc2626'));
   addEventListener('storage', e => { if (e.key === 'notif_read_ids') updateBell(); });
 
-  async function boot() { ensureManifest(); repairMobileCompatibilityCSS(); createInstallUI(); scheduleInstall(15000); setupBell(); await registerServiceWorker(); }
+  async function boot() { ensureManifest(); repairMobileCompatibilityCSS(); createInstallUI(); scheduleInstall(15000); setupBell(); scheduleInitialLoaderFallback(); await registerServiceWorker(); }
   addEventListener('pageshow', () => { repairMobileCompatibilityCSS(); if (!isInstalled()) scheduleInstall(15000); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true }); else boot();
 })();
