@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - 'android/**'
+      - 'app.js'
+      - 'sw.js'
+      - 'manifest.json'
       - '.github/workflows/build-android-apk.yml'
   workflow_dispatch:
 
