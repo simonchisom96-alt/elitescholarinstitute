@@ -11,8 +11,8 @@ android {
         applicationId = "com.elitescholarinstitute.app"
         minSdk = 23
         targetSdk = 35
-        versionCode = 362319
-        versionName = "1.3"
+        versionCode = 362320
+        versionName = "1.4"
     }
 
     buildTypes {
@@ -34,6 +34,6 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.activity:activity-ktx:1.10.0")
+    implementation("androidx.activity:activity:1.10.0")
     implementation("androidx.webkit:webkit:1.12.1")
 }
