@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function(){
-  const CACHE_NAME = 'esi-pdf-cache-36.2341';
+  const CACHE_NAME = 'esi-pdf-cache-36.2342';
   const cachePromise = caches.open(CACHE_NAME);
 
   const getPdfUrl = (btn) => {
@@ -79,7 +79,6 @@ document.addEventListener('DOMContentLoaded', function(){
     } catch(_) {}
   };
 
-  // Bind immediately; cache inspection must never block the download button.
   document.addEventListener('click', async function(e){
     const btn = e.target.closest && e.target.closest('.download-btn');
     if(!btn) return;
@@ -109,13 +108,22 @@ document.addEventListener('DOMContentLoaded', function(){
         await cache.delete(url);
       }
 
-      // Do not use navigator.onLine here. Android WebView can report false
-      // while the native app has a valid network connection. Let the actual
-      // PDF request decide whether the connection works.
-
       btn.classList.add('loading');
       if(text) text.textContent = 'Downloading...';
       if(percent) percent.textContent = '0%';
+
+      // In the APK, let the native downloader fetch the real Pages URL.
+      // This bypasses WebView's appassets fetch/interceptor for PDFs only.
+      if(window.ESIAndroid && typeof window.ESIAndroid.downloadPdf === 'function'){
+        const realUrl = url.replace(/^https:\/\/appassets\.androidplatform\.net/i, 'https://elitescholarinstitute.pages.dev');
+        window.ESIAndroid.downloadPdf(realUrl, fileName);
+        await new Promise(resolve => setTimeout(resolve, 250));
+        btn.classList.remove('loading');
+        btn.classList.add('success');
+        if(text) text.textContent = '✓ Open';
+        if(percent) percent.textContent = '';
+        return;
+      }
 
       const response = await fetch(url, {method:'GET', credentials:'same-origin', cache:'no-store'});
       if(!response.ok) throw new Error('PDF request failed: ' + response.status);
