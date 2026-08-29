@@ -1,9 +1,10 @@
-/* Elite Scholar Institute — application controller 36.2309 */
+/* Elite Scholar Institute — application controller 36.2310 */
 (() => {
   'use strict';
 
-  const BUILD = '36.2309';
-  const APK_URL = '/releases/latest/download/ESI.apk';
+  const BUILD = '36.2310';
+  // Permanent GitHub Release asset. This must be absolute so Cloudflare Pages never turns it into a pages.dev path.
+  const APK_URL = 'https://github.com/simonchisom96-alt/elitescholarinstitute/releases/latest/download/ESI.apk';
   const NOTIF_DB_URL = 'https://elite-notification-default-rtdb.firebaseio.com';
   const SW_URL = '/sw.js?v=' + BUILD;
   let installBox = null;
@@ -45,7 +46,7 @@
     link.href = '/manifest.json?v=' + BUILD;
   }
 
-  function viewportFix() {
+  function repairMobileCompatibilityCSS() {
     let vp = document.querySelector('meta[name="viewport"]');
     if (!vp) {
       vp = document.createElement('meta');
@@ -54,6 +55,7 @@
     }
     const content = vp.getAttribute('content') || 'width=device-width, initial-scale=1';
     vp.setAttribute('content', /viewport-fit\s*=\s*cover/i.test(content) ? content : content + ', viewport-fit=cover');
+
     const setVH = () => {
       document.documentElement.style.setProperty('--app-vh', `${innerHeight * 0.01}px`);
       document.documentElement.style.setProperty('--esi-safe-top', 'env(safe-area-inset-top, 0px)');
@@ -77,7 +79,7 @@
         [class*="logo-box" i] img,[class*="logo-badge" i]{flex:0 0 auto;max-width:40px}
         [class*="logo-box" i] h1,[class*="logo-box" i] h2,[class*="header-title" i] h1,[class*="header-title" i] h2{font-size:clamp(12px,4vw,16px)!important;line-height:1.2;overflow-wrap:anywhere}
         [class*="logo-box" i] p,[class*="header-title" i] p{font-size:clamp(9px,2.6vw,11px)!important;line-height:1.25;overflow-wrap:anywhere}
-        /* The existing pages use touch-action:pan-y globally. That blocks horizontal filter swipes. Restore horizontal gestures only for actual scroll strips. */
+        /* The pages set *{touch-action:pan-y}; this blocks horizontal filter/tab gestures. */
         [class*="filter" i],[id*="filter" i],[class*="tabs" i],[id*="tabs" i],[class*="category" i],[id*="category" i]{touch-action:pan-x pan-y!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;min-width:0}
         [class*="filter" i]>* ,[id*="filter" i]>* ,[class*="tabs" i]>* ,[id*="tabs" i]>* ,[class*="category" i]>* ,[id*="category" i]>*{flex:0 0 auto}
         .quiz-container,.quiz-content,[class*="quiz-container" i],[class*="quiz-content" i]{min-width:0;max-width:100%;overflow-x:hidden}
@@ -88,6 +90,24 @@
       `;
       document.head.appendChild(s);
     }
+
+    // Runtime guard for horizontal scrollers even when their class/id does not contain filter/tab/category.
+    const fixHorizontalTouchTargets = () => {
+      document.querySelectorAll('*').forEach(el => {
+        if (el === document.documentElement || el === document.body) return;
+        if (el.scrollWidth > el.clientWidth + 2 && el.clientWidth > 0) {
+          const cs = getComputedStyle(el);
+          if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') {
+            el.style.setProperty('touch-action', 'pan-x pan-y', 'important');
+            el.style.overscrollBehaviorX = 'contain';
+            el.style.webkitOverflowScrolling = 'touch';
+          }
+        }
+      });
+    };
+    requestAnimationFrame(fixHorizontalTouchTargets);
+    setTimeout(fixHorizontalTouchTargets, 500);
+    window.addEventListener('resize', fixHorizontalTouchTargets, { passive: true });
   }
 
   function createInstallUI() {
@@ -225,7 +245,7 @@
     const urls = [
       'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
       'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js',
-      'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js'
+      'https://www.gstatic.com/firebase/10.12.2/firebase-auth-compat.js'
     ];
     let i = 0;
     const next = () => {
@@ -272,8 +292,7 @@
 
   async function boot() {
     ensureManifest();
-    viewportFix();
-    // Register the real offline worker. Never unregister it here.
+    repairMobileCompatibilityCSS();
     await registerServiceWorker();
     setupBell();
     createInstallUI();
