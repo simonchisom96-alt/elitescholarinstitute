@@ -2,6 +2,11 @@ package com.elitescholarinstitute.app
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
@@ -28,6 +33,7 @@ class MainActivity : ComponentActivity() {
     private val offlineHome = "https://appassets.androidplatform.net/index.html"
     private val onlineOrigin = "https://elitescholarinstitute.pages.dev"
     private val diskCache by lazy { File(cacheDir, "esi-web-cache").apply { mkdirs() } }
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
 
     private fun mimeType(path: String): String {
         val ext = path.substringAfterLast('.', "").lowercase()
@@ -106,12 +112,32 @@ class MainActivity : ComponentActivity() {
         if (uri.host != "appassets.androidplatform.net") return null
         val path = uri.path?.removePrefix("/") ?: return null
         if (path.isEmpty()) return null
-
-        // The exact APK shell is bundled. Everything else is progressively cached on disk.
         bundledAsset(path)?.let { return it }
-        val pathAndQuery = path.let { if (uri.query.isNullOrEmpty()) "/$it" else "/$it?${uri.query}" }
+        val pathAndQuery = if (uri.query.isNullOrEmpty()) "/$path" else "/$path?${uri.query}"
         cachedAsset(pathAndQuery, path)?.let { return it }
         return networkAsset(pathAndQuery, path)
+    }
+
+    private fun handleNotificationIntent(intent: Intent?) {
+        val path = intent?.getStringExtra("esi_notification_path") ?: return
+        val safePath = if (path.startsWith("/") && !path.contains("..")) path else return
+        webView.post { webView.loadUrl("https://appassets.androidplatform.net$safePath") }
+        intent.removeExtra("esi_notification_path")
+    }
+
+    private fun monitorNetwork() {
+        val manager = getSystemService(ConnectivityManager::class.java)
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                runOnUiThread { EsiStatusNotification.show(this@MainActivity, true) }
+            }
+            override fun onLost(network: Network) {
+                runOnUiThread { EsiStatusNotification.show(this@MainActivity, false) }
+            }
+        }
+        networkCallback = callback
+        try { manager.registerDefaultNetworkCallback(callback) } catch (_: Exception) {}
+        EsiNetworkReceiver.schedule(this, 15L * 60L * 1000L)
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -141,21 +167,21 @@ class MainActivity : ComponentActivity() {
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
 
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
-                return localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
-            }
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
+                localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
 
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
                 return if (uri.scheme == "http" || uri.scheme == "https") false
                 else {
-                    try { startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri)) } catch (_: Exception) {}
+                    try { startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (_: Exception) {}
                     true
                 }
             }
         }
 
         if (savedInstanceState == null) webView.loadUrl(offlineHome) else webView.restoreState(savedInstanceState)
+        handleNotificationIntent(intent)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -163,9 +189,23 @@ class MainActivity : ComponentActivity() {
             }
         })
 
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
+        } else {
+            NativeNotificationScheduler.initialize(this)
         }
+        monitorNetwork()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleNotificationIntent(intent)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 1001 && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) NativeNotificationScheduler.initialize(this)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -174,6 +214,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        networkCallback?.let { callback -> try { getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(callback) } catch (_: Exception) {} }
         webView.stopLoading()
         webView.webChromeClient = null
         (webView.parent as? ViewGroup)?.removeView(webView)
