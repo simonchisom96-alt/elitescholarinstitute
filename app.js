@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '36.2311';
+  const BUILD = '36.2312';
   const APK_URL = 'https://github.com/simonchisom96-alt/elitescholarinstitute/releases/latest/download/ESI.apk';
   const NOTIF_DB_URL = 'https://elite-notification-default-rtdb.firebaseio.com';
   const SW_URL = '/sw.js?v=' + BUILD;
@@ -115,7 +115,7 @@
     if (!installBox) return;
     const text = installBox.querySelector('[data-install-text]');
     const button = installBox.querySelector('[data-install]');
-    text.textContent = isAndroid && !isInstalled() ? 'Install the Android app for faster access.' : isIOS ? 'Add Elite Scholar Institute to your Home Screen.' : 'Add Elite Scholar Institute to your device.';
+    text.textContent = isAndroid && !isInstalled() ? 'Works offline, faster access, better architecture.' : isIOS ? 'Add Elite Scholar Institute to your Home Screen.' : 'Add Elite Scholar Institute to your device.';
     button.textContent = 'Install Elite Scholar App';
   }
 
