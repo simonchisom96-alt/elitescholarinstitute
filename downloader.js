@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function(){
-  const CACHE_NAME = 'esi-cache-36.2315';
+  const CACHE_NAME = 'esi-cache-36.2316';
   const cache = await caches.open(CACHE_NAME);
   const btns = document.querySelectorAll('.download-btn');
 
@@ -145,5 +145,5 @@ document.addEventListener('DOMContentLoaded', async function(){
         window.showToast('Download failed. Check internet');
       }
     });
-  });
+  }
 });
