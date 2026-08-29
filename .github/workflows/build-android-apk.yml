@@ -11,6 +11,7 @@ on:
       - 'downloader.js'
       - 'manifest.json'
       - 'logo.jpg'
+      - 'Textbooks.html'
       - '.github/workflows/build-android-apk.yml'
   workflow_dispatch:
 
@@ -27,6 +28,30 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Align ESI v2.4 release versions and textbook route
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i "s/36\.2316/36.2330/g" app.js
+          sed -i "s/36\.2317/36.2330/g; s/36\.2318/36.2330/g" sw.js downloader.js
+          sed -i 's/versionCode = 362329/versionCode = 362330/; s/versionName = "2\.3"/versionName = "2.4"/' android/app/build.gradle.kts
+          sed -i 's/href="englishtextbook\.html"/href="Englishtextbook.html"/g' Textbooks.html
+          rm -f englishtextbook.html
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js sw.js downloader.js android/app/build.gradle.kts Textbooks.html englishtextbook.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Bump ESI web caches and Android app to v2.4 [skip ci]"
+            git push origin main
+          fi
+          echo "app.js BUILD:"; grep -m1 "const BUILD" app.js
+          echo "sw cache:"; grep -m1 "CACHE_NAME" sw.js || true
+          echo "downloader cache:"; grep -m1 "CACHE_NAME" downloader.js || true
+          echo "Android version:"; grep -E "versionCode|versionName" android/app/build.gradle.kts
+          echo "English textbook route:"; grep -m1 -o 'href="[^"]*Englishtextbook\.html"' Textbooks.html || true
 
       - name: Bundle only the defined ESI offline shell
         shell: bash
@@ -73,7 +98,6 @@ jobs:
           delsu.html
           governmenttextbook.html
           Englishtextbook.html
-          englishtextbook.html
           biologytextbook.html
           chemistrytextbook.html
           economicstextbook.html
@@ -132,7 +156,6 @@ jobs:
             test -f "$file" || { echo "Missing required shell file: $file"; exit 1; }
           done < /tmp/esi-shell.txt
           rsync -a --files-from=/tmp/esi-shell.txt ./ android/app/src/main/assets/site/
-          # Use the exact website logo.jpg as the Android launcher icon source.
           cp -f logo.jpg android/app/src/main/res/drawable/logo.jpg
           echo "Bundled shell file count: $(find android/app/src/main/assets/site -type f | wc -l)"
           echo "Bundled shell size: $(du -sh android/app/src/main/assets/site | cut -f1)"
@@ -180,4 +203,4 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "ESI Android APK" \
-            --notes "ESI Android APK. Contains only the defined ESI offline shell; additional same-origin resources are cached by the service worker when accessed."
+            --notes "ESI Android APK v2.4. Includes chunked native file sharing, binary-safe PDF handling, corrected English textbook route, and aligned web cache versions."
