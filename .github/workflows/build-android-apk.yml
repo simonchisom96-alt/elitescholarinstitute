@@ -39,10 +39,9 @@ jobs:
           sed -i "s/36\.2330/36.2331/g; s/36\.2317/36.2331/g; s/36\.2318/36.2331/g" sw.js downloader.js
           sed -i 's/versionCode = 362330/versionCode = 362331/; s/versionName = "2\.4"/versionName = "2.5"/' android/app/build.gradle.kts
           sed -i 's/href="englishtextbook\.html"/href="Englishtextbook.html"/g' Textbooks.html
-          rm -f englishtextbook.html
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app.js sw.js downloader.js android/app/build.gradle.kts Textbooks.html englishtextbook.html
+          git add app.js sw.js downloader.js android/app/build.gradle.kts Textbooks.html
           if ! git diff --cached --quiet; then
             git commit -m "Bump ESI web caches and Android app to v2.5 [skip ci]"
             git push origin main
