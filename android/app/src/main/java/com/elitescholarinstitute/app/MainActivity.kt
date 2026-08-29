@@ -246,6 +246,11 @@ class MainActivity : ComponentActivity() {
         monitorNetwork()
     }
 
+    override fun onResume() {
+        super.onResume()
+        requestNotificationPermissionIfDue()
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode != NOTIFICATION_PERMISSION_REQUEST) return
