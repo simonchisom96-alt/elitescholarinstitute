@@ -34,6 +34,7 @@ class MainActivity : ComponentActivity() {
     private val onlineOrigin = "https://elitescholarinstitute.pages.dev"
     private val diskCache by lazy { File(cacheDir, "esi-web-cache").apply { mkdirs() } }
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var lastNetworkState: Boolean? = null
 
     private fun mimeType(path: String): String {
         val ext = path.substringAfterLast('.', "").lowercase()
@@ -66,8 +67,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun bundledAsset(path: String): WebResourceResponse? = try {
-        val stream = assets.open("site/$path")
-        WebResourceResponse(mimeType(path), "UTF-8", stream)
+        WebResourceResponse(mimeType(path), "UTF-8", assets.open("site/$path"))
     } catch (_: FileNotFoundException) {
         null
     } catch (_: Exception) {
@@ -77,35 +77,24 @@ class MainActivity : ComponentActivity() {
     private fun cachedAsset(pathAndQuery: String, path: String): WebResourceResponse? {
         val file = File(diskCache, cacheKey(pathAndQuery))
         if (!file.isFile || file.length() == 0L) return null
-        return try {
-            WebResourceResponse(mimeType(path), "UTF-8", file.inputStream())
-        } catch (_: Exception) {
-            null
-        }
+        return try { WebResourceResponse(mimeType(path), "UTF-8", file.inputStream()) } catch (_: Exception) { null }
     }
 
-    private fun networkAsset(pathAndQuery: String, path: String): WebResourceResponse? {
-        return try {
-            val connection = (URL(onlineOrigin + pathAndQuery).openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
-                connectTimeout = 9000
-                readTimeout = 15000
-                useCaches = true
-                instanceFollowRedirects = true
-            }
-            if (connection.responseCode !in 200..299) {
-                connection.disconnect()
-                return null
-            }
-            val bytes = connection.inputStream.use { it.readBytes() }
-            connection.disconnect()
-            if (bytes.isEmpty()) return null
-            FileOutputStream(File(diskCache, cacheKey(pathAndQuery))).use { it.write(bytes) }
-            WebResourceResponse(mimeType(path), "UTF-8", ByteArrayInputStream(bytes))
-        } catch (_: Exception) {
-            null
+    private fun networkAsset(pathAndQuery: String, path: String): WebResourceResponse? = try {
+        val connection = (URL(onlineOrigin + pathAndQuery).openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = 9000
+            readTimeout = 15000
+            useCaches = true
+            instanceFollowRedirects = true
         }
-    }
+        if (connection.responseCode !in 200..299) { connection.disconnect(); return null }
+        val bytes = connection.inputStream.use { it.readBytes() }
+        connection.disconnect()
+        if (bytes.isEmpty()) return null
+        FileOutputStream(File(diskCache, cacheKey(pathAndQuery))).use { it.write(bytes) }
+        WebResourceResponse(mimeType(path), "UTF-8", ByteArrayInputStream(bytes))
+    } catch (_: Exception) { null }
 
     private fun localOrCachedAsset(request: WebResourceRequest): WebResourceResponse? {
         val uri = request.url
@@ -120,24 +109,38 @@ class MainActivity : ComponentActivity() {
 
     private fun handleNotificationIntent(intent: Intent?) {
         val path = intent?.getStringExtra("esi_notification_path") ?: return
-        val safePath = if (path.startsWith("/") && !path.contains("..")) path else return
-        webView.post { webView.loadUrl("https://appassets.androidplatform.net$safePath") }
+        if (!path.startsWith("/") || path.contains("..")) return
+        webView.post { webView.loadUrl("https://appassets.androidplatform.net$path") }
         intent.removeExtra("esi_notification_path")
+    }
+
+    private fun currentNetworkState(): Boolean {
+        val manager = getSystemService(ConnectivityManager::class.java)
+        val network = manager.activeNetwork ?: return false
+        val capabilities = manager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+
+    private fun emitNetworkState(connected: Boolean, notify: Boolean) {
+        val previous = lastNetworkState
+        lastNetworkState = connected
+        if (notify && previous != null && previous != connected) EsiStatusNotification.show(this, connected)
     }
 
     private fun monitorNetwork() {
         val manager = getSystemService(ConnectivityManager::class.java)
+        emitNetworkState(currentNetworkState(), false)
         val callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
-                runOnUiThread { EsiStatusNotification.show(this@MainActivity, true) }
+                runOnUiThread { emitNetworkState(true, true) }
             }
             override fun onLost(network: Network) {
-                runOnUiThread { EsiStatusNotification.show(this@MainActivity, false) }
+                runOnUiThread { emitNetworkState(currentNetworkState(), true) }
             }
         }
         networkCallback = callback
         try { manager.registerDefaultNetworkCallback(callback) } catch (_: Exception) {}
-        EsiNetworkReceiver.schedule(this, 15L * 60L * 1000L)
+        EsiNetworkReceiver.schedule(this)
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -147,7 +150,6 @@ class MainActivity : ComponentActivity() {
         webView = WebView(this)
         webView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         setContentView(webView)
-
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -160,40 +162,25 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/36.2312"
+            userAgentString = "$userAgentString ESIAndroid/36.2313"
         }
-
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
-
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
-                localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
-
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? = localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
-                return if (uri.scheme == "http" || uri.scheme == "https") false
-                else {
-                    try { startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (_: Exception) {}
-                    true
-                }
+                return if (uri.scheme == "http" || uri.scheme == "https") false else { try { startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (_: Exception) {}; true }
             }
         }
-
         if (savedInstanceState == null) webView.loadUrl(offlineHome) else webView.restoreState(savedInstanceState)
         handleNotificationIntent(intent)
-
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (webView.canGoBack()) webView.goBack() else finish()
-            }
+            override fun handleOnBackPressed() { if (webView.canGoBack()) webView.goBack() else finish() }
         })
-
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
-        } else {
-            NativeNotificationScheduler.initialize(this)
-        }
+        } else NativeNotificationScheduler.initialize(this)
         monitorNetwork()
     }
 
