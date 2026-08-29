@@ -1,10 +1,11 @@
-/* Elite Scholar Institute — application controller 36.2308 — no service worker */
+/* Elite Scholar Institute — application controller 36.2309 */
 (() => {
   'use strict';
 
-  const BUILD = '36.2308';
-  const APK_URL = 'https://github.com/simonchisom96-alt/elitescholarinstitute/releases/latest/download/ESI.apk';
+  const BUILD = '36.2309';
+  const APK_URL = '/releases/latest/download/ESI.apk';
   const NOTIF_DB_URL = 'https://elite-notification-default-rtdb.firebaseio.com';
+  const SW_URL = '/sw.js?v=' + BUILD;
   let installBox = null;
   let hideTimer = null;
   let installTimer = null;
@@ -21,6 +22,7 @@
 
   window.__esiAppLoadTime = Date.now();
   window.__esiNotifDbUrl = NOTIF_DB_URL;
+  window.__esiBuild = BUILD;
 
   function toast(message, background = '#111827') {
     document.querySelectorAll('[data-esi-toast]').forEach(n => n.remove());
@@ -62,23 +64,27 @@
     addEventListener('orientationchange', () => setTimeout(setVH, 150), { passive: true });
     if (window.visualViewport) visualViewport.addEventListener('resize', setVH, { passive: true });
 
-    // Mobile layout guard. This is CSS injected by app.js so the HTML files remain untouched.
     if (!document.getElementById('esiMobileCompatibilityCSS')) {
       const s = document.createElement('style');
       s.id = 'esiMobileCompatibilityCSS';
       s.textContent = `
         html,body{max-width:100%;overflow-x:hidden}
-        img,video,canvas,svg{max-width:100%}
+        img,video,canvas,svg{max-width:100%;height:auto}
         input,textarea,select,button{max-width:100%}
-        #appHeader{padding-top:max(12px,var(--esi-safe-top))!important}
-        #notifBellBtn{top:calc(260px + var(--esi-safe-top))!important}
-        @media (max-width:600px){
-          header,.header,.app-header,#appHeader{max-width:100vw}
-          .filter-tabs,.filter-bar,.notification-filter,.quiz-filter,[class*="filter"]{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
-          .filter-tabs>*,.filter-bar>*,.notification-filter>* ,.quiz-filter>*{flex:0 0 auto}
-          .quiz-container,.quiz-content,[class*="quiz-container"],[class*="quiz-content"]{min-width:0;max-width:100%;overflow-x:hidden}
-          pre,code{max-width:100%;overflow-x:auto}
-        }
+        header,.header,.app-header,#appHeader,[class*="topbar" i],[class*="top-bar" i],[id*="topbar" i],[class*="navbar" i],[class*="nav-bar" i],[class*="appbar" i],[class*="app-bar" i]{box-sizing:border-box!important;max-width:100vw;min-width:0;flex-shrink:0;padding-top:max(8px,env(safe-area-inset-top))!important;padding-left:max(0px,env(safe-area-inset-left))!important;padding-right:max(0px,env(safe-area-inset-right))!important}
+        header *,[class*="header" i] *,[id*="header" i] *,[class*="topbar" i] *,[class*="top-bar" i] *,[class*="navbar" i] *,[class*="appbar" i] *,[class*="app-bar" i] *{min-width:0;max-width:100%}
+        [class*="logo-box" i],[class*="header-title" i],[class*="header-row" i]{min-width:0;max-width:100%;flex-wrap:nowrap}
+        [class*="logo-box" i] img,[class*="logo-badge" i]{flex:0 0 auto;max-width:40px}
+        [class*="logo-box" i] h1,[class*="logo-box" i] h2,[class*="header-title" i] h1,[class*="header-title" i] h2{font-size:clamp(12px,4vw,16px)!important;line-height:1.2;overflow-wrap:anywhere}
+        [class*="logo-box" i] p,[class*="header-title" i] p{font-size:clamp(9px,2.6vw,11px)!important;line-height:1.25;overflow-wrap:anywhere}
+        /* The existing pages use touch-action:pan-y globally. That blocks horizontal filter swipes. Restore horizontal gestures only for actual scroll strips. */
+        [class*="filter" i],[id*="filter" i],[class*="tabs" i],[id*="tabs" i],[class*="category" i],[id*="category" i]{touch-action:pan-x pan-y!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;min-width:0}
+        [class*="filter" i]>* ,[id*="filter" i]>* ,[class*="tabs" i]>* ,[id*="tabs" i]>* ,[class*="category" i]>* ,[id*="category" i]>*{flex:0 0 auto}
+        .quiz-container,.quiz-content,[class*="quiz-container" i],[class*="quiz-content" i]{min-width:0;max-width:100%;overflow-x:hidden}
+        pre,code{max-width:100%;overflow-x:auto}
+        @media(max-width:360px){[class*="logo-box" i] img,[class*="logo-badge" i]{width:34px!important;height:34px!important}}
+        @media(max-height:700px){header,.header,.app-header,#appHeader,[class*="topbar" i],[class*="navbar" i]{padding-top:max(6px,env(safe-area-inset-top))!important}}
+        [class*="bottom-nav" i],[class*="tab-bar" i],[class*="tabbar" i],[class*="footer-nav" i],[class*="bottombar" i],[class*="bottom-bar" i]{padding-bottom:max(8px,env(safe-area-inset-bottom))!important;box-sizing:border-box!important;flex-shrink:0}
       `;
       document.head.appendChild(s);
     }
@@ -105,14 +111,14 @@
     const text = installBox.querySelector('[data-install-text]');
     const button = installBox.querySelector('[data-install]');
     if (isAndroid && !isInstalled()) {
-      text.textContent = 'Get the ESI Android app directly. No browser install prompt is required.';
-      button.textContent = 'Download ESI App';
+      text.textContent = 'Install the Android app for faster access.';
+      button.textContent = 'Install Elite Scholar App';
     } else if (isIOS) {
-      text.textContent = 'On iPhone or iPad, use Share → Add to Home Screen to install the website.';
-      button.textContent = 'Show iPhone Instructions';
+      text.textContent = 'Add Elite Scholar Institute to your Home Screen.';
+      button.textContent = 'Install Elite Scholar App';
     } else {
-      text.textContent = 'Add Elite Scholar Institute to your device for faster access.';
-      button.textContent = 'Install / Add to Home Screen';
+      text.textContent = 'Add Elite Scholar Institute to your device.';
+      button.textContent = 'Install Elite Scholar App';
     }
   }
 
@@ -128,7 +134,7 @@
     hideTimer = setTimeout(hideInstall, 10000);
   }
 
-  function scheduleInstall(delay = 12000) {
+  function scheduleInstall(delay = 15000) {
     if (isInstalled() || installTimer) return;
     clearTimeout(installTimer);
     installTimer = setTimeout(() => {
@@ -149,16 +155,13 @@
   async function installNow() {
     hideInstall();
     if (isAndroid && !isInstalled()) {
-      window.location.href = APK_URL;
+      window.location.assign(APK_URL);
       return;
     }
     if (deferredInstall) {
       const event = deferredInstall;
       deferredInstall = null;
-      try {
-        event.prompt();
-        await event.userChoice;
-      } catch (_) {}
+      try { event.prompt(); await event.userChoice; } catch (_) {}
       return;
     }
     if (isIOS) {
@@ -172,7 +175,7 @@
     event.preventDefault();
     deferredInstall = event;
     window.__esiInstallAvailable = true;
-    if (!isAndroid && !isIOS) scheduleInstall(12000);
+    if (!isAndroid && !isIOS) scheduleInstall(15000);
   });
 
   window.addEventListener('appinstalled', () => {
@@ -182,12 +185,16 @@
     toast('App installed successfully', '#16a34a');
   });
 
-  async function removeLegacyServiceWorkers() {
-    if (!('serviceWorker' in navigator)) return;
+  async function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return null;
     try {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map(reg => reg.unregister()));
-    } catch (_) {}
+      const registration = await navigator.serviceWorker.register(SW_URL, { scope: '/', updateViaCache: 'none' });
+      await registration.update().catch(() => {});
+      if (registration.waiting) registration.waiting.postMessage('SKIP_WAITING');
+      return registration;
+    } catch (_) {
+      return null;
+    }
   }
 
   function ensureBell() {
@@ -224,10 +231,7 @@
     const next = () => {
       if (i >= urls.length) return done();
       const s = document.createElement('script');
-      s.src = urls[i++];
-      s.onload = next;
-      s.onerror = next;
-      document.head.appendChild(s);
+      s.src = urls[i++]; s.onload = next; s.onerror = next; document.head.appendChild(s);
     };
     next();
   }
@@ -269,14 +273,15 @@
   async function boot() {
     ensureManifest();
     viewportFix();
-    await removeLegacyServiceWorkers();
+    // Register the real offline worker. Never unregister it here.
+    await registerServiceWorker();
     setupBell();
     createInstallUI();
-    scheduleInstall(12000);
+    scheduleInstall(15000);
   }
 
   addEventListener('pageshow', () => {
-    if (!isInstalled()) scheduleInstall(12000);
+    if (!isInstalled()) scheduleInstall(15000);
   });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
