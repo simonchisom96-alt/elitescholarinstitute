@@ -66,35 +66,47 @@ class MainActivity : ComponentActivity() {
         return digest.joinToString("") { "%02x".format(it) }
     }
 
-    private fun bundledAsset(path: String): WebResourceResponse? = try {
-        WebResourceResponse(mimeType(path), "UTF-8", assets.open("site/$path"))
-    } catch (_: FileNotFoundException) {
-        null
-    } catch (_: Exception) {
-        null
+    private fun bundledAsset(path: String): WebResourceResponse? {
+        return try {
+            WebResourceResponse(mimeType(path), "UTF-8", assets.open("site/$path"))
+        } catch (_: FileNotFoundException) {
+            null
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun cachedAsset(pathAndQuery: String, path: String): WebResourceResponse? {
         val file = File(diskCache, cacheKey(pathAndQuery))
         if (!file.isFile || file.length() == 0L) return null
-        return try { WebResourceResponse(mimeType(path), "UTF-8", file.inputStream()) } catch (_: Exception) { null }
+        return try {
+            WebResourceResponse(mimeType(path), "UTF-8", file.inputStream())
+        } catch (_: Exception) {
+            null
+        }
     }
 
-    private fun networkAsset(pathAndQuery: String, path: String): WebResourceResponse? = try {
-        val connection = (URL(onlineOrigin + pathAndQuery).openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"
-            connectTimeout = 9000
-            readTimeout = 15000
-            useCaches = true
-            instanceFollowRedirects = true
+    private fun networkAsset(pathAndQuery: String, path: String): WebResourceResponse? {
+        var connection: HttpURLConnection? = null
+        return try {
+            connection = (URL(onlineOrigin + pathAndQuery).openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 9000
+                readTimeout = 15000
+                useCaches = true
+                instanceFollowRedirects = true
+            }
+            if (connection.responseCode !in 200..299) return null
+            val bytes = connection.inputStream.use { it.readBytes() }
+            if (bytes.isEmpty()) return null
+            FileOutputStream(File(diskCache, cacheKey(pathAndQuery))).use { it.write(bytes) }
+            WebResourceResponse(mimeType(path), "UTF-8", ByteArrayInputStream(bytes))
+        } catch (_: Exception) {
+            null
+        } finally {
+            connection?.disconnect()
         }
-        if (connection.responseCode !in 200..299) { connection.disconnect(); return null }
-        val bytes = connection.inputStream.use { it.readBytes() }
-        connection.disconnect()
-        if (bytes.isEmpty()) return null
-        FileOutputStream(File(diskCache, cacheKey(pathAndQuery))).use { it.write(bytes) }
-        WebResourceResponse(mimeType(path), "UTF-8", ByteArrayInputStream(bytes))
-    } catch (_: Exception) { null }
+    }
 
     private fun localOrCachedAsset(request: WebResourceRequest): WebResourceResponse? {
         val uri = request.url
@@ -118,13 +130,16 @@ class MainActivity : ComponentActivity() {
         val manager = getSystemService(ConnectivityManager::class.java)
         val network = manager.activeNetwork ?: return false
         val capabilities = manager.getNetworkCapabilities(network) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 
     private fun emitNetworkState(connected: Boolean, notify: Boolean) {
         val previous = lastNetworkState
         lastNetworkState = connected
-        if (notify && previous != null && previous != connected) EsiStatusNotification.show(this, connected)
+        if (notify && previous != null && previous != connected) {
+            EsiStatusNotification.show(this, connected)
+        }
     }
 
     private fun monitorNetwork() {
@@ -134,12 +149,16 @@ class MainActivity : ComponentActivity() {
             override fun onAvailable(network: Network) {
                 runOnUiThread { emitNetworkState(true, true) }
             }
+
             override fun onLost(network: Network) {
                 runOnUiThread { emitNetworkState(currentNetworkState(), true) }
             }
         }
         networkCallback = callback
-        try { manager.registerDefaultNetworkCallback(callback) } catch (_: Exception) {}
+        try {
+            manager.registerDefaultNetworkCallback(callback)
+        } catch (_: Exception) {
+        }
         EsiNetworkReceiver.schedule(this)
     }
 
@@ -148,8 +167,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         webView = WebView(this)
-        webView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        webView.layoutParams = ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
         setContentView(webView)
+
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -164,23 +187,55 @@ class MainActivity : ComponentActivity() {
             displayZoomControls = false
             userAgentString = "$userAgentString ESIAndroid/36.2313"
         }
+
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
+
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? = localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
-            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+            override fun shouldInterceptRequest(
+                view: WebView,
+                request: WebResourceRequest
+            ): WebResourceResponse? {
+                return localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
+            }
+
+            override fun shouldOverrideUrlLoading(
+                view: WebView,
+                request: WebResourceRequest
+            ): Boolean {
                 val uri = request.url
-                return if (uri.scheme == "http" || uri.scheme == "https") false else { try { startActivity(Intent(Intent.ACTION_VIEW, uri)) } catch (_: Exception) {}; true }
+                if (uri.scheme == "http" || uri.scheme == "https") return false
+                return try {
+                    startActivity(Intent(Intent.ACTION_VIEW, uri))
+                    true
+                } catch (_: Exception) {
+                    true
+                }
             }
         }
-        if (savedInstanceState == null) webView.loadUrl(offlineHome) else webView.restoreState(savedInstanceState)
+
+        if (savedInstanceState == null) {
+            webView.loadUrl(offlineHome)
+        } else {
+            webView.restoreState(savedInstanceState)
+        }
+
         handleNotificationIntent(intent)
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() { if (webView.canGoBack()) webView.goBack() else finish() }
+            override fun handleOnBackPressed() {
+                if (webView.canGoBack()) webView.goBack() else finish()
+            }
         })
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
-        } else NativeNotificationScheduler.initialize(this)
+        } else {
+            NativeNotificationScheduler.initialize(this)
+        }
+
         monitorNetwork()
     }
 
@@ -190,9 +245,15 @@ class MainActivity : ComponentActivity() {
         handleNotificationIntent(intent)
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 1001 && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) NativeNotificationScheduler.initialize(this)
+        if (requestCode == 1001 && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+            NativeNotificationScheduler.initialize(this)
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -201,7 +262,12 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        networkCallback?.let { callback -> try { getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(callback) } catch (_: Exception) {} }
+        networkCallback?.let { callback ->
+            try {
+                getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(callback)
+            } catch (_: Exception) {
+            }
+        }
         webView.stopLoading()
         webView.webChromeClient = null
         (webView.parent as? ViewGroup)?.removeView(webView)
