@@ -1,5 +1,5 @@
 /* Elite Scholar Institute service worker — offline shell + runtime cache */
-const CACHE_VERSION = 'esi-cache-36.2332';
+const CACHE_VERSION = 'esi-cache-36.2345';
 const APP_SHELL = [
   '/', '/index.html', '/logo.jpg', '/advert.png', '/esi.jpg', '/founder.jpg',
   '/manifest.json', '/offline.html', '/app.js', '/downloader.js',
@@ -55,10 +55,6 @@ self.addEventListener('fetch', event => {
   if (!isGet(request) || !isSameOrigin(request)) return;
   const url = new URL(request.url);
   if (url.pathname.startsWith('/api/')) return;
-
-  // PDFs are handled exclusively by downloader.js so an old/stale
-  // service-worker response can never replace the real PDF response.
-  if (url.pathname.toLowerCase().endsWith('.pdf')) return;
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
