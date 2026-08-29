@@ -56,6 +56,10 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (url.pathname.startsWith('/api/')) return;
 
+  // PDFs are handled exclusively by downloader.js so an old/stale
+  // service-worker response can never replace the real PDF response.
+  if (url.pathname.toLowerCase().endsWith('.pdf')) return;
+
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
