@@ -202,6 +202,21 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
+        fun openPdf(name: String, base64: String) {
+            try {
+                val safeName = name.substringAfterLast('/').ifBlank { "document.pdf" }
+                val file = File(shareDir, safeName)
+                FileOutputStream(file, false).use { out ->
+                    out.write(Base64.decode(base64, Base64.DEFAULT))
+                    out.flush()
+                }
+                runOnUiThread { openLocalPdf(file) }
+            } catch (_: Exception) {
+                runOnUiThread { android.widget.Toast.makeText(this@MainActivity, "Unable to open PDF", android.widget.Toast.LENGTH_SHORT).show() }
+            }
+        }
+
+        @JavascriptInterface
         fun share(title: String, text: String, url: String) {
             runOnUiThread {
                 val safeUrl = if (url.startsWith("https://appassets.androidplatform.net/")) {
@@ -219,6 +234,19 @@ class MainActivity : ComponentActivity() {
     }
 
     private val androidBridge = AndroidBridge()
+
+    private fun openLocalPdf(file: File) {
+        try {
+            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/pdf")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(intent, "Open PDF with"))
+        } catch (_: Exception) {
+            android.widget.Toast.makeText(this, "No PDF viewer is available", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
 
     private fun shareLocalFile(file: File, mime: String, title: String, text: String) {
         try {
@@ -256,7 +284,7 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/2.4"
+            userAgentString = "$userAgentString ESIAndroid/2.6"
         }
         webView.addJavascriptInterface(androidBridge, "ESIAndroid")
         CookieManager.getInstance().setAcceptCookie(true)
