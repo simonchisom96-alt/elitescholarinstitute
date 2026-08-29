@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function(){
-  const CACHE_NAME = 'esi-pdf-cache-36.2342';
+  const CACHE_NAME = 'esi-pdf-cache-36.2343';
   const cachePromise = caches.open(CACHE_NAME);
 
   const getPdfUrl = (btn) => {
@@ -8,11 +8,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const raw = (card && card.dataset.url) || (owner && owner.dataset.url) || btn.dataset.url || btn.getAttribute('href');
     if(!raw || /PASTE_/i.test(raw)) return null;
     try {
-      const url = new URL(raw, location.href);
-      if(/ESIAndroid\//i.test(navigator.userAgent) && url.origin === 'https://elitescholarinstitute.pages.dev') {
-        return location.origin + url.pathname + url.search;
-      }
-      return url.href;
+      return new URL(raw, location.href).href;
     } catch(e) {
       return null;
     }
@@ -112,20 +108,14 @@ document.addEventListener('DOMContentLoaded', function(){
       if(text) text.textContent = 'Downloading...';
       if(percent) percent.textContent = '0%';
 
-      // In the APK, let the native downloader fetch the real Pages URL.
-      // This bypasses WebView's appassets fetch/interceptor for PDFs only.
-      if(window.ESIAndroid && typeof window.ESIAndroid.downloadPdf === 'function'){
-        const realUrl = url.replace(/^https:\/\/appassets\.androidplatform\.net/i, 'https://elitescholarinstitute.pages.dev');
-        window.ESIAndroid.downloadPdf(realUrl, fileName);
-        await new Promise(resolve => setTimeout(resolve, 250));
-        btn.classList.remove('loading');
-        btn.classList.add('success');
-        if(text) text.textContent = '✓ Open';
-        if(percent) percent.textContent = '';
-        return;
-      }
-
-      const response = await fetch(url, {method:'GET', credentials:'same-origin', cache:'no-store'});
+      // PDF download uses the real Cloudflare Pages URL in both website and APK.
+      // The APK must not rewrite it to appassets.androidplatform.net.
+      // Cloudflare Pages static assets provide Access-Control-Allow-Origin: *.
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'omit',
+        cache: 'no-store'
+      });
       if(!response.ok) throw new Error('PDF request failed: ' + response.status);
 
       const blob = await response.blob();
