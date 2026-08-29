@@ -64,11 +64,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun resourceEncoding(path: String): String? {
-        return when (mimeType(path)) {
-            "text/html", "application/javascript", "text/css", "application/json", "image/svg+xml" -> "UTF-8"
-            else -> null
-        }
+    private fun resourceEncoding(path: String): String? = when (mimeType(path)) {
+        "text/html", "application/javascript", "text/css", "application/json", "image/svg+xml" -> "UTF-8"
+        else -> null
     }
 
     private fun cacheKey(pathAndQuery: String): String {
@@ -76,47 +74,33 @@ class MainActivity : ComponentActivity() {
         return digest.joinToString("") { "%02x".format(it) }
     }
 
-    private fun bundledAsset(path: String): WebResourceResponse? {
-        return try {
-            WebResourceResponse(mimeType(path), resourceEncoding(path), assets.open("site/$path"))
-        } catch (_: FileNotFoundException) {
-            null
-        } catch (_: Exception) {
-            null
-        }
-    }
+    private fun bundledAsset(path: String): WebResourceResponse? = try {
+        WebResourceResponse(mimeType(path), resourceEncoding(path), assets.open("site/$path"))
+    } catch (_: FileNotFoundException) { null } catch (_: Exception) { null }
 
     private fun cachedAsset(pathAndQuery: String, path: String): WebResourceResponse? {
         val file = File(diskCache, cacheKey(pathAndQuery))
         if (!file.isFile || file.length() == 0L) return null
-        return try {
-            WebResourceResponse(mimeType(path), resourceEncoding(path), file.inputStream())
-        } catch (_: Exception) {
-            null
-        }
+        return try { WebResourceResponse(mimeType(path), resourceEncoding(path), file.inputStream()) } catch (_: Exception) { null }
     }
 
     private fun networkAsset(pathAndQuery: String, path: String): WebResourceResponse? {
         var connection: HttpURLConnection? = null
         return try {
-            val activeConnection = (URL(onlineOrigin + pathAndQuery).openConnection() as HttpURLConnection).apply {
+            val c = (URL(onlineOrigin + pathAndQuery).openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 connectTimeout = 9000
                 readTimeout = 15000
                 useCaches = true
                 instanceFollowRedirects = true
             }
-            connection = activeConnection
-            if (activeConnection.responseCode !in 200..299) return null
-            val bytes = activeConnection.inputStream.use { it.readBytes() }
+            connection = c
+            if (c.responseCode !in 200..299) return null
+            val bytes = c.inputStream.use { it.readBytes() }
             if (bytes.isEmpty()) return null
             FileOutputStream(File(diskCache, cacheKey(pathAndQuery))).use { it.write(bytes) }
             WebResourceResponse(mimeType(path), resourceEncoding(path), ByteArrayInputStream(bytes))
-        } catch (_: Exception) {
-            null
-        } finally {
-            connection?.disconnect()
-        }
+        } catch (_: Exception) { null } finally { connection?.disconnect() }
     }
 
     private fun localOrCachedAsset(request: WebResourceRequest): WebResourceResponse? {
@@ -130,17 +114,7 @@ class MainActivity : ComponentActivity() {
         return networkAsset(pathAndQuery, path)
     }
 
-    private fun currentNetworkState(): Boolean {
-        val manager = getSystemService(ConnectivityManager::class.java)
-        val network = manager.activeNetwork ?: return false
-        val capabilities = manager.getNetworkCapabilities(network) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-    }
-
-    private fun injectAppJs() {
-        webView.evaluateJavascript(buildAndroidBridgeJs(), null)
-    }
+    private fun injectAppJs() = webView.evaluateJavascript(buildAndroidBridgeJs(), null)
 
     private fun buildAndroidBridgeJs(): String = """
         (function(){
@@ -161,7 +135,12 @@ class MainActivity : ComponentActivity() {
                     const result = String(reader.result || '');
                     const comma = result.indexOf(',');
                     const base64 = comma >= 0 ? result.slice(comma + 1) : result;
-                    window.ESIAndroid.shareFile(file.name || 'shared_file', file.type || 'application/octet-stream', base64, data.title || '', data.text || '');
+                    const chunkSize = 180000;
+                    window.ESIAndroid.beginShareFile(file.name || 'shared_file', file.type || 'application/octet-stream', data.title || '', data.text || '');
+                    for(let i=0; i<base64.length; i+=chunkSize){
+                      window.ESIAndroid.appendShareChunk(base64.slice(i, i+chunkSize));
+                    }
+                    window.ESIAndroid.finishShareFile();
                     resolve();
                   } catch(e){ reject(e); }
                 };
@@ -176,6 +155,52 @@ class MainActivity : ComponentActivity() {
     """.trimIndent()
 
     private inner class AndroidBridge {
+        private var pendingFile: File? = null
+        private var pendingMime = "application/octet-stream"
+        private var pendingTitle = ""
+        private var pendingText = ""
+        private var pendingOutput: FileOutputStream? = null
+
+        @JavascriptInterface
+        fun beginShareFile(name: String, mime: String, title: String, text: String) {
+            synchronized(this) {
+                pendingOutput?.close()
+                val safeName = name.substringAfterLast('/').ifBlank { "shared_file" }
+                pendingFile = File(shareDir, safeName)
+                pendingMime = mime.ifBlank { "application/octet-stream" }
+                pendingTitle = title
+                pendingText = text
+                pendingOutput = FileOutputStream(pendingFile!!, false)
+            }
+        }
+
+        @JavascriptInterface
+        fun appendShareChunk(chunk: String) {
+            synchronized(this) {
+                val out = pendingOutput ?: throw IllegalStateException("No share file is open")
+                out.write(Base64.decode(chunk, Base64.DEFAULT))
+            }
+        }
+
+        @JavascriptInterface
+        fun finishShareFile() {
+            val file: File
+            val mime: String
+            val title: String
+            val text: String
+            synchronized(this) {
+                pendingOutput?.flush()
+                pendingOutput?.close()
+                pendingOutput = null
+                file = pendingFile ?: throw IllegalStateException("No share file is open")
+                mime = pendingMime
+                title = pendingTitle
+                text = pendingText
+                pendingFile = null
+            }
+            runOnUiThread { shareLocalFile(file, mime, title, text) }
+        }
+
         @JavascriptInterface
         fun share(title: String, text: String, url: String) {
             runOnUiThread {
@@ -191,85 +216,32 @@ class MainActivity : ComponentActivity() {
                 startActivity(Intent.createChooser(intent, "Share with"))
             }
         }
-
-        @JavascriptInterface
-        fun shareFile(name: String, mime: String, base64: String, title: String, text: String) {
-            runOnUiThread {
-                try {
-                    val safeName = name.substringAfterLast('/').ifBlank { "shared_file" }
-                    val file = File(shareDir, safeName)
-                    file.writeBytes(Base64.decode(base64, Base64.DEFAULT))
-                    val uri = FileProvider.getUriForFile(this@MainActivity, "$packageName.fileprovider", file)
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = mime.ifBlank { "application/octet-stream" }
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        if (text.isNotBlank()) putExtra(Intent.EXTRA_TEXT, text)
-                        if (title.isNotBlank()) putExtra(Intent.EXTRA_SUBJECT, title)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    startActivity(Intent.createChooser(intent, "Share with"))
-                } catch (_: Exception) {
-                    android.widget.Toast.makeText(this@MainActivity, "Unable to share file", android.widget.Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-        @JavascriptInterface
-        fun openPdf(name: String, base64: String) {
-            runOnUiThread {
-                try {
-                    val safeName = name.substringAfterLast('/').ifBlank { "document.pdf" }
-                    val finalName = if (safeName.lowercase().endsWith(".pdf")) safeName else "$safeName.pdf"
-                    val file = File(shareDir, finalName)
-                    file.writeBytes(Base64.decode(base64, Base64.DEFAULT))
-                    val uri = FileProvider.getUriForFile(this@MainActivity, "$packageName.fileprovider", file)
-                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(uri, "application/pdf")
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    startActivity(intent)
-                } catch (_: Exception) {
-                    android.widget.Toast.makeText(this@MainActivity, "No PDF viewer is available", android.widget.Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
     }
 
     private val androidBridge = AndroidBridge()
 
-    private fun openBlobPdf(blobUrl: String) {
-        val quoted = org.json.JSONObject.quote(blobUrl)
-        val script = """
-            (async function(){
-              try {
-                const r = await fetch($quoted);
-                const b = await r.blob();
-                const reader = new FileReader();
-                reader.onload = function(){
-                  const s = String(reader.result || '');
-                  const i = s.indexOf(',');
-                  const data = i >= 0 ? s.slice(i + 1) : s;
-                  window.ESIAndroid.openPdf('document.pdf', data);
-                };
-                reader.readAsDataURL(b);
-              } catch(e) {
-                console.error('Android cached PDF bridge error', e);
-              }
-            })();
-        """.trimIndent()
-        webView.evaluateJavascript(script, null)
+    private fun shareLocalFile(file: File, mime: String, title: String, text: String) {
+        try {
+            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = mime.ifBlank { "application/octet-stream" }
+                putExtra(Intent.EXTRA_STREAM, uri)
+                if (text.isNotBlank()) putExtra(Intent.EXTRA_TEXT, text)
+                if (title.isNotBlank()) putExtra(Intent.EXTRA_SUBJECT, title)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(intent, "Share with"))
+        } catch (_: Exception) {
+            android.widget.Toast.makeText(this, "Unable to share file", android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
         webView = WebView(this)
-        webView.layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
+        webView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         setContentView(webView)
 
         webView.settings.apply {
@@ -284,34 +256,21 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/2.2"
+            userAgentString = "$userAgentString ESIAndroid/2.4"
         }
-
         webView.addJavascriptInterface(androidBridge, "ESIAndroid")
-
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
 
         webView.webChromeClient = object : WebChromeClient() {
             override fun onJsAlert(view: WebView?, url: String?, message: String?, result: JsResult): Boolean {
-                AlertDialog.Builder(this@MainActivity)
-                    .setMessage(message ?: "")
-                    .setPositiveButton("OK") { _, _ -> result.confirm() }
-                    .setOnCancelListener { result.cancel() }
-                    .show()
+                AlertDialog.Builder(this@MainActivity).setMessage(message ?: "").setPositiveButton("OK") { _, _ -> result.confirm() }.setOnCancelListener { result.cancel() }.show()
                 return true
             }
-
             override fun onJsConfirm(view: WebView?, url: String?, message: String?, result: JsResult): Boolean {
-                AlertDialog.Builder(this@MainActivity)
-                    .setMessage(message ?: "")
-                    .setPositiveButton("OK") { _, _ -> result.confirm() }
-                    .setNegativeButton("Cancel") { _, _ -> result.cancel() }
-                    .setOnCancelListener { result.cancel() }
-                    .show()
+                AlertDialog.Builder(this@MainActivity).setMessage(message ?: "").setPositiveButton("OK") { _, _ -> result.confirm() }.setNegativeButton("Cancel") { _, _ -> result.cancel() }.setOnCancelListener { result.cancel() }.show()
                 return true
             }
-
             override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
                 if (!isUserGesture || resultMsg == null) return false
                 val popup = WebView(this@MainActivity)
@@ -324,17 +283,9 @@ class MainActivity : ComponentActivity() {
                 CookieManager.getInstance().setAcceptThirdPartyCookies(popup, true)
                 val dialog = Dialog(this@MainActivity)
                 popup.webViewClient = WebViewClient()
-                popup.webChromeClient = object : WebChromeClient() {
-                    override fun onCloseWindow(window: WebView?) {
-                        dialog.dismiss()
-                    }
-                }
+                popup.webChromeClient = object : WebChromeClient() { override fun onCloseWindow(window: WebView?) { dialog.dismiss() } }
                 dialog.setContentView(popup)
-                dialog.setOnDismissListener {
-                    popup.stopLoading()
-                    popup.destroy()
-                    if (authPopup === dialog) authPopup = null
-                }
+                dialog.setOnDismissListener { popup.stopLoading(); popup.destroy(); if (authPopup === dialog) authPopup = null }
                 authPopup = dialog
                 dialog.show()
                 dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
@@ -342,60 +293,37 @@ class MainActivity : ComponentActivity() {
                 resultMsg.sendToTarget()
                 return true
             }
-
-            override fun onCloseWindow(window: WebView?) {
-                authPopup?.dismiss()
-                authPopup = null
-            }
+            override fun onCloseWindow(window: WebView?) { authPopup?.dismiss(); authPopup = null }
         }
 
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
-                localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
-
-            override fun onPageFinished(view: WebView, url: String?) {
-                super.onPageFinished(view, url)
-                injectAppJs()
-            }
-
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? = localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
+            override fun onPageFinished(view: WebView, url: String?) { super.onPageFinished(view, url); injectAppJs() }
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
                 if (uri.scheme == "http" || uri.scheme == "https") return false
                 if (uri.scheme == "blob" && uri.toString().startsWith("blob:")) {
-                    openBlobPdf(uri.toString())
+                    val quoted = org.json.JSONObject.quote(uri.toString())
+                    view.evaluateJavascript("fetch($quoted).then(r=>r.blob()).then(b=>{const x=new FileReader();x.onload=()=>{const s=String(x.result||'');window.ESIAndroid.beginShareFile('document.pdf','application/pdf','','');window.ESIAndroid.appendShareChunk(s.slice(s.indexOf(',')+1));window.ESIAndroid.finishShareFile()};x.readAsDataURL(b)})", null)
                     return true
                 }
-                return try {
-                    startActivity(Intent(Intent.ACTION_VIEW, uri))
-                    true
-                } catch (_: Exception) {
-                    true
-                }
+                return try { startActivity(Intent(Intent.ACTION_VIEW, uri)); true } catch (_: Exception) { true }
             }
         }
 
         if (savedInstanceState == null) webView.loadUrl(offlineHome) else webView.restoreState(savedInstanceState)
-
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (webView.canGoBack()) webView.goBack() else finish()
-            }
+            override fun handleOnBackPressed() { if (webView.canGoBack()) webView.goBack() else finish() }
         })
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        webView.saveState(outState)
-        super.onSaveInstanceState(outState)
-    }
+    override fun onSaveInstanceState(outState: Bundle) { webView.saveState(outState); super.onSaveInstanceState(outState) }
 
     override fun onDestroy() {
-        authPopup?.dismiss()
-        authPopup = null
+        authPopup?.dismiss(); authPopup = null
         webView.removeJavascriptInterface("ESIAndroid")
-        webView.stopLoading()
-        webView.webChromeClient = null
+        webView.stopLoading(); webView.webChromeClient = null
         (webView.parent as? ViewGroup)?.removeView(webView)
-        webView.destroy()
-        super.onDestroy()
+        webView.destroy(); super.onDestroy()
     }
 }
