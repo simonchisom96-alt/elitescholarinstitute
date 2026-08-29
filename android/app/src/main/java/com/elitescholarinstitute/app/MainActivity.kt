@@ -5,7 +5,6 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
 import android.view.ViewGroup
@@ -131,7 +130,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun injectAppJs() {
-        if (!currentNetworkState()) return
         webView.evaluateJavascript(buildAndroidBridgeJs(), null)
     }
 
@@ -139,7 +137,6 @@ class MainActivity : ComponentActivity() {
         (function(){
           if(!window.ESIAndroid || window.__esiAndroidBridgeInstalled) return;
           window.__esiAndroidBridgeInstalled = true;
-          const originalShare = navigator.share;
           navigator.share = function(data){
             data = data || {};
             if(data.files && data.files.length){
@@ -195,7 +192,7 @@ class MainActivity : ComponentActivity() {
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
                     startActivity(Intent.createChooser(intent, "Share with"))
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     android.widget.Toast.makeText(this@MainActivity, "Unable to share file", android.widget.Toast.LENGTH_SHORT).show()
                 }
             }
