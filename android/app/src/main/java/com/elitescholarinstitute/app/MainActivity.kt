@@ -6,17 +6,60 @@ import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
 import android.webkit.CookieManager
+import android.webkit.MimeTypeMap
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import java.io.FileNotFoundException
 
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
-    private val home = "https://elitescholarinstitute.pages.dev/"
+    private val offlineHome = "https://appassets.androidplatform.net/index.html"
+
+    private fun mimeType(path: String): String {
+        val ext = path.substringAfterLast('.', "").lowercase()
+        return when (ext) {
+            "html", "htm" -> "text/html"
+            "js", "mjs" -> "application/javascript"
+            "css" -> "text/css"
+            "json", "map" -> "application/json"
+            "pdf" -> "application/pdf"
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "gif" -> "image/gif"
+            "webp" -> "image/webp"
+            "svg" -> "image/svg+xml"
+            "mp4" -> "video/mp4"
+            "webm" -> "video/webm"
+            "mp3" -> "audio/mpeg"
+            "wav" -> "audio/wav"
+            "woff" -> "font/woff"
+            "woff2" -> "font/woff2"
+            "ttf" -> "font/ttf"
+            "ico" -> "image/x-icon"
+            else -> MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "application/octet-stream"
+        }
+    }
+
+    private fun localAsset(request: WebResourceRequest): WebResourceResponse? {
+        val uri = request.url
+        if (uri.host != "appassets.androidplatform.net") return null
+        val path = uri.path?.removePrefix("/") ?: return null
+        if (path.isEmpty()) return null
+        return try {
+            val stream = assets.open("site/$path")
+            WebResourceResponse(mimeType(path), "UTF-8", stream)
+        } catch (_: FileNotFoundException) {
+            null
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,13 +81,17 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/36.2310"
+            userAgentString = "$userAgentString ESIAndroid/36.2311"
         }
 
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
 
         webView.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+                return localAsset(request) ?: super.shouldInterceptRequest(view, request)
+            }
+
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
                 return if (uri.scheme == "http" || uri.scheme == "https") false
@@ -55,7 +102,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        if (savedInstanceState == null) webView.loadUrl(home) else webView.restoreState(savedInstanceState)
+        if (savedInstanceState == null) webView.loadUrl(offlineHome) else webView.restoreState(savedInstanceState)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
