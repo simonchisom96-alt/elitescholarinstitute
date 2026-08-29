@@ -1,23 +1,20 @@
-/* Elite Scholar Institute — application controller 36.2311 */
+/* Elite Scholar Institute — application controller 36.2312 */
 (() => {
   'use strict';
 
-  const BUILD = '36.2311';
+  const BUILD = '36.2312';
   const APK_URL = 'https://github.com/simonchisom96-alt/elitescholarinstitute/releases/latest/download/ESI.apk';
-  const NOTIF_DB_URL = 'https://elite-notification-default-rtdb.firebaseio.com';
   const SW_URL = '/sw.js?v=' + BUILD;
   let installBox = null;
   let hideTimer = null;
   let installTimer = null;
   let deferredInstall = null;
-  let notifications = {};
 
   const isAndroid = /Android/i.test(navigator.userAgent);
   const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isInstalled = () => !!window.matchMedia?.('(display-mode: standalone)').matches || !!window.matchMedia?.('(display-mode: window-controls-overlay)').matches || navigator.standalone === true || /ESIAndroid\//i.test(navigator.userAgent);
 
   window.__esiAppLoadTime = Date.now();
-  window.__esiNotifDbUrl = NOTIF_DB_URL;
   window.__esiBuild = BUILD;
 
   function toast(message, background = '#111827') {
@@ -66,7 +63,6 @@
         [class*="logo-box" i] img,[class*="logo-badge" i]{flex:0 0 auto;max-width:40px}
         [class*="logo-box" i] h1,[class*="logo-box" i] h2,[class*="header-title" i] h1,[class*="header-title" i] h2{font-size:clamp(12px,4vw,16px)!important;line-height:1.2;overflow-wrap:anywhere}
         [class*="logo-box" i] p,[class*="header-title" i] p{font-size:clamp(9px,2.6vw,11px)!important;line-height:1.25;overflow-wrap:anywhere}
-        /* The page CSS uses *{touch-action:pan-y}; that blocks horizontal gesture recognition at the body/html level. */
         html,body,*{touch-action:auto!important}
         [class*="filter" i],[id*="filter" i],[class*="tabs" i],[id*="tabs" i],[class*="category" i],[id*="category" i]{touch-action:pan-x pan-y!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;min-width:0}
         [class*="filter" i]>* ,[id*="filter" i]>* ,[class*="tabs" i]>* ,[id*="tabs" i]>* ,[class*="category" i]>* ,[id*="category" i]>*{touch-action:pan-x pan-y!important;flex:0 0 auto}
@@ -138,7 +134,7 @@
     if (isAndroid && !isInstalled()) { window.location.assign(APK_URL); return; }
     if (deferredInstall) { const event = deferredInstall; deferredInstall = null; try { event.prompt(); await event.userChoice; } catch (_) {} return; }
     if (isIOS) { toast('Tap Share, then choose Add to Home Screen.', '#2563eb'); return; }
-    toast('Use your browser menu and choose Install app or Add to Home screen.', '#2563eb');
+    toast('Use your browser menu and choose Install app or Add to home screen.', '#2563eb');
   }
   window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferredInstall = event; window.__esiInstallAvailable = true; if (!isAndroid && !isIOS) scheduleInstall(15000); });
   window.addEventListener('appinstalled', () => { deferredInstall = null; window.__esiInstallAvailable = false; hideInstall(); toast('App installed successfully', '#16a34a'); });
@@ -148,36 +144,23 @@
     try { const registration = await navigator.serviceWorker.register(SW_URL, { scope: '/', updateViaCache: 'none' }); await registration.update().catch(() => {}); if (registration.waiting) registration.waiting.postMessage('SKIP_WAITING'); return registration; } catch (_) { return null; }
   }
 
-  function ensureBell() {
-    if (location.pathname.endsWith('/notification.html') || document.getElementById('notifBellBtn')) return;
-    const s = document.createElement('style');
-    s.textContent = '#notifBellBtn{position:fixed;top:calc(260px + env(safe-area-inset-top));right:5px;z-index:9990;background:#0f172a;border:1px solid #2563eb;border-radius:50%;width:42px;height:42px;display:grid;place-items:center;font-size:19px;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35);cursor:pointer;-webkit-tap-highlight-color:transparent}#globalUnreadBadge{display:none;position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:#ff2d55;box-shadow:0 0 8px 2px rgba(255,45,85,.9)}#globalUnreadBadge.show{display:block}';
-    document.head.appendChild(s);
-    const b = document.createElement('button'); b.id = 'notifBellBtn'; b.setAttribute('aria-label', 'Notifications'); b.innerHTML = '🔔<span id="globalUnreadBadge"></span>'; b.onclick = () => { location.href = '/notification.html'; }; document.body.appendChild(b);
-  }
-  function updateBell() { const b = document.getElementById('globalUnreadBadge'); if (!b) return; let read = new Set(); try { read = new Set(JSON.parse(localStorage.getItem('notif_read_ids') || '[]')); } catch (_) {} const unread = Object.keys(notifications).filter(id => !read.has(id)).length; b.classList.toggle('show', unread > 0 && !location.pathname.endsWith('/notification.html')); }
-  window.esiUpdateBellBadge = updateBell;
-
-  function loadFirebase(done) {
-    if (window.firebase?.database && window.firebase?.auth) return done();
-    const urls = ['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js','https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js','https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js']; let i = 0;
-    const next = () => { if (i >= urls.length) return done(); const s = document.createElement('script'); s.src = urls[i++]; s.onload = next; s.onerror = next; document.head.appendChild(s); }; next();
-  }
-  function setupBell() {
-    ensureBell();
-    loadFirebase(() => {
-      if (!window.firebase?.database || !window.firebase?.auth) return;
-      let app;
-      try { const config = window.FIREBASE_CONFIG || {apiKey:'AIzaSyDkjELsB4qeaumvsMAIDGIFZgNzl6eoBPM',authDomain:'elite-notification.firebaseapp.com',databaseURL:NOTIF_DB_URL,projectId:'elite-notification',storageBucket:'elite-notification.firebasestorage.app',messagingSenderId:'359910414254',appId:'1:359910414254:web:a1bafd3e23fd554a975a3f'}; app = firebase.apps.find(a => a.name === 'notifications') || firebase.initializeApp(config, 'notifications'); } catch (_) { return; }
-      const auth = app.auth(), db = app.database(), ready = auth.currentUser ? Promise.resolve() : auth.signInAnonymously().catch(() => null);
-      ready.then(() => { db.ref('notifications').orderByChild('timestamp').limitToLast(50).on('value', snap => { notifications = snap.val() || {}; updateBell(); window.dispatchEvent(new CustomEvent('esi:notifications-updated',{detail:notifications})); }); });
-    });
-  }
+  // Notification delivery has intentionally been removed from app.js.
+  // notification.html remains the sole ESI notification surface.
   addEventListener('online', () => toast('Back Online', '#16a34a'));
   addEventListener('offline', () => toast('You are offline', '#dc2626'));
-  addEventListener('storage', e => { if (e.key === 'notif_read_ids') updateBell(); });
 
-  async function boot() { ensureManifest(); repairMobileCompatibilityCSS(); createInstallUI(); scheduleInstall(15000); setupBell(); await registerServiceWorker(); }
-  addEventListener('pageshow', () => { repairMobileCompatibilityCSS(); if (!isInstalled()) scheduleInstall(15000); });
+  async function boot() {
+    ensureManifest();
+    repairMobileCompatibilityCSS();
+    createInstallUI();
+    scheduleInstall(15000);
+    await registerServiceWorker();
+  }
+
+  addEventListener('pageshow', () => {
+    repairMobileCompatibilityCSS();
+    if (!isInstalled()) scheduleInstall(15000);
+  });
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true }); else boot();
 })();
