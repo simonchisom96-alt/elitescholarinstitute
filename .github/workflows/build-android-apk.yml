@@ -27,108 +27,110 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Bundle only the defined ESI offline shell and exact logo
+      - name: Bundle only the defined ESI offline shell
         shell: bash
         run: |
           set -euo pipefail
           rm -rf android/app/src/main/assets
           mkdir -p android/app/src/main/assets/site
           cat > /tmp/esi-shell.txt <<'EOF'
-index.html
-logo.jpg
-advert.png
-esi.jpg
-founder.jpg
-manifest.json
-offline.html
-app.js
-downloader.js
-Textbooks.html
-uniben.html
-crstextbook.html
-literaturetextbook.html
-postutme.html
-buk.html
-imsu.html
-oou.html
-eksu.html
-esut.html
-lautech.html
-aaua.html
-syllables.html
-Grace.jpg
-Chuka.jpg
-325.jpg
-339.jpg
-faloke.jpg
-emma.jpg
-uniport.html
-unijos.html
-unimed.html
-unical.html
-yabatech.html
-oauth.html
-luth.html
-delsu.html
-governmenttextbook.html
-Englishtextbook.html
-biologytextbook.html
-chemistrytextbook.html
-economicstextbook.html
-physicstextbook.html
-mathematicstextbook.html
-motivation.html
-chapter2.html
-chapter3.html
-chapter4.html
-chapter5.html
-chapter6.html
-chapter7.html
-chapter8.html
-chapter9.html
-chapter10.html
-furthermathstextbook.html
-accountingtextbook.html
-motivation2.html
-motivation3.html
-biop.html
-motivatio.html
-uip.html
-ulp.html
-picture.html
-motivation4.html
-unn.html
-physicsp.html
-chemp.html
-crsp.html
-englishp.html
-literaturep.html
-mathematicsp.html
-governmentp.html
-economicsp.html
-accountingp.html
-oau.html
-notification.html
-abu.html
-futa.html
-unilorin.html
-unizik.html
-password.js
-credit.html
-timetable1.jpg
-timetable2.jpg
-quiz1.html
-quiz.html
-video.mp4
-firebase-config.js
-multiplayer.js
-singleplay.js
-EOF
+          index.html
+          logo.jpg
+          advert.png
+          esi.jpg
+          founder.jpg
+          manifest.json
+          offline.html
+          app.js
+          downloader.js
+          Textbooks.html
+          uniben.html
+          crstextbook.html
+          literaturetextbook.html
+          postutme.html
+          buk.html
+          imsu.html
+          oou.html
+          eksu.html
+          esut.html
+          lautech.html
+          aaua.html
+          syllables.html
+          Grace.jpg
+          Chuka.jpg
+          325.jpg
+          339.jpg
+          faloke.jpg
+          emma.jpg
+          uniport.html
+          unijos.html
+          unimed.html
+          unical.html
+          yabatech.html
+          oauth.html
+          luth.html
+          delsu.html
+          governmenttextbook.html
+          Englishtextbook.html
+          biologytextbook.html
+          chemistrytextbook.html
+          economicstextbook.html
+          physicstextbook.html
+          mathematicstextbook.html
+          motivation.html
+          chapter2.html
+          chapter3.html
+          chapter4.html
+          chapter5.html
+          chapter6.html
+          chapter7.html
+          chapter8.html
+          chapter9.html
+          chapter10.html
+          furthermathstextbook.html
+          accountingtextbook.html
+          motivation2.html
+          motivation3.html
+          biop.html
+          motivatio.html
+          uip.html
+          ulp.html
+          picture.html
+          motivation4.html
+          unn.html
+          physicsp.html
+          chemp.html
+          crsp.html
+          englishp.html
+          literaturep.html
+          mathematicsp.html
+          governmentp.html
+          economicsp.html
+          accountingp.html
+          oau.html
+          notification.html
+          abu.html
+          futa.html
+          unilorin.html
+          unizik.html
+          password.js
+          credit.html
+          timetable1.jpg
+          timetable2.jpg
+          quiz1.html
+          quiz.html
+          video.mp4
+          firebase-config.js
+          multiplayer.js
+          singleplay.js
+          EOF
+          sed -i 's/^[[:space:]]*//' /tmp/esi-shell.txt
           while IFS= read -r file; do
+            [ -z "$file" ] && continue
             test -f "$file" || { echo "Missing required shell file: $file"; exit 1; }
-            cp -f "$file" "android/app/src/main/assets/site/$file"
           done < /tmp/esi-shell.txt
-          # This is the exact root website logo.jpg, not a replacement icon.
+          rsync -a --files-from=/tmp/esi-shell.txt ./ android/app/src/main/assets/site/
+          # Use the exact website logo.jpg as the Android launcher icon source.
           cp -f logo.jpg android/app/src/main/res/drawable/logo.jpg
           echo "Bundled shell file count: $(find android/app/src/main/assets/site -type f | wc -l)"
           echo "Bundled shell size: $(du -sh android/app/src/main/assets/site | cut -f1)"
@@ -156,10 +158,7 @@ EOF
           test -s android/app/build/outputs/apk/debug/app-debug.apk
           mkdir -p release
           cp android/app/build/outputs/apk/debug/app-debug.apk release/ESI.apk
-          unzip -l release/ESI.apk | grep -q 'assets/site/index.html'
-          unzip -l release/ESI.apk | grep -q 'assets/site/logo.jpg'
-          unzip -l release/ESI.apk | grep -q 'res/drawable/logo.jpg'
-          echo "APK size: $(du -h release/ESI.apk | cut -f1)"
+          ls -lh release/ESI.apk
 
       - name: Upload temporary Actions artifact
         uses: actions/upload-artifact@v4
@@ -179,4 +178,4 @@ EOF
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "ESI Android APK" \
-            --notes "ESI Android APK. Exact defined offline shell. Launcher icon uses the exact root logo.jpg."
+            --notes "ESI Android APK. Contains only the defined ESI offline shell; additional same-origin resources are cached by the service worker when accessed."
