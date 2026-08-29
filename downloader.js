@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async function(){
-  const CACHE_NAME = 'esi-cache-36.2333';
+  const CACHE_NAME = 'esi-cache-36.2334';
   const cache = await caches.open(CACHE_NAME);
   const btns = document.querySelectorAll('.download-btn');
 
@@ -12,22 +12,48 @@ document.addEventListener('DOMContentLoaded', async function(){
   };
 
   const getPdfUrl = (btn) => {
-    const card = btn.closest('[data-url]');
-    const rawUrl = (card && card.dataset.url) || btn.dataset.url || btn.getAttribute('href');
-    if(!rawUrl || rawUrl.includes('PASTE_')) return null;
-    return getCleanUrl(rawUrl);
+    const owner = btn.closest('[data-url]');
+    const rawUrl = (owner && owner.dataset.url) || btn.dataset.url || btn.getAttribute('href');
+    if(!rawUrl || /PASTE_/i.test(rawUrl)) return null;
+    const url = getCleanUrl(rawUrl);
+    try {
+      const path = new URL(url, location.href).pathname.toLowerCase();
+      return path.endsWith('.pdf') ? url : null;
+    } catch(e) {
+      return null;
+    }
   };
 
   const getFileName = (url) => {
     try {
-      const name = new URL(url, location.href).pathname.split('/').pop();
-      return name || 'document.pdf';
+      const name = decodeURIComponent(new URL(url, location.href).pathname.split('/').pop() || 'document.pdf');
+      return /\.pdf$/i.test(name) ? name : 'document.pdf';
     } catch(e) {
       return 'document.pdf';
     }
   };
 
+  const isPdfBlob = async (blob) => {
+    if(!blob || !blob.size) return false;
+    const header = new Uint8Array(await blob.slice(0, 5).arrayBuffer());
+    return header.length === 5 && header[0] === 0x25 && header[1] === 0x50 && header[2] === 0x44 && header[3] === 0x46 && header[4] === 0x2D;
+  };
+
+  const downloadInBrowser = (blob, fileName) => {
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = fileName;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+  };
+
   const openPdfBlob = async (blob, fileName = 'document.pdf') => {
+    if(!(await isPdfBlob(blob))) throw new Error('Response is not a valid PDF');
+
     if(window.ESIAndroid && typeof window.ESIAndroid.openPdf === 'function'){
       const reader = new FileReader();
       await new Promise((resolve, reject) => {
@@ -45,9 +71,8 @@ document.addEventListener('DOMContentLoaded', async function(){
       });
       return;
     }
-    const objectUrl = URL.createObjectURL(blob);
-    window.location.assign(objectUrl);
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+
+    downloadInBrowser(blob, fileName);
   };
 
   for(const btn of btns){
@@ -55,15 +80,25 @@ document.addEventListener('DOMContentLoaded', async function(){
     if(!absoluteUrl) continue;
     const btnText = btn.querySelector('.btn-text');
     const cached = await cache.match(absoluteUrl);
-    if(cached && btnText){
-      btn.classList.add('success');
-      btnText.textContent = '✓ Open';
+    if(cached){
+      try {
+        const cachedBlob = await cached.blob();
+        if(await isPdfBlob(cachedBlob)){
+          btn.classList.add('success');
+          if(btnText) btnText.textContent = '✓ Open';
+        } else {
+          await cache.delete(absoluteUrl);
+        }
+      } catch(_) {
+        await cache.delete(absoluteUrl);
+      }
     }
   }
 
   btns.forEach(btn => {
     btn.addEventListener('click', async function(e){
       e.preventDefault();
+      e.stopPropagation();
       if(btn.classList.contains('loading')) return;
 
       const btnText = btn.querySelector('.btn-text');
@@ -78,12 +113,16 @@ document.addEventListener('DOMContentLoaded', async function(){
       const cached = await cache.match(absoluteUrl);
       if(cached){
         try {
-          await openPdfBlob(await cached.blob(), fileName);
+          const cachedBlob = await cached.blob();
+          if(await isPdfBlob(cachedBlob)){
+            await openPdfBlob(cachedBlob, fileName);
+            return;
+          }
+          await cache.delete(absoluteUrl);
         } catch(err) {
-          console.error('Cached PDF open error:', err);
-          window.showToast('Unable to open cached PDF');
+          console.error('Cached PDF error:', err);
+          await cache.delete(absoluteUrl);
         }
-        return;
       }
 
       if(!navigator.onLine){
@@ -96,44 +135,24 @@ document.addEventListener('DOMContentLoaded', async function(){
       if(percent) percent.textContent = '0%';
 
       try {
-        const res = await fetch(absoluteUrl, {cache: 'no-store'});
-        if(!res.ok) throw new Error('Fetch failed: ' + res.status);
+        const res = await fetch(absoluteUrl, { method: 'GET', credentials: 'same-origin', cache: 'default' });
+        if(!res.ok) throw new Error('PDF request failed: ' + res.status);
 
-        let blob;
-        if(!res.body){
-          blob = await res.blob();
-        } else {
-          const totalBytes = parseInt(res.headers.get('content-length'), 10) || 0;
-          let receivedBytes = 0;
-          const reader = res.body.getReader();
-          const chunks = [];
-          while(true){
-            const {done, value} = await reader.read();
-            if(done) break;
-            if(value){
-              chunks.push(value);
-              receivedBytes += value.length;
-              if(totalBytes > 0 && percent) percent.textContent = Math.round((receivedBytes / totalBytes) * 100) + '%';
-            }
-          }
-          const allChunks = new Uint8Array(receivedBytes);
-          let position = 0;
-          for(const chunk of chunks){
-            allChunks.set(chunk, position);
-            position += chunk.length;
-          }
-          blob = new Blob([allChunks], {type:'application/pdf'});
-        }
+        const blob = await res.blob();
+        if(!(await isPdfBlob(blob))) throw new Error('Server did not return a PDF');
 
-        await cache.put(absoluteUrl, new Response(blob, {headers:{'Content-Type':'application/pdf'}}));
+        const pdfResponse = new Response(blob, {headers:{'Content-Type':'application/pdf'}});
+        await cache.put(absoluteUrl, pdfResponse.clone());
+
         if(percent) percent.textContent = '100%';
         btn.classList.remove('loading');
         btn.classList.add('success');
         if(btnText) btnText.textContent = '✓ Open';
         if(percent) percent.textContent = '';
+
         await openPdfBlob(blob, fileName);
       } catch(err) {
-        console.error('Download error:', err);
+        console.error('PDF download error:', err);
         btn.classList.remove('loading');
         if(btnText) btnText.textContent = '⬇ Download Now';
         if(percent) percent.textContent = '';
