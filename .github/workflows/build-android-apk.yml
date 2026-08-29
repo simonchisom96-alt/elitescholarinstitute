@@ -8,6 +8,7 @@ on:
       - 'android/**'
       - 'app.js'
       - 'sw.js'
+      - 'downloader.js'
       - 'manifest.json'
       - 'logo.jpg'
       - '.github/workflows/build-android-apk.yml'
