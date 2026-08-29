@@ -135,7 +135,12 @@ document.addEventListener('DOMContentLoaded', async function(){
       if(percent) percent.textContent = '0%';
 
       try {
-        const res = await fetch(absoluteUrl, { method: 'GET', credentials: 'same-origin', cache: 'default' });
+        // Use a dedicated PDF fetch URL so the service worker cannot reuse a stale
+        // cached response stored under the normal PDF URL. The downloaded bytes
+        // are still stored under the clean/canonical URL in our PDF cache below.
+        const networkUrl = new URL(absoluteUrl, location.href);
+        networkUrl.searchParams.set('esi_pdf_fetch', '1');
+        const res = await fetch(networkUrl.href, { method: 'GET', credentials: 'same-origin', cache: 'reload' });
         if(!res.ok) throw new Error('PDF request failed: ' + res.status);
 
         const blob = await res.blob();
