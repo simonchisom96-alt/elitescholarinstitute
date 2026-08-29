@@ -1,22 +1,24 @@
 document.addEventListener('DOMContentLoaded', async function(){
-  const CACHE_NAME = 'esi-pdf-cache-36.2336';
+  const CACHE_NAME = 'esi-pdf-cache-36.2337';
   const cache = await caches.open(CACHE_NAME);
   const btns = document.querySelectorAll('.download-btn');
+
+  const getCleanUrl = (url) => {
+    const clean = new URL(url, location.href);
+    if (/ESIAndroid\//i.test(navigator.userAgent) && clean.origin === 'https://elitescholarinstitute.pages.dev') {
+      return location.origin + clean.pathname + clean.search;
+    }
+    return clean.href;
+  };
 
   const getPdfUrl = (btn) => {
     const owner = btn.closest('[data-url]');
     const rawUrl = (owner && owner.dataset.url) || btn.dataset.url || btn.getAttribute('href');
     if(!rawUrl || /PASTE_/i.test(rawUrl)) return null;
+    const url = getCleanUrl(rawUrl);
     try {
-      // Always keep the real PDF URL. In the APK this deliberately leaves
-      // the PDF request on Cloudflare Pages instead of routing it through
-      // the appassets resource interceptor. Cloudflare Pages static assets
-      // support CORS, so the response remains fetchable and cacheable.
-      const url = new URL(rawUrl, location.href);
-      if (url.origin === 'https://appassets.androidplatform.net') {
-        return new URL(url.pathname + url.search, 'https://elitescholarinstitute.pages.dev').href;
-      }
-      return url.href;
+      const path = new URL(url, location.href).pathname.toLowerCase();
+      return path.endsWith('.pdf') ? url : null;
     } catch(e) {
       return null;
     }
@@ -133,15 +135,17 @@ document.addEventListener('DOMContentLoaded', async function(){
       if(percent) percent.textContent = '0%';
 
       try {
-        // Fetch the real Cloudflare Pages PDF directly. This bypasses the
-        // appassets service-worker/resource-interceptor path in the APK.
-        const res = await fetch(absoluteUrl, { method: 'GET', credentials: 'same-origin', cache: 'no-store' });
+        // Keep the proven same-origin PDF request path. In the APK the Android
+        // WebView interceptor receives the appassets PDF URL and handles the
+        // native network/cache path. On the website this remains same-origin.
+        const res = await fetch(absoluteUrl, { method: 'GET', credentials: 'same-origin', cache: 'default' });
         if(!res.ok) throw new Error('PDF request failed: ' + res.status);
 
         const blob = await res.blob();
         if(!(await isPdfBlob(blob))) throw new Error('Server did not return a PDF');
 
-        await cache.put(absoluteUrl, new Response(blob, {headers:{'Content-Type':'application/pdf'}}));
+        const pdfResponse = new Response(blob, {headers:{'Content-Type':'application/pdf'}});
+        await cache.put(absoluteUrl, pdfResponse.clone());
 
         if(percent) percent.textContent = '100%';
         btn.classList.remove('loading');
