@@ -307,25 +307,27 @@ class MainActivity : ComponentActivity() {
 
             override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
                 if (!isUserGesture || resultMsg == null) return false
-                val popup = WebView(this@MainActivity).apply {
-                    settings.javaScriptEnabled = true
-                    settings.domStorageEnabled = true
-                    settings.databaseEnabled = true
-                    settings.javaScriptCanOpenWindowsAutomatically = true
-                    settings.setSupportMultipleWindows(true)
-                    CookieManager.getInstance().setAcceptCookie(true)
-                    CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
-                    webViewClient = WebViewClient()
-                    webChromeClient = this@object
-                }
+                val popup = WebView(this@MainActivity)
+                popup.settings.javaScriptEnabled = true
+                popup.settings.domStorageEnabled = true
+                popup.settings.databaseEnabled = true
+                popup.settings.javaScriptCanOpenWindowsAutomatically = true
+                popup.settings.setSupportMultipleWindows(true)
+                CookieManager.getInstance().setAcceptCookie(true)
+                CookieManager.getInstance().setAcceptThirdPartyCookies(popup, true)
                 val dialog = Dialog(this@MainActivity)
+                popup.webViewClient = WebViewClient()
+                popup.webChromeClient = object : WebChromeClient() {
+                    override fun onCloseWindow(window: WebView?) {
+                        dialog.dismiss()
+                    }
+                }
                 dialog.setContentView(popup)
                 dialog.setOnDismissListener {
                     popup.stopLoading()
                     popup.destroy()
-                    authPopup = null
+                    if (authPopup === dialog) authPopup = null
                 }
-                dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                 authPopup = dialog
                 dialog.show()
                 dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
