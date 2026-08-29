@@ -166,7 +166,12 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun share(title: String, text: String, url: String) {
             runOnUiThread {
-                val body = if (url.isBlank()) text else if (text.isBlank()) url else "$text\n$url"
+                val safeUrl = if (url.startsWith("https://appassets.androidplatform.net/")) {
+                    onlineOrigin + url.removePrefix("https://appassets.androidplatform.net")
+                } else {
+                    url
+                }
+                val body = if (safeUrl.isBlank()) text else if (text.isBlank()) safeUrl else "$text\n$safeUrl"
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(Intent.EXTRA_SUBJECT, title)
@@ -268,7 +273,7 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/2.0"
+            userAgentString = "$userAgentString ESIAndroid/2.1"
         }
 
         webView.addJavascriptInterface(androidBridge, "ESIAndroid")
