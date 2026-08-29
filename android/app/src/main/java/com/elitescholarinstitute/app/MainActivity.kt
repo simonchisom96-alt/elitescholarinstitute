@@ -89,15 +89,16 @@ class MainActivity : ComponentActivity() {
     private fun networkAsset(pathAndQuery: String, path: String): WebResourceResponse? {
         var connection: HttpURLConnection? = null
         return try {
-            connection = (URL(onlineOrigin + pathAndQuery).openConnection() as HttpURLConnection).apply {
+            val activeConnection = (URL(onlineOrigin + pathAndQuery).openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 connectTimeout = 9000
                 readTimeout = 15000
                 useCaches = true
                 instanceFollowRedirects = true
             }
-            if (connection.responseCode !in 200..299) return null
-            val bytes = connection.inputStream.use { it.readBytes() }
+            connection = activeConnection
+            if (activeConnection.responseCode !in 200..299) return null
+            val bytes = activeConnection.inputStream.use { it.readBytes() }
             if (bytes.isEmpty()) return null
             FileOutputStream(File(diskCache, cacheKey(pathAndQuery))).use { it.write(bytes) }
             WebResourceResponse(mimeType(path), "UTF-8", ByteArrayInputStream(bytes))
@@ -149,16 +150,12 @@ class MainActivity : ComponentActivity() {
             override fun onAvailable(network: Network) {
                 runOnUiThread { emitNetworkState(true, true) }
             }
-
             override fun onLost(network: Network) {
                 runOnUiThread { emitNetworkState(currentNetworkState(), true) }
             }
         }
         networkCallback = callback
-        try {
-            manager.registerDefaultNetworkCallback(callback)
-        } catch (_: Exception) {
-        }
+        try { manager.registerDefaultNetworkCallback(callback) } catch (_: Exception) { }
         EsiNetworkReceiver.schedule(this)
     }
 
@@ -167,12 +164,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         webView = WebView(this)
-        webView.layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
+        webView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         setContentView(webView)
-
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -187,55 +180,27 @@ class MainActivity : ComponentActivity() {
             displayZoomControls = false
             userAgentString = "$userAgentString ESIAndroid/36.2313"
         }
-
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
-
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldInterceptRequest(
-                view: WebView,
-                request: WebResourceRequest
-            ): WebResourceResponse? {
-                return localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
-            }
-
-            override fun shouldOverrideUrlLoading(
-                view: WebView,
-                request: WebResourceRequest
-            ): Boolean {
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
+                localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
                 if (uri.scheme == "http" || uri.scheme == "https") return false
-                return try {
-                    startActivity(Intent(Intent.ACTION_VIEW, uri))
-                    true
-                } catch (_: Exception) {
-                    true
-                }
+                return try { startActivity(Intent(Intent.ACTION_VIEW, uri)); true } catch (_: Exception) { true }
             }
         }
-
-        if (savedInstanceState == null) {
-            webView.loadUrl(offlineHome)
-        } else {
-            webView.restoreState(savedInstanceState)
-        }
-
+        if (savedInstanceState == null) webView.loadUrl(offlineHome) else webView.restoreState(savedInstanceState)
         handleNotificationIntent(intent)
-
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (webView.canGoBack()) webView.goBack() else finish()
-            }
+            override fun handleOnBackPressed() { if (webView.canGoBack()) webView.goBack() else finish() }
         })
-
-        if (Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
         } else {
             NativeNotificationScheduler.initialize(this)
         }
-
         monitorNetwork()
     }
 
@@ -245,17 +210,6 @@ class MainActivity : ComponentActivity() {
         handleNotificationIntent(intent)
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 1001 && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-            NativeNotificationScheduler.initialize(this)
-        }
-    }
-
     override fun onSaveInstanceState(outState: Bundle) {
         webView.saveState(outState)
         super.onSaveInstanceState(outState)
@@ -263,10 +217,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         networkCallback?.let { callback ->
-            try {
-                getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(callback)
-            } catch (_: Exception) {
-            }
+            try { getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(callback) } catch (_: Exception) { }
         }
         webView.stopLoading()
         webView.webChromeClient = null
