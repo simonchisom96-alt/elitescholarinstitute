@@ -64,6 +64,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun resourceEncoding(path: String): String? {
+        return when (mimeType(path)) {
+            "text/html", "application/javascript", "text/css", "application/json", "image/svg+xml" -> "UTF-8"
+            else -> null
+        }
+    }
+
     private fun cacheKey(pathAndQuery: String): String {
         val digest = MessageDigest.getInstance("SHA-256").digest(pathAndQuery.toByteArray())
         return digest.joinToString("") { "%02x".format(it) }
@@ -71,7 +78,7 @@ class MainActivity : ComponentActivity() {
 
     private fun bundledAsset(path: String): WebResourceResponse? {
         return try {
-            WebResourceResponse(mimeType(path), "UTF-8", assets.open("site/$path"))
+            WebResourceResponse(mimeType(path), resourceEncoding(path), assets.open("site/$path"))
         } catch (_: FileNotFoundException) {
             null
         } catch (_: Exception) {
@@ -83,7 +90,7 @@ class MainActivity : ComponentActivity() {
         val file = File(diskCache, cacheKey(pathAndQuery))
         if (!file.isFile || file.length() == 0L) return null
         return try {
-            WebResourceResponse(mimeType(path), "UTF-8", file.inputStream())
+            WebResourceResponse(mimeType(path), resourceEncoding(path), file.inputStream())
         } catch (_: Exception) {
             null
         }
@@ -104,7 +111,7 @@ class MainActivity : ComponentActivity() {
             val bytes = activeConnection.inputStream.use { it.readBytes() }
             if (bytes.isEmpty()) return null
             FileOutputStream(File(diskCache, cacheKey(pathAndQuery))).use { it.write(bytes) }
-            WebResourceResponse(mimeType(path), "UTF-8", ByteArrayInputStream(bytes))
+            WebResourceResponse(mimeType(path), resourceEncoding(path), ByteArrayInputStream(bytes))
         } catch (_: Exception) {
             null
         } finally {
