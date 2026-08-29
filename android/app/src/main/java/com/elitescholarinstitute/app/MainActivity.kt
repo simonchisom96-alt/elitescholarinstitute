@@ -1,13 +1,9 @@
 package com.elitescholarinstitute.app
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.ConnectivityManager
-import android.net.Network
 import android.net.NetworkCapabilities
-import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
 import android.webkit.CookieManager
@@ -20,7 +16,6 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileNotFoundException
@@ -34,26 +29,6 @@ class MainActivity : ComponentActivity() {
     private val offlineHome = "https://appassets.androidplatform.net/index.html"
     private val onlineOrigin = "https://elitescholarinstitute.pages.dev"
     private val diskCache by lazy { File(cacheDir, "esi-web-cache").apply { mkdirs() } }
-    private var networkCallback: ConnectivityManager.NetworkCallback? = null
-    private var lastNetworkState: Boolean? = null
-
-    private companion object {
-        const val PERMISSION_PREFS = "esi_notification_permission"
-        const val ASKED = "asked"
-        const val DENIED_AT = "denied_at"
-        const val RETRY_AFTER_MS = 50L * 60L * 60L * 1000L
-    }
-
-    private val notificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            val prefs = getSharedPreferences(PERMISSION_PREFS, MODE_PRIVATE)
-            if (granted) {
-                prefs.edit().remove(DENIED_AT).apply()
-                NativeNotificationScheduler.initialize(this)
-            } else {
-                prefs.edit().putLong(DENIED_AT, System.currentTimeMillis()).apply()
-            }
-        }
 
     private fun mimeType(path: String): String {
         val ext = path.substringAfterLast('.', "").lowercase()
@@ -139,13 +114,6 @@ class MainActivity : ComponentActivity() {
         return networkAsset(pathAndQuery, path)
     }
 
-    private fun handleNotificationIntent(intent: Intent?) {
-        val path = intent?.getStringExtra("esi_notification_path") ?: return
-        if (!path.startsWith("/") || path.contains("..")) return
-        webView.post { webView.loadUrl("https://appassets.androidplatform.net$path") }
-        intent.removeExtra("esi_notification_path")
-    }
-
     private fun currentNetworkState(): Boolean {
         val manager = getSystemService(ConnectivityManager::class.java)
         val network = manager.activeNetwork ?: return false
@@ -154,71 +122,24 @@ class MainActivity : ComponentActivity() {
             capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 
-    private fun emitNetworkState(connected: Boolean, notify: Boolean) {
-        val previous = lastNetworkState
-        lastNetworkState = connected
-        if (notify && previous != null && previous != connected) {
-            EsiStatusNotification.show(this, connected)
-        }
-    }
-
-    private fun monitorNetwork() {
-        val manager = getSystemService(ConnectivityManager::class.java)
-        emitNetworkState(currentNetworkState(), false)
-        val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                runOnUiThread { emitNetworkState(true, true) }
-            }
-            override fun onLost(network: Network) {
-                runOnUiThread { emitNetworkState(currentNetworkState(), true) }
-            }
-        }
-        networkCallback = callback
-        try { manager.registerDefaultNetworkCallback(callback) } catch (_: Exception) { }
-        EsiNetworkReceiver.schedule(this)
-    }
-
     private fun injectAppJs() {
-        try {
-            val source = assets.open("site/app.js").bufferedReader().use { it.readText() }
-            webView.evaluateJavascript("javascript:(function(){if(window.__esiAppJsInjected)return;window.__esiAppJsInjected=true;$source})()", null)
-        } catch (_: Exception) { }
-    }
-
-    private fun requestNotificationPermissionIfDue() {
-        if (Build.VERSION.SDK_INT < 33) {
-            NativeNotificationScheduler.initialize(this)
-            return
-        }
-        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-            NativeNotificationScheduler.initialize(this)
-            return
-        }
-
-        val prefs = getSharedPreferences(PERMISSION_PREFS, MODE_PRIVATE)
-        val asked = prefs.getBoolean(ASKED, false)
-        val deniedAt = prefs.getLong(DENIED_AT, 0L)
-
-        if (!asked) {
-            prefs.edit().putBoolean(ASKED, true).apply()
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            return
-        }
-
-        val retryDue = deniedAt > 0L && System.currentTimeMillis() - deniedAt >= RETRY_AFTER_MS
-        if (retryDue && shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
-            prefs.edit().putLong(DENIED_AT, System.currentTimeMillis()).apply()
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
+        // app.js is already loaded by the bundled HTML pages. Do not inject it a second time;
+        // this keeps the existing in-app notification, bell, online/offline toast and page logic intact.
+        if (!currentNetworkState()) return
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         webView = WebView(this)
-        webView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        webView.layoutParams = ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
         setContentView(webView)
+
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -231,41 +152,46 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/1.0"
+            userAgentString = "$userAgentString ESIAndroid/1.1"
         }
+
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
+
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
-                localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
+            override fun shouldInterceptRequest(
+                view: WebView,
+                request: WebResourceRequest
+            ): WebResourceResponse? = localOrCachedAsset(request) ?: super.shouldInterceptRequest(view, request)
+
             override fun onPageFinished(view: WebView, url: String?) {
                 super.onPageFinished(view, url)
                 injectAppJs()
             }
+
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
                 if (uri.scheme == "http" || uri.scheme == "https") return false
-                return try { startActivity(Intent(Intent.ACTION_VIEW, uri)); true } catch (_: Exception) { true }
+                return try {
+                    startActivity(Intent(Intent.ACTION_VIEW, uri))
+                    true
+                } catch (_: Exception) {
+                    true
+                }
             }
         }
-        if (savedInstanceState == null) webView.loadUrl(offlineHome) else webView.restoreState(savedInstanceState)
-        handleNotificationIntent(intent)
+
+        if (savedInstanceState == null) {
+            webView.loadUrl(offlineHome)
+        } else {
+            webView.restoreState(savedInstanceState)
+        }
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() { if (webView.canGoBack()) webView.goBack() else finish() }
+            override fun handleOnBackPressed() {
+                if (webView.canGoBack()) webView.goBack() else finish()
+            }
         })
-        requestNotificationPermissionIfDue()
-        monitorNetwork()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        requestNotificationPermissionIfDue()
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        handleNotificationIntent(intent)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -274,9 +200,6 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        networkCallback?.let { callback ->
-            try { getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(callback) } catch (_: Exception) { }
-        }
         webView.stopLoading()
         webView.webChromeClient = null
         (webView.parent as? ViewGroup)?.removeView(webView)
