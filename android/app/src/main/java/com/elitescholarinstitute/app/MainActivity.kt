@@ -1,13 +1,19 @@
 package com.elitescholarinstitute.app
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
 import android.os.Bundle
+import android.util.Base64
 import android.view.ViewGroup
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
+import android.webkit.JsResult
 import android.webkit.MimeTypeMap
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
@@ -16,6 +22,7 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.core.content.FileProvider
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileNotFoundException
@@ -29,6 +36,7 @@ class MainActivity : ComponentActivity() {
     private val offlineHome = "https://appassets.androidplatform.net/index.html"
     private val onlineOrigin = "https://elitescholarinstitute.pages.dev"
     private val diskCache by lazy { File(cacheDir, "esi-web-cache").apply { mkdirs() } }
+    private val shareDir by lazy { File(cacheDir, "shared").apply { mkdirs() } }
 
     private fun mimeType(path: String): String {
         val ext = path.substringAfterLast('.', "").lowercase()
@@ -123,9 +131,120 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun injectAppJs() {
-        // app.js is already loaded by the bundled HTML pages. Do not inject it a second time;
-        // this keeps the existing in-app notification, bell, online/offline toast and page logic intact.
         if (!currentNetworkState()) return
+        webView.evaluateJavascript(buildAndroidBridgeJs(), null)
+    }
+
+    private fun buildAndroidBridgeJs(): String = """
+        (function(){
+          if(!window.ESIAndroid || window.__esiAndroidBridgeInstalled) return;
+          window.__esiAndroidBridgeInstalled = true;
+          const originalShare = navigator.share;
+          navigator.share = function(data){
+            data = data || {};
+            if(data.files && data.files.length){
+              const file = data.files[0];
+              return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(){
+                  try {
+                    const result = String(reader.result || '');
+                    const comma = result.indexOf(',');
+                    const base64 = comma >= 0 ? result.slice(comma + 1) : result;
+                    window.ESIAndroid.shareFile(file.name || 'shared_file', file.type || 'application/octet-stream', base64, data.title || '', data.text || '');
+                    resolve();
+                  } catch(e){ reject(e); }
+                };
+                reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
+                reader.readAsDataURL(file);
+              });
+            }
+            window.ESIAndroid.share(data.title || 'Elite Scholar Institute', data.text || '', data.url || '');
+            return Promise.resolve();
+          };
+        })();
+    """.trimIndent()
+
+    private inner class AndroidBridge {
+        @JavascriptInterface
+        fun share(title: String, text: String, url: String) {
+            runOnUiThread {
+                val body = if (url.isBlank()) text else if (text.isBlank()) url else "$text\n$url"
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_SUBJECT, title)
+                    putExtra(Intent.EXTRA_TEXT, body)
+                }
+                startActivity(Intent.createChooser(intent, "Share with"))
+            }
+        }
+
+        @JavascriptInterface
+        fun shareFile(name: String, mime: String, base64: String, title: String, text: String) {
+            runOnUiThread {
+                try {
+                    val safeName = name.substringAfterLast('/').ifBlank { "shared_file" }
+                    val file = File(shareDir, safeName)
+                    file.writeBytes(Base64.decode(base64, Base64.DEFAULT))
+                    val uri = FileProvider.getUriForFile(this@MainActivity, "$packageName.fileprovider", file)
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = mime.ifBlank { "application/octet-stream" }
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        if (text.isNotBlank()) putExtra(Intent.EXTRA_TEXT, text)
+                        if (title.isNotBlank()) putExtra(Intent.EXTRA_SUBJECT, title)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    startActivity(Intent.createChooser(intent, "Share with"))
+                } catch (e: Exception) {
+                    android.widget.Toast.makeText(this@MainActivity, "Unable to share file", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun openPdf(name: String, base64: String) {
+            runOnUiThread {
+                try {
+                    val safeName = name.substringAfterLast('/').ifBlank { "document.pdf" }
+                    val finalName = if (safeName.lowercase().endsWith(".pdf")) safeName else "$safeName.pdf"
+                    val file = File(shareDir, finalName)
+                    file.writeBytes(Base64.decode(base64, Base64.DEFAULT))
+                    val uri = FileProvider.getUriForFile(this@MainActivity, "$packageName.fileprovider", file)
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(uri, "application/pdf")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    startActivity(intent)
+                } catch (_: Exception) {
+                    android.widget.Toast.makeText(this@MainActivity, "No PDF viewer is available", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private val androidBridge = AndroidBridge()
+
+    private fun openBlobPdf(blobUrl: String) {
+        val quoted = org.json.JSONObject.quote(blobUrl)
+        val script = """
+            (async function(){
+              try {
+                const r = await fetch($quoted);
+                const b = await r.blob();
+                const reader = new FileReader();
+                reader.onload = function(){
+                  const s = String(reader.result || '');
+                  const i = s.indexOf(',');
+                  const data = i >= 0 ? s.slice(i + 1) : s;
+                  window.ESIAndroid.openPdf('document.pdf', data);
+                };
+                reader.readAsDataURL(b);
+              } catch(e) {
+                console.error('Android cached PDF bridge error', e);
+              }
+            })();
+        """.trimIndent()
+        webView.evaluateJavascript(script, null)
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -152,11 +271,34 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/1.1"
+            userAgentString = "$userAgentString ESIAndroid/2.0"
         }
+
+        webView.addJavascriptInterface(androidBridge, "ESIAndroid")
 
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
+
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onJsAlert(view: WebView?, url: String?, message: String?, result: JsResult): Boolean {
+                AlertDialog.Builder(this@MainActivity)
+                    .setMessage(message ?: "")
+                    .setPositiveButton("OK") { _, _ -> result.confirm() }
+                    .setOnCancelListener { result.cancel() }
+                    .show()
+                return true
+            }
+
+            override fun onJsConfirm(view: WebView?, url: String?, message: String?, result: JsResult): Boolean {
+                AlertDialog.Builder(this@MainActivity)
+                    .setMessage(message ?: "")
+                    .setPositiveButton("OK") { _, _ -> result.confirm() }
+                    .setNegativeButton("Cancel") { _, _ -> result.cancel() }
+                    .setOnCancelListener { result.cancel() }
+                    .show()
+                return true
+            }
+        }
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(
@@ -172,6 +314,10 @@ class MainActivity : ComponentActivity() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
                 if (uri.scheme == "http" || uri.scheme == "https") return false
+                if (uri.scheme == "blob" && uri.toString().startsWith("blob:")) {
+                    openBlobPdf(uri.toString())
+                    return true
+                }
                 return try {
                     startActivity(Intent(Intent.ACTION_VIEW, uri))
                     true
@@ -200,6 +346,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        webView.removeJavascriptInterface("ESIAndroid")
         webView.stopLoading()
         webView.webChromeClient = null
         (webView.parent as? ViewGroup)?.removeView(webView)
