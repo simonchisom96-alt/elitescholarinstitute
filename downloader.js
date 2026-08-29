@@ -1,10 +1,15 @@
 document.addEventListener('DOMContentLoaded', async function(){
-  const CACHE_NAME = 'esi-cache-36.2330';
+  const CACHE_NAME = 'esi-cache-36.2331';
   const cache = await caches.open(CACHE_NAME);
   const btns = document.querySelectorAll('.download-btn');
 
   const getCleanUrl = (url) => {
     const clean = new URL(url, location.origin);
+    // In the Android WebView, route same-site Pages URLs back through the
+    // appassets origin so MainActivity can serve/cache the binary PDF.
+    if (/ESIAndroid\//i.test(navigator.userAgent) && clean.origin === 'https://elitescholarinstitute.pages.dev') {
+      return location.origin + clean.pathname;
+    }
     return clean.origin + clean.pathname;
   };
 
