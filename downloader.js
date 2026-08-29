@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function(){
-  const CACHE_NAME = 'esi-pdf-cache-36.2345';
+  const CACHE_NAME = 'esi-pdf-cache-36.2346';
   const cachePromise = caches.open(CACHE_NAME);
 
   const getPdfUrl = (btn) => {
@@ -9,8 +9,8 @@ document.addEventListener('DOMContentLoaded', function(){
     if(!raw || /PASTE_/i.test(raw)) return null;
     try {
       const clean = new URL(raw, location.href);
-      // Proven Android PDF path: route real Pages PDFs through the appassets
-      // origin so MainActivity's native resource handler downloads/caches them.
+      // In the APK, keep the proven appassets route so MainActivity's native
+      // resource handler can retrieve the real Pages PDF.
       if (/ESIAndroid\//i.test(navigator.userAgent) && clean.origin === 'https://elitescholarinstitute.pages.dev') {
         return location.origin + clean.pathname;
       }
