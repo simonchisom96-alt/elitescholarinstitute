@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function(){
-  const CACHE_NAME = 'esi-pdf-cache-36.2343';
+  const CACHE_NAME = 'esi-pdf-cache-36.2345';
   const cachePromise = caches.open(CACHE_NAME);
 
   const getPdfUrl = (btn) => {
@@ -8,7 +8,13 @@ document.addEventListener('DOMContentLoaded', function(){
     const raw = (card && card.dataset.url) || (owner && owner.dataset.url) || btn.dataset.url || btn.getAttribute('href');
     if(!raw || /PASTE_/i.test(raw)) return null;
     try {
-      return new URL(raw, location.href).href;
+      const clean = new URL(raw, location.href);
+      // Proven Android PDF path: route real Pages PDFs through the appassets
+      // origin so MainActivity's native resource handler downloads/caches them.
+      if (/ESIAndroid\//i.test(navigator.userAgent) && clean.origin === 'https://elitescholarinstitute.pages.dev') {
+        return location.origin + clean.pathname;
+      }
+      return clean.origin + clean.pathname;
     } catch(e) {
       return null;
     }
@@ -108,14 +114,7 @@ document.addEventListener('DOMContentLoaded', function(){
       if(text) text.textContent = 'Downloading...';
       if(percent) percent.textContent = '0%';
 
-      // PDF download uses the real Cloudflare Pages URL in both website and APK.
-      // The APK must not rewrite it to appassets.androidplatform.net.
-      // Cloudflare Pages static assets provide Access-Control-Allow-Origin: *.
-      const response = await fetch(url, {
-        method: 'GET',
-        credentials: 'omit',
-        cache: 'no-store'
-      });
+      const response = await fetch(url, { method:'GET', cache:'no-store' });
       if(!response.ok) throw new Error('PDF request failed: ' + response.status);
 
       const blob = await response.blob();
