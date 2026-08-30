@@ -359,7 +359,20 @@ class MainActivity : ComponentActivity() {
                 CookieManager.getInstance().setAcceptCookie(true)
                 CookieManager.getInstance().setAcceptThirdPartyCookies(popup, true)
                 val dialog = Dialog(this@MainActivity)
-                popup.webViewClient = WebViewClient()
+                popup.webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                        val uri = request.url
+                        if (uri.scheme == "whatsapp" || uri.host == "wa.me" || uri.host == "api.whatsapp.com") {
+                            return try {
+                                startActivity(Intent(Intent.ACTION_VIEW, uri))
+                                true
+                            } catch (_: Exception) {
+                                false
+                            }
+                        }
+                        return false
+                    }
+                }
                 popup.webChromeClient = object : WebChromeClient() { override fun onCloseWindow(window: WebView?) { dialog.dismiss() } }
                 dialog.setContentView(popup)
                 dialog.setOnDismissListener { popup.stopLoading(); popup.destroy(); if (authPopup === dialog) authPopup = null }
@@ -378,6 +391,14 @@ class MainActivity : ComponentActivity() {
             override fun onPageFinished(view: WebView, url: String?) { super.onPageFinished(view, url); injectAppJs() }
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
+                if (uri.scheme == "whatsapp" || uri.host == "wa.me" || uri.host == "api.whatsapp.com") {
+                    return try {
+                        startActivity(Intent(Intent.ACTION_VIEW, uri))
+                        true
+                    } catch (_: Exception) {
+                        false
+                    }
+                }
                 if (uri.scheme == "http" || uri.scheme == "https") return false
                 if (uri.scheme == "blob" && uri.toString().startsWith("blob:")) {
                     val quoted = org.json.JSONObject.quote(uri.toString())
