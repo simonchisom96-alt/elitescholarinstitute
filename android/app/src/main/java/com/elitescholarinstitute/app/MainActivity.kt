@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
                   try {
                     const result = String(reader.result || '');
                     const comma = result.indexOf(',');
-                    const base64 = comma >= 0 ? result.slice(comma + 1) : result;
+                    const base64 = comma >= 0 ? result.slice(comma+1) : result;
                     const chunkSize = 180000;
                     window.ESIAndroid.beginShareFile(file.name || 'shared_file', file.type || 'application/octet-stream', data.title || '', data.text || '');
                     for(let i=0; i<base64.length; i+=chunkSize){
@@ -284,7 +284,7 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/2.6"
+            userAgentString = "$userAgentString ESIAndroid/3.9"
         }
         webView.addJavascriptInterface(androidBridge, "ESIAndroid")
         CookieManager.getInstance().setAcceptCookie(true)
