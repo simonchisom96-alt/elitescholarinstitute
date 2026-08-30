@@ -13,6 +13,7 @@ import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.JsResult
 import android.webkit.MimeTypeMap
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -34,10 +35,12 @@ import java.security.MessageDigest
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private var authPopup: Dialog? = null
+    private var fileChooserCallback: ValueCallback<Array<android.net.Uri>>? = null
     private val offlineHome = "https://appassets.androidplatform.net/index.html"
     private val onlineOrigin = "https://elitescholarinstitute.pages.dev"
     private val diskCache by lazy { File(cacheDir, "esi-web-cache").apply { mkdirs() } }
     private val shareDir by lazy { File(cacheDir, "shared").apply { mkdirs() } }
+    private val fileChooserRequestCode = 41001
 
     private fun mimeType(path: String): String {
         val ext = path.substringAfterLast('.', "").lowercase()
@@ -264,6 +267,45 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun acceptFileChooser(callback: ValueCallback<Array<android.net.Uri>>?, params: WebChromeClient.FileChooserParams): Boolean {
+        fileChooserCallback?.onReceiveValue(null)
+        fileChooserCallback = callback
+        val intent = try {
+            params.createIntent().apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                if (params.acceptTypes.isNotEmpty()) putExtra(Intent.EXTRA_MIME_TYPES, params.acceptTypes.filter { it.isNotBlank() }.toTypedArray())
+            }
+        } catch (_: Exception) {
+            Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "*/*"
+            }
+        }
+        return try {
+            startActivityForResult(intent, fileChooserRequestCode)
+            true
+        } catch (_: Exception) {
+            fileChooserCallback?.onReceiveValue(null)
+            fileChooserCallback = null
+            false
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == fileChooserRequestCode) {
+            val callback = fileChooserCallback
+            fileChooserCallback = null
+            if (callback != null) {
+                val results = if (resultCode == RESULT_OK && data != null) {
+                    WebChromeClient.FileChooserParams.parseResult(resultCode, data)
+                } else null
+                callback.onReceiveValue(results)
+            }
+            return
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -284,7 +326,7 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/3.9"
+            userAgentString = "$userAgentString ESIAndroid/4.0"
         }
         webView.addJavascriptInterface(androidBridge, "ESIAndroid")
         CookieManager.getInstance().setAcceptCookie(true)
@@ -298,6 +340,13 @@ class MainActivity : ComponentActivity() {
             override fun onJsConfirm(view: WebView?, url: String?, message: String?, result: JsResult): Boolean {
                 AlertDialog.Builder(this@MainActivity).setMessage(message ?: "").setPositiveButton("OK") { _, _ -> result.confirm() }.setNegativeButton("Cancel") { _, _ -> result.cancel() }.setOnCancelListener { result.cancel() }.show()
                 return true
+            }
+            override fun onShowFileChooser(view: WebView?, filePathCallback: ValueCallback<Array<android.net.Uri>>?, fileChooserParams: FileChooserParams?): Boolean {
+                if (fileChooserParams == null) {
+                    filePathCallback?.onReceiveValue(null)
+                    return false
+                }
+                return acceptFileChooser(filePathCallback, fileChooserParams)
             }
             override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
                 if (!isUserGesture || resultMsg == null) return false
@@ -348,6 +397,8 @@ class MainActivity : ComponentActivity() {
     override fun onSaveInstanceState(outState: Bundle) { webView.saveState(outState); super.onSaveInstanceState(outState) }
 
     override fun onDestroy() {
+        fileChooserCallback?.onReceiveValue(null)
+        fileChooserCallback = null
         authPopup?.dismiss(); authPopup = null
         webView.removeJavascriptInterface("ESIAndroid")
         webView.stopLoading(); webView.webChromeClient = null
