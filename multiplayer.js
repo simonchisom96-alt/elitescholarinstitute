@@ -133,7 +133,7 @@ function updateUI(){
         multiBtn.className = 'mode-btn unlock';
         multiIcon.textContent = '👥';
         multiTitle.textContent = 'Multiplayer';
-        multiSub.textContent = 'Locked • ₦3,500 one-time';
+        multiSub.textContent = 'Locked • ₦2,000 one-time';
         multiArrow.textContent = '→';
         unlockCard.style.display = 'block';
         statusPill.className = 'status-pill locked';
@@ -163,7 +163,7 @@ function openWhatsApp(){
     const text = encodeURIComponent(
 `Hello, Elite Scholar Institute! I am ready to the unlock the *Multiplayer* quiz mode.
 
-I am ready to pay for the ₦3,500 passcode unlock key. 
+I am ready to pay for the ₦2,000 passcode unlock key. 
 
 Please send me the one-time passcode key after payment. Thank you.`
     );
