@@ -171,14 +171,15 @@ jobs:
           cp android/app/build/outputs/apk/debug/app-debug.apk release/ESI.apk
           echo "APK SHA-256: $(sha256sum release/ESI.apk | cut -d' ' -f1)"
           echo "APK bytes: $(wc -c < release/ESI.apk)"
-          # Verify the APK has the current Gradle version metadata using aapt2.
           SDK_AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1)
-          "$SDK_AAPT2" dump badging release/ESI.apk | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='362347'.*versionName='3.9'"
+          BADGING=$("$SDK_AAPT2" dump badging release/ESI.apk)
+          echo "$BADGING"
+          echo "$BADGING" | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='362401'.*versionName='4.1'"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ESI-APK-v3.9
+          name: ESI-APK-v4.1
           path: release/ESI.apk
           if-no-files-found: error
           retention-days: 30
@@ -189,12 +190,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="esi-v3.9-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          TAG="esi-v4.1-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
           gh release create "$TAG" release/ESI.apk \
-            --title "ESI Android APK v3.9" \
-            --notes "ESI Android APK v3.9. Built from commit ${GITHUB_SHA}. This release asset is the APK served by releases/latest/download/ESI.apk." \
+            --title "ESI Android APK v4.1" \
+            --notes "ESI Android APK v4.1. Built from commit ${GITHUB_SHA}. This release asset is the APK served by releases/latest/download/ESI.apk." \
             --latest
 
       - name: Confirm successful release
         shell: bash
-        run: echo "ESI v3.9 APK built, version-verified, and published as the latest release asset."
+        run: echo "ESI v4.1 APK built, version-verified, and published as the latest release asset."
