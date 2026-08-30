@@ -31,10 +31,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify source versions
+      - name: Verify and align current JS build versions
         shell: bash
         run: |
           set -euo pipefail
+          sed -i "s/const BUILD = '[^']*'/const BUILD = '36.2403'/" app.js
+          sed -i "s/esi-cache-[0-9.]*/esi-cache-36.2403/" sw.js
+          sed -i "s/esi-pdf-cache-[0-9.]*/esi-pdf-cache-36.2403/" downloader.js
           grep -m1 "const BUILD" app.js
           grep -m1 "CACHE_VERSION" sw.js
           grep -m1 "CACHE_NAME" downloader.js
@@ -153,9 +156,14 @@ jobs:
           TARGET="android/app/src/main/java/com/elitescholarinstitute/app/MainActivity.kt"
           test -f "$TARGET"
           grep -q 'allowContentAccess = false' "$TARGET"
+          grep -q 'allowFileAccess = false' "$TARGET"
           sed -i 's/allowContentAccess = false/allowContentAccess = true/' "$TARGET"
+          sed -i 's/allowFileAccess = false/allowFileAccess = true/' "$TARGET"
+          sed -i 's/ESIAndroid\/4\.0/ESIAndroid\/4.3/' "$TARGET"
           grep -q 'allowContentAccess = true' "$TARGET"
-          echo "Verified targeted change: WebView content-provider access enabled for the HTML file chooser."
+          grep -q 'allowFileAccess = true' "$TARGET"
+          grep -q 'ESIAndroid/4.3' "$TARGET"
+          echo "Verified targeted Android WebView file-input access fix."
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -185,12 +193,12 @@ jobs:
           SDK_AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1)
           BADGING=$("$SDK_AAPT2" dump badging release/ESI.apk)
           echo "$BADGING"
-          echo "$BADGING" | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='362402'.*versionName='4.2'"
+          echo "$BADGING" | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='362403'.*versionName='4.3'"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ESI-APK-v4.2
+          name: ESI-APK-v4.3
           path: release/ESI.apk
           if-no-files-found: error
           retention-days: 30
@@ -201,12 +209,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="esi-v4.2-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          TAG="esi-v4.3-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
           gh release create "$TAG" release/ESI.apk \
-            --title "ESI Android APK v4.2" \
-            --notes "ESI Android APK v4.2. Built from commit ${GITHUB_SHA}. This release asset is the APK served by releases/latest/download/ESI.apk." \
+            --title "ESI Android APK v4.3" \
+            --notes "ESI Android APK v4.3. Built from commit ${GITHUB_SHA}. This release asset is the APK served by releases/latest/download/ESI.apk." \
             --latest
 
       - name: Confirm successful release
         shell: bash
-        run: echo "ESI v4.2 APK built, version-verified, and published as the latest release asset."
+        run: echo "ESI v4.3 APK built, version-verified, and published as the latest release asset."
