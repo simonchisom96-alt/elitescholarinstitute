@@ -1,5 +1,5 @@
 /* Elite Scholar Institute service worker — offline shell + runtime cache */
-const CACHE_VERSION = 'esi-cache-36.2347';
+const CACHE_VERSION = 'esi-cache-36.2400';
 const APP_SHELL = [
   '/', '/index.html', '/logo.jpg', '/advert.png', '/esi.jpg', '/founder.jpg',
   '/manifest.json', '/offline.html', '/app.js', '/downloader.js',
@@ -21,75 +21,28 @@ const APP_SHELL = [
   '/password.js', '/credit.html', '/timetable1.jpg', '/timetable2.jpg', '/quiz1.html',
   '/quiz.html', '/video.mp4', '/firebase-config.js', '/multiplayer.js', '/singleplay.js'
 ];
-
 const isSameOrigin = request => new URL(request.url).origin === self.location.origin;
 const isGet = request => request.method === 'GET';
-
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_VERSION);
-    await Promise.all(APP_SHELL.map(async url => {
-      try {
-        const response = await fetch(new Request(url, { cache: 'reload' }));
-        if (response.ok || response.type === 'opaque') await cache.put(url, response.clone());
-      } catch (_) {}
-    }));
+    await Promise.all(APP_SHELL.map(async url => { try { const response = await fetch(new Request(url, { cache: 'reload' })); if (response.ok || response.type === 'opaque') await cache.put(url, response.clone()); } catch (_) {} }));
     await self.skipWaiting();
   })());
 });
-
 self.addEventListener('activate', event => {
-  event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(key => key.startsWith('esi-cache-') && key !== CACHE_VERSION).map(key => caches.delete(key)));
-    await self.clients.claim();
-  })());
+  event.waitUntil((async () => { const keys = await caches.keys(); await Promise.all(keys.filter(key => key.startsWith('esi-cache-') && key !== CACHE_VERSION).map(key => caches.delete(key))); await self.clients.claim(); })());
 });
-
-self.addEventListener('message', event => {
-  if (event.data === 'SKIP_WAITING') self.skipWaiting();
-});
-
+self.addEventListener('message', event => { if (event.data === 'SKIP_WAITING') self.skipWaiting(); });
 self.addEventListener('fetch', event => {
   const { request } = event;
   if (!isGet(request) || !isSameOrigin(request)) return;
   const url = new URL(request.url);
   if (url.pathname.startsWith('/api/')) return;
-
-  // PDFs use the dedicated downloader/native Android path. Do not let the
-  // generic service-worker cache consume PDF responses first.
   if (/\.pdf$/i.test(url.pathname)) return;
-
   if (request.mode === 'navigate') {
-    event.respondWith((async () => {
-      try {
-        const network = await fetch(request);
-        if (network.ok) {
-          const cache = await caches.open(CACHE_VERSION);
-          cache.put(request, network.clone()).catch(() => {});
-        }
-        return network;
-      } catch (_) {
-        const cache = await caches.open(CACHE_VERSION);
-        return (await cache.match(request)) || (await cache.match('/index.html')) || (await cache.match('/offline.html')) || Response.error();
-      }
-    })());
+    event.respondWith((async () => { try { const network = await fetch(request); if (network.ok) { const cache = await caches.open(CACHE_VERSION); cache.put(request, network.clone()).catch(() => {}); } return network; } catch (_) { const cache = await caches.open(CACHE_VERSION); return (await cache.match(request)) || (await cache.match('/index.html')) || (await cache.match('/offline.html')) || Response.error(); } })());
     return;
   }
-
-  event.respondWith((async () => {
-    const cache = await caches.open(CACHE_VERSION);
-    const cached = await cache.match(request);
-    if (cached) {
-      fetch(request).then(response => { if (response.ok) cache.put(request, response.clone()).catch(() => {}); }).catch(() => {});
-      return cached;
-    }
-    try {
-      const response = await fetch(request);
-      if (response.ok) cache.put(request, response.clone()).catch(() => {});
-      return response;
-    } catch (_) {
-      return Response.error();
-    }
-  })());
+  event.respondWith((async () => { const cache = await caches.open(CACHE_VERSION); const cached = await cache.match(request); if (cached) { fetch(request).then(response => { if (response.ok) cache.put(request, response.clone()).catch(() => {}); }).catch(() => {}); return cached; } try { const response = await fetch(request); if (response.ok) cache.put(request, response.clone()).catch(() => {}); return response; } catch (_) { return Response.error(); } })());
 });
