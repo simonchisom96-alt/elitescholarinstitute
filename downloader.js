@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function(){
-  const CACHE_NAME = 'esi-pdf-cache-36.2400';
+  const CACHE_NAME = 'esi-pdf-cache-36.2401';
   const cachePromise = caches.open(CACHE_NAME);
   const getPdfUrl = (btn) => {
     const card = btn.closest('.book-card');
