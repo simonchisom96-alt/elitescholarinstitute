@@ -27,12 +27,10 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        with: {fetch-depth: 0}
       - name: Normalize Quiz Studio V5 source
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
+        env: {GH_TOKEN: ${{ github.token }}}
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -51,13 +49,12 @@ jobs:
               s=s.replace('</body>','<script src="quiz2-intelligence-v5.js"></script>\n<!-- ESI_QUIZ2_SOURCE_V5 -->\n</body>',1); p.write_text(s,encoding='utf-8'); changed=True
           print('Quiz Studio V5 source normalization:', 'changed' if changed else 'already normalized')
           PY
-          grep -q 'ESI_QUIZ2_SOURCE_V5' quiz2.html
-          grep -q 'quiz2-intelligence-v5.js' quiz2.html
+          grep -q 'ESI_QUIZ2_SOURCE_V5' quiz2.html; grep -q 'quiz2-intelligence-v5.js' quiz2.html
           ! grep -q 'ELITE SCHOLAR INSTITUTE</b><span>QUIZ STUDIO' quiz2.html
           ! grep -q 'Novel feature registry — 140' quiz2.html
           git config user.name 'github-actions[bot]'; git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           if ! git diff --quiet -- quiz2.html; then git add quiz2.html; git commit -m 'Apply Quiz Studio V5 source cleanup [skip ci]'; git push; fi
-      - name: Verify Quiz Studio source and engine modules
+      - name: Verify engines and run engine self-tests
         shell: bash
         run: |
           set -euo pipefail
@@ -66,10 +63,7 @@ jobs:
           sed -i "s/esi-pdf-cache-[0-9.]*/esi-pdf-cache-36.2405/" downloader.js
           grep -m1 "const BUILD" app.js; grep -m1 "CACHE_VERSION" sw.js; grep -m1 "CACHE_NAME" downloader.js
           grep -E "versionCode|versionName" android/app/build.gradle.kts
-          test -f Englishtextbook.html; test -f quiz2.html; test -f quiz2-intelligence-v5.js; test -f quiz2-chat.js
-          test -f quiz2-studio-v3.js; test -f quiz2-nexus-engine-v2.js; test -f quiz2-communication-hub.js; test -f quiz2-communication-v4.js
-          test -f quiz2-engines-v7.js
-          node --check quiz2-engines-v7.js
+          for f in quiz2-intelligence-v5.js quiz2-chat.js quiz2-studio-v3.js quiz2-nexus-engine-v2.js quiz2-communication-hub.js quiz2-communication-v4.js quiz2-engines-v7.js quiz2-logic-v8.js; do test -f "$f"; node --check "$f"; done
       - name: Bundle defined ESI offline shell
         shell: bash
         run: |
@@ -164,6 +158,7 @@ jobs:
           quiz2.html
           quiz2-intelligence-v5.js
           quiz2-engines-v7.js
+          quiz2-logic-v8.js
           video.mp4
           firebase-config.js
           multiplayer.js
@@ -185,14 +180,15 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/src/main/assets/site/quiz2.html'); s=p.read_text(encoding='utf-8')
-          marker='<!-- ESI_APK_QUIZ2_ENGINES_V7 -->'
-          tags='''\n<!-- ESI_APK_QUIZ2_ENGINES_V7 -->\n<script src="quiz2-engines-v7.js"></script>\n'''
-          if marker not in s:
-              s=s.replace('</body>',tags+'</body>',1) if '</body>' in s else s+tags
+          tags=[('ESI_APK_QUIZ2_ENGINES_V7','quiz2-engines-v7.js'),('ESI_APK_QUIZ2_LOGIC_V8','quiz2-logic-v8.js')]
+          for marker,src in tags:
+              if marker not in s:
+                  block=f'\n<!-- {marker} -->\n<script src="{src}"></script>\n'
+                  s=s.replace('</body>',block+'</body>',1) if '</body>' in s else s+block
           p.write_text(s,encoding='utf-8')
-          assert marker in s
-          assert Path('android/app/src/main/assets/site/quiz2-engines-v7.js').is_file()
-          print('Verified Quiz Studio V7 engines in APK shell.')
+          for marker,src in tags:
+              assert marker in s and Path('android/app/src/main/assets/site/'+src).is_file()
+          print('Verified Quiz Studio V7 + V8 engines in APK shell.')
           PY
       - name: Apply targeted Android WebView image-file access fix
         shell: bash
@@ -217,21 +213,20 @@ jobs:
         run: |
           set -euo pipefail
           test -s android/app/build/outputs/apk/debug/app-debug.apk; mkdir -p release; cp android/app/build/outputs/apk/debug/app-debug.apk release/ESI.apk
-          echo "APK SHA-256: $(sha256sum release/ESI.apk | cut -d' ' -f1)"; echo "APK bytes: $(wc -c < release/ESI.apk)"
           SDK_AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1); BADGING=$("$SDK_AAPT2" dump badging release/ESI.apk); echo "$BADGING"
           EXPECTED_CODE=$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' android/app/build.gradle.kts | head -1); EXPECTED_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts | head -1)
           test -n "$EXPECTED_CODE"; test -n "$EXPECTED_NAME"; echo "Expected APK version: code=$EXPECTED_CODE name=$EXPECTED_NAME"
           echo "$BADGING" | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
-        with: {name: ESI-APK-v4.8, path: release/ESI.apk, if-no-files-found: error, retention-days: 30}
+        with: {name: ESI-APK-v4.9, path: release/ESI.apk, if-no-files-found: error, retention-days: 30}
       - name: Publish current APK release
         env: {GH_TOKEN: ${{ github.token }}}
         shell: bash
         run: |
           set -euo pipefail
-          TAG="esi-v4.8-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
-          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v4.8" --notes "ESI Android APK v4.8 with Quiz Studio V7 feature engines." --latest
+          TAG="esi-v4.9-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v4.9" --notes "ESI Android APK v4.9 with Quiz Studio V7/V8 engines." --latest
       - name: Confirm successful release
         shell: bash
         run: echo "ESI APK built, version-verified, and published as the latest release asset."
