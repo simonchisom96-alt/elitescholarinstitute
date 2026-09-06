@@ -1,0 +1,10 @@
+/* ESI Quiz Studio Security & Integrity Engine V15 — client-side safety gates only */
+(()=>{'use strict';
+const text=x=>String(x??'');const arr=x=>Array.isArray(x)?x:[];
+function scanQuiz(q){const errors=[],warnings=[];if(!q||typeof q!=='object')return{safe:false,errors:['Quiz payload is not an object'],warnings:[]};if(!Array.isArray(q.questions))errors.push('Questions collection is invalid');arr(q.questions).forEach((x,i)=>{if(!x||typeof x!=='object')errors.push(`Question ${i+1} is invalid`);if(!text(x.text||x.prompt).trim())warnings.push(`Question ${i+1} has empty prompt`);if(x.options&&!Array.isArray(x.options))errors.push(`Question ${i+1} options are invalid`)});const raw=JSON.stringify(q);if(/(?:AIza[0-9A-Za-z_-]{20,}|sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9_]{20,})/.test(raw))errors.push('Possible credential detected in quiz payload');return{safe:!errors.length,errors,warnings};}
+function integrity(q){const r=scanQuiz(q), seen=new Set(),dupes=[];arr(q?.questions).forEach((x,i)=>{const k=text(x?.id||'');if(k&&seen.has(k))dupes.push(k);if(k)seen.add(k)});return{...r,duplicateIds:dupes,integrity:!dupes.length&&r.safe};}
+function publishGate(q){const r=integrity(q),blocking=[...r.errors,...(r.duplicateIds.length?['Duplicate question IDs detected']:[])];return{allowed:!blocking.length,blocking,warnings:r.warnings,checkedAt:Date.now()};}
+function redact(s){return text(s).replace(/(?:AIza[0-9A-Za-z_-]{20,}|sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9_]{20,})/g,'[REDACTED]')}
+function selfTest(){const q={title:'Test',questions:[{id:'a',text:'x',options:['1','2']} ]};const good=publishGate(q).allowed;const bad=publishGate({questions:[{id:'a',text:'x'},{id:'a',text:'y'}]}).allowed===false;return{ok:good&&bad,tests:{validQuiz:good,duplicateIdsBlocked:bad}}}
+window.ESISecurityV15={scanQuiz,integrity,publishGate,redact,selfTest};
+})();
