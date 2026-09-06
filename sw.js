@@ -13,7 +13,7 @@ const APP_SHELL = [
   '/mathematicstextbook.html', '/motivation.html', '/chapter2.html', '/chapter3.html',
   '/chapter4.html', '/chapter5.html', '/chapter6.html', '/chapter7.html', '/chapter8.html',
   '/chapter9.html', '/chapter10.html', '/furthermathstextbook.html', '/accountingtextbook.html',
-  '/motivation2.html', '/motivation3.html', '/biop.html', '/motivatIO.html', '/uip.html',
+  '/motivation2.html', '/motivation3.html', '/biop.html', '/motivatio.html', '/uip.html',
   '/ulp.html', '/picture.html', '/motivation4.html', '/unn.html', '/physicsp.html',
   '/chemp.html', '/crsp.html', '/englishp.html', '/literaturep.html', '/mathematicsp.html',
   '/governmentp.html', '/economicsp.html', '/accountingp.html', '/oau.html',
