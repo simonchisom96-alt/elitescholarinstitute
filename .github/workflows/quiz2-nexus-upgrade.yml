@@ -1,0 +1,79 @@
+name: Quiz2 Nexus Upgrade
+on:
+  push:
+    paths:
+      - '.github/workflows/quiz2-nexus-upgrade.yml'
+permissions:
+  contents: write
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upgrade quiz2 Nexus safely
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('quiz2.html')
+          s=p.read_text(encoding='utf-8')
+          marker='/* ESI_NEXUS_V2 */'
+          if marker in s:
+              print('Nexus v2 already present; no-op')
+          else:
+              insert=r'''/* ESI_NEXUS_V2 */
+          (function(){
+            const K=['speed','accuracy','difficulty','consistency','mastery'];
+            const N=['Speed','Accuracy','Difficulty','Consistency','Mastery'];
+            const oldDraw=window.drawNexus;
+            window.nexusV2={drag:null};
+            function metrics(){
+              const n=state.nexus,v=K.map(k=>Math.max(0,Math.min(100,+n[k]||0))),m=v.reduce((a,b)=>a+b,0)/5;
+              const spread=Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/5),range=Math.max(...v)-Math.min(...v);
+              return {mean:Math.round(m),spread,range,balance:Math.max(0,Math.min(100,Math.round(100-spread*2))),synergy:Math.max(0,Math.min(100,Math.round((100-range*.7)*.55+(100-spread*2)*.45)))};
+            }
+            function pull(i,delta){
+              const c=Math.max(0,Math.min(1,+state.nexus.coupling||.28));
+              if(!c||!delta)return;
+              const l=K[(i+4)%5],r=K[(i+1)%5],a=delta*c*.34;
+              state.nexus[l]=Math.max(0,Math.min(100,Math.round((+state.nexus[l]||0)+a)));
+              state.nexus[r]=Math.max(0,Math.min(100,Math.round((+state.nexus[r]||0)+a)));
+            }
+            window.setNexus=function(k,v){
+              const before=+state.nexus[k]||0,target=Math.max(0,Math.min(100,+v||0));
+              state.nexus[k]=target;pull(K.indexOf(k),target-before);silent();
+              window.drawNexus();window.syncNexusUI&&window.syncNexusUI();
+            };
+            window.setNexusCoupling=function(v){state.nexus.coupling=Math.max(0,Math.min(1,(+v||0)/100));silent();window.drawNexus();window.syncNexusUI&&window.syncNexusUI()};
+            window.nexusPreset=function(name){
+              const p={balanced:{speed:82,accuracy:82,difficulty:82,consistency:82,mastery:82},precision:{speed:72,accuracy:97,difficulty:78,consistency:91,mastery:89},speed:{speed:98,accuracy:78,difficulty:72,consistency:76,mastery:70},mastery:{speed:70,accuracy:91,difficulty:95,consistency:88,mastery:98}}[name];
+              if(p){Object.assign(state.nexus,p);state.nexus.coupling=.28;silent();window.analytics(document.getElementById('main'));toast(name+' Nexus preset applied')}
+            };
+            window.nexusReset=function(){Object.assign(state.nexus,{speed:78,accuracy:86,difficulty:70,consistency:82,mastery:74,coupling:.28});silent();window.analytics(document.getElementById('main'));toast('Nexus reset')};
+            window.drawNexus=function(){
+              const svg=document.getElementById('nexusSvg');if(!svg)return;
+              const n=state.nexus,cx=280,cy=250,R=155,L=196,pt=(i,r)=>{const a=-Math.PI/2+i*Math.PI*2/5;return{x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r}},v=K.map(k=>Math.max(0,Math.min(100,+n[k]||0)));
+              let o='';[.2,.4,.6,.8,1].forEach(sc=>o+=`<polygon class="nexus-grid" points="${K.map((_,i)=>{const p=pt(i,R*sc);return p.x+','+p.y}).join(' ')}"></polygon>`);
+              K.forEach((_,i)=>{const p=pt(i,R);o+=`<line class="nexus-axis" x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}"></line>`});
+              const d=v.map((x,i)=>pt(i,R*x/100));
+              o+=`<circle class="nexus-orbit" cx="${cx}" cy="${cy}" r="45"></circle><circle class="nexus-orbit" cx="${cx}" cy="${cy}" r="31" style="stroke:#f6c80055;stroke-width:3"></circle><polygon class="nexus-fill" points="${d.map(p=>p.x+','+p.y).join(' ')}"></polygon>`;
+              d.forEach((p,i)=>{const q=d[(i+1)%5],mid=pt(i+.5,R*.55);o+=`<line class="nexus-coupling" x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}"></line><circle cx="${mid.x}" cy="${mid.y}" r="3" fill="#f6c80088"></circle>`});
+              const score=window.nexusScore(n);o+=`<circle class="nexus-center" cx="${cx}" cy="${cy}" r="27"></circle><text class="nexus-value" x="${cx}" y="${cy+4}" text-anchor="middle">${score}</text><text x="${cx}" y="${cy+16}" text-anchor="middle" style="font-size:6px;fill:#8fa8ca;font-weight:800;letter-spacing:1px">NEXUS</text>`;
+              K.forEach((k,i)=>{const p=d[i],lp=pt(i,L);o+=`<text class="nexus-label" x="${lp.x}" y="${lp.y}" text-anchor="middle">${N[i].toUpperCase()}</text><text class="nexus-value" x="${p.x}" y="${p.y-12}" text-anchor="middle">${Math.round(v[i])}%</text><circle class="nexus-handle" tabindex="0" role="slider" aria-label="${N[i]}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(v[i])}" data-k="${k}" cx="${p.x}" cy="${p.y}" r="11"></circle>`});
+              svg.innerHTML=o;
+              svg.querySelectorAll('.nexus-handle').forEach(h=>{h.addEventListener('pointerdown',e=>{e.preventDefault();const k=h.dataset.k,i=K.indexOf(k),r=svg.getBoundingClientRect(),a=-Math.PI/2+i*Math.PI*2/5;const move=x=>{const dx=(x.clientX-r.left)/r.width*560-280,dy=(x.clientY-r.top)/r.height*500-250,proj=dx*Math.cos(a)+dy*Math.sin(a);window.setNexus(k,Math.round(Math.max(0,Math.min(100,proj/R*100))))};const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up)};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up)});h.addEventListener('keydown',e=>{const k=h.dataset.k;if(e.key==='ArrowUp'||e.key==='ArrowRight'){e.preventDefault();window.setNexus(k,Math.min(100,+state.nexus[k]+2))}if(e.key==='ArrowDown'||e.key==='ArrowLeft'){e.preventDefault();window.setNexus(k,Math.max(0,+state.nexus[k]-2))}})});
+            };
+            window.syncNexusUI=function(){const n=state.nexus,m=metrics(),s=window.nexusScore(n),q=x=>document.getElementById(x);if(q('nexusScore'))q('nexusScore').textContent=s;if(q('scoreRing'))q('scoreRing').style.setProperty('--score',s);if(q('nexusProfile'))q('nexusProfile').textContent=s>=92?'LEGENDARY':s>=82?'ELITE BALANCE':s>=70?'HIGH POTENTIAL':s>=55?'RECALIBRATE':'REBUILD CORE';if(q('nxMean'))q('nxMean').textContent=m.mean+'%';if(q('nxSynergy'))q('nxSynergy').textContent=m.synergy+'%';if(q('nxCoupling'))q('nxCoupling').textContent=m.balance+'%';K.forEach(k=>{if(q('out_'+k))q('out_'+k).textContent=Math.round(n[k])+'%'});if(q('couplingOut'))q('couplingOut').textContent=Math.round(n.coupling*100)+'%'};
+            const css=document.createElement('style');css.textContent='.nexus-handle{transition:r .12s,filter .12s}.nexus-handle:hover{filter:drop-shadow(0 0 10px #ffd84d)}.nexus-coupling{animation:nexusFlow 2.8s linear infinite}@keyframes nexusFlow{to{stroke-dashoffset:-18}}';document.head.appendChild(css);
+          })();
+          '''
+              s=s.replace('</script></body></html>',insert+'</script></body></html>')
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit upgrade and remove temporary workflow
+        run: |
+          git config user.name 'ESI Build Bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add quiz2.html .github/workflows/quiz2-nexus-upgrade.yml
+          git rm -f .github/workflows/quiz2-nexus-upgrade.yml
+          git commit -m 'Upgrade quiz2 Nexus with coupled performance geometry' || exit 0
+          git push
