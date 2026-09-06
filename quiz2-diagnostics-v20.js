@@ -1,0 +1,7 @@
+/* ESI Quiz Studio Diagnostics Engine V20 — non-destructive runtime health checks */
+(()=>{'use strict';
+const tests=[];function check(name,fn){try{const ok=!!fn();tests.push({name,ok,error:null})}catch(e){tests.push({name,ok:false,error:String(e?.message||e)})}}
+function run(){tests.length=0;check('DOM available',()=>!!document);check('Local storage',()=>{const k='esi.quiz2.diag.v20';localStorage.setItem(k,'1');localStorage.removeItem(k);return true});check('Runtime bridge',()=>!!window.ESIQuizIntegrationV19);check('Publish engine',()=>!!window.ESIPublishV13);check('Security engine',()=>!!window.ESISecurityV15);check('Sync engine',()=>!!window.ESISyncV14);check('Live engine',()=>!!window.ESILiveV12);check('Media engine',()=>!!window.ESIMediaV11);check('Accessibility engine',()=>!!window.ESIAccessibilityV17);check('Notifications engine',()=>!!window.ESINotificationsV18);const result={ok:tests.every(x=>x.ok),tests:[...tests],at:Date.now()};window.ESIQuizDiagnosticsV20=result;try{window.dispatchEvent(new CustomEvent('esi:diagnostics',{detail:result}))}catch{}return result}
+function summary(){const r=window.ESIQuizDiagnosticsV20||run();return{ok:r.ok,passed:r.tests.filter(x=>x.ok).length,total:r.tests.length,failed:r.tests.filter(x=>!x.ok).map(x=>x.name)}}
+window.ESIQuizDiagnosticsV20={run,summary};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+})();
