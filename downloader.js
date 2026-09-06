@@ -1,16 +1,12 @@
 document.addEventListener('DOMContentLoaded', function(){
-  const CACHE_NAME = 'esi-pdf-cache-36.2401';
+  const CACHE_NAME = 'esi-pdf-cache-36.2404';
   const cachePromise = caches.open(CACHE_NAME);
   const getPdfUrl = (btn) => {
     const card = btn.closest('.book-card');
     const owner = btn.closest('[data-url]');
     const raw = (card && card.dataset.url) || (owner && owner.dataset.url) || btn.dataset.url || btn.getAttribute('href');
     if(!raw || /PASTE_/i.test(raw)) return null;
-    try {
-      const clean = new URL(raw, location.href);
-      if (/ESIAndroid\//i.test(navigator.userAgent) && clean.origin === 'https://elitescholarinstitute.pages.dev') return location.origin + clean.pathname;
-      return clean.origin + clean.pathname;
-    } catch(e) { return null; }
+    try { const clean = new URL(raw, location.href); if (/ESIAndroid\//i.test(navigator.userAgent) && clean.origin === 'https://elitescholarinstitute.pages.dev') return location.origin + clean.pathname; return clean.origin + clean.pathname; } catch(e) { return null; }
   };
   const getFileName = (url) => { try { const name = decodeURIComponent(new URL(url, location.href).pathname.split('/').pop() || 'document.pdf'); return /\.pdf$/i.test(name) ? name : 'document.pdf'; } catch(e) { return 'document.pdf'; } };
   const isPdf = async (blob) => { if(!blob || !blob.size) return false; const h = new Uint8Array(await blob.slice(0, 5).arrayBuffer()); return h.length === 5 && h[0] === 0x25 && h[1] === 0x50 && h[2] === 0x44 && h[3] === 0x46 && h[4] === 0x2D; };
