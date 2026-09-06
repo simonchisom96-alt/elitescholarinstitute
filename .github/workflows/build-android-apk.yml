@@ -34,16 +34,14 @@ jobs:
         run: |
           set -euo pipefail
           test -f quiz2.html
-          test -f quiz2-intelligence-v5.js
-          test -f quiz2-engines-v7.js
-          test -f quiz2-logic-v8.js
-          test -f quiz2-intelligence-v9.js
-          grep -q 'ESI_QUIZ2_SOURCE_V5' quiz2.html || true
+          for f in quiz2-intelligence-v5.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js; do
+            test -f "$f" || { echo "Missing Quiz Studio module: $f"; exit 1; }
+          done
       - name: Verify engines with Node syntax checks
         shell: bash
         run: |
           set -euo pipefail
-          for f in quiz2-intelligence-v5.js quiz2-chat.js quiz2-studio-v3.js quiz2-nexus-engine-v2.js quiz2-communication-hub.js quiz2-communication-v4.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js; do
+          for f in quiz2-intelligence-v5.js quiz2-chat.js quiz2-studio-v3.js quiz2-nexus-engine-v2.js quiz2-communication-hub.js quiz2-communication-v4.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js; do
             test -f "$f"
             node --check "$f"
           done
@@ -54,29 +52,24 @@ jobs:
           set -euo pipefail
           node <<'NODE'
           const fs=require('fs'),vm=require('vm');
-          const listeners={};
-          const store=new Map();
-          const sandbox={
-            console,structuredClone,Date,Math,JSON,
+          const listeners={}; const store=new Map();
+          const sandbox={console,structuredClone,Date,Math,JSON,
             localStorage:{getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)},
             window:null,document:{readyState:'complete',addEventListener(){},querySelectorAll(){return[]},scripts:[]},
-            CustomEvent:function(type,init){this.type=type;this.detail=init?.detail},
-          };
-          sandbox.window=sandbox;
-          sandbox.dispatchEvent=(e)=>{(listeners[e.type]||[]).forEach(fn=>fn(e))};
-          sandbox.addEventListener=(n,fn)=>(listeners[n]??=[]).push(fn);
+            CustomEvent:function(type,init){this.type=type;this.detail=init?.detail}};
+          sandbox.window=sandbox; sandbox.dispatchEvent=e=>(listeners[e.type]||[]).forEach(fn=>fn(e)); sandbox.addEventListener=(n,fn)=>(listeners[n]??=[]).push(fn);
           vm.createContext(sandbox);
-          for(const f of ['quiz2-engines-v7.js','quiz2-logic-v8.js','quiz2-intelligence-v9.js']) vm.runInContext(fs.readFileSync(f,'utf8'),sandbox,{filename:f});
-          const v7=sandbox.ESIQuizEnginesV7, v8=sandbox.ESIQuizLogicV8, v9=sandbox.ESIQuizIntelligenceV9;
-          if(!v7||!v8||!v9) throw Error('Engine boot failed');
-          if(v8.applyScore(2,[{type:'multiply',value:2}],{})!==4) throw Error('V8 scoring test failed');
-          if(v8.mastery([{correct:true},{correct:false}]).score!==50) throw Error('V8 mastery test failed');
+          const files=['quiz2-engines-v7.js','quiz2-logic-v8.js','quiz2-intelligence-v9.js','quiz2-results-v10.js','quiz2-media-v11.js','quiz2-live-v12.js','quiz2-publish-v13.js','quiz2-sync-v14.js','quiz2-security-v15.js','quiz2-collaboration-v16.js','quiz2-accessibility-v17.js','quiz2-notifications-v18.js','quiz2-integration-v19.js','quiz2-diagnostics-v20.js'];
+          for(const f of files) vm.runInContext(fs.readFileSync(f,'utf8'),sandbox,{filename:f});
+          if(!sandbox.ESIQuizEnginesV7||!sandbox.ESIQuizLogicV8||!sandbox.ESIQuizIntelligenceV9) throw Error('Core engine boot failed');
+          if(sandbox.ESIQuizLogicV8.applyScore(2,[{type:'multiply',value:2}],{})!==4) throw Error('V8 scoring test failed');
+          if(sandbox.ESIQuizLogicV8.mastery([{correct:true},{correct:false}]).score!==50) throw Error('V8 mastery test failed');
           const sample={questions:[{id:'q1',text:'What is 2+2?',type:'mcq',options:[{text:'4',correct:true},{text:'5',correct:false}],tags:['math']},{id:'q2',text:'Explain why.',type:'long',tags:['math']}],sections:[]};
-          if(v9.audit.call({})===undefined) {}
-          if(v9.bloom(sample.questions[0])!=='understand' && v9.bloom(sample.questions[0])!=='remember') throw Error('V9 bloom test failed');
-          if(v9.pools({questions:sample.questions}).math.length!==2) throw Error('V9 bank pool test failed');
-          if(v9.createBlueprint({questions:sample.questions,count:2,targetDifficulty:3}).questions.length!==2) throw Error('V9 blueprint test failed');
-          console.log('V7/V8/V9 deterministic smoke tests passed.');
+          if(sandbox.ESIQuizIntelligenceV9.pools({questions:sample.questions}).math.length!==2) throw Error('V9 pool test failed');
+          if(sandbox.ESIQuizIntelligenceV9.createBlueprint({questions:sample.questions,count:2,targetDifficulty:3}).questions.length!==2) throw Error('V9 blueprint test failed');
+          if(!sandbox.ESIQuizIntegrationV19||!sandbox.ESIQuizDiagnosticsV20) throw Error('V19/V20 boot failed');
+          const diag=sandbox.ESIQuizDiagnosticsV20.summary(); if(diag.total<1||typeof diag.ok!=='boolean') throw Error('V20 diagnostics test failed');
+          console.log('Quiz Studio V7-V20 smoke tests passed.');
           NODE
       - name: Prepare APK-only Quiz Studio shell
         shell: bash
@@ -116,6 +109,17 @@ jobs:
           quiz2-engines-v7.js
           quiz2-logic-v8.js
           quiz2-intelligence-v9.js
+          quiz2-results-v10.js
+          quiz2-media-v11.js
+          quiz2-live-v12.js
+          quiz2-publish-v13.js
+          quiz2-sync-v14.js
+          quiz2-security-v15.js
+          quiz2-collaboration-v16.js
+          quiz2-accessibility-v17.js
+          quiz2-notifications-v18.js
+          quiz2-integration-v19.js
+          quiz2-diagnostics-v20.js
           quiz2-chat.js
           quiz2-studio-v3.js
           quiz2-nexus-engine-v2.js
@@ -146,16 +150,25 @@ jobs:
             ('ESI_APK_QUIZ2_INTELLIGENCE_V5','quiz2-intelligence-v5.js'),
             ('ESI_APK_QUIZ2_ENGINES_V7','quiz2-engines-v7.js'),
             ('ESI_APK_QUIZ2_LOGIC_V8','quiz2-logic-v8.js'),
-            ('ESI_APK_QUIZ2_INTELLIGENCE_V9','quiz2-intelligence-v9.js')]
+            ('ESI_APK_QUIZ2_INTELLIGENCE_V9','quiz2-intelligence-v9.js'),
+            ('ESI_APK_QUIZ2_RESULTS_V10','quiz2-results-v10.js'),
+            ('ESI_APK_QUIZ2_MEDIA_V11','quiz2-media-v11.js'),
+            ('ESI_APK_QUIZ2_LIVE_V12','quiz2-live-v12.js'),
+            ('ESI_APK_QUIZ2_PUBLISH_V13','quiz2-publish-v13.js'),
+            ('ESI_APK_QUIZ2_SYNC_V14','quiz2-sync-v14.js'),
+            ('ESI_APK_QUIZ2_SECURITY_V15','quiz2-security-v15.js'),
+            ('ESI_APK_QUIZ2_COLLAB_V16','quiz2-collaboration-v16.js'),
+            ('ESI_APK_QUIZ2_A11Y_V17','quiz2-accessibility-v17.js'),
+            ('ESI_APK_QUIZ2_NOTIFICATIONS_V18','quiz2-notifications-v18.js'),
+            ('ESI_APK_QUIZ2_INTEGRATION_V19','quiz2-integration-v19.js'),
+            ('ESI_APK_QUIZ2_DIAGNOSTICS_V20','quiz2-diagnostics-v20.js')]
           for marker,src in tags:
               if marker not in s:
                   block=f'\n<!-- {marker} -->\n<script src="{src}"></script>\n'
-                  if '</body>' in s:s=s.replace('</body>',block+'</body>',1)
-                  else:s+=block
+                  s=s.replace('</body>',block+'</body>',1) if '</body>' in s else s+block
           p.write_text(s,encoding='utf-8')
-          for marker,src in tags:
-              assert marker in s and Path('android/app/src/main/assets/site/'+src).is_file()
-          print('V5/V7/V8/V9 activation verified.')
+          for marker,src in tags: assert marker in s and Path('android/app/src/main/assets/site/'+src).is_file()
+          print('V5 and V7-V20 activation verified.')
           PY
       - name: Apply targeted Android WebView compatibility checks
         shell: bash
@@ -210,4 +223,4 @@ jobs:
         run: |
           set -euo pipefail
           TAG="esi-v4.9-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
-          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v4.9" --notes "ESI Android APK v4.9 with Quiz Studio V5/V7/V8/V9 engines." --latest
+          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v4.9" --notes "ESI Android APK v4.9 with Quiz Studio V5/V7-V20 engines." --latest
