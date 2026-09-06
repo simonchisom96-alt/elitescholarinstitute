@@ -10,8 +10,8 @@ on:
       - 'sw.js'
       - 'downloader.js'
       - 'manifest.json'
-      - 'logo.jpg'
-      - 'Textbooks.html'
+      - 'quiz2.html'
+      - 'quiz2-*.js'
       - '.github/workflows/build-android-apk.yml'
   workflow_dispatch:
 
@@ -35,14 +35,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sed -i "s/const BUILD = '[^']*'/const BUILD = '36.2403'/" app.js
-          sed -i "s/esi-cache-[0-9.]*/esi-cache-36.2403/" sw.js
-          sed -i "s/esi-pdf-cache-[0-9.]*/esi-pdf-cache-36.2403/" downloader.js
+          sed -i "s/const BUILD = '[^']*'/const BUILD = '36.2404'/" app.js
+          sed -i "s/esi-cache-[0-9.]*/esi-cache-36.2404/" sw.js
+          sed -i "s/esi-pdf-cache-[0-9.]*/esi-pdf-cache-36.2404/" downloader.js
           grep -m1 "const BUILD" app.js
           grep -m1 "CACHE_VERSION" sw.js
           grep -m1 "CACHE_NAME" downloader.js
           grep -E "versionCode|versionName" android/app/build.gradle.kts
           test -f Englishtextbook.html
+          test -f quiz2.html
+          test -f quiz2-chat.js
+          test -f quiz2-studio-v3.js
+          test -f quiz2-communication-hub.js
+          test -f quiz2-communication-v4.js
 
       - name: Bundle defined ESI offline shell
         shell: bash
@@ -136,10 +141,17 @@ jobs:
           timetable2.jpg
           quiz1.html
           quiz.html
+          quiz2.html
           video.mp4
           firebase-config.js
           multiplayer.js
           singleplay.js
+          quiz2-chat.js
+          quiz2-studio-v3.js
+          quiz2-nexus-v2.js
+          quiz2-production.js
+          quiz2-communication-hub.js
+          quiz2-communication-v4.js
           EOF
           sed -i 's/^[[:space:]]*//' /tmp/esi-shell.txt
           while IFS= read -r file; do
@@ -148,6 +160,28 @@ jobs:
           done < /tmp/esi-shell.txt
           rsync -a --files-from=/tmp/esi-shell.txt ./ android/app/src/main/assets/site/
           cp -f logo.jpg android/app/src/main/res/drawable/logo.jpg
+
+      - name: Activate Quiz Studio product layer inside APK shell only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/src/main/assets/site/quiz2.html')
+          s=p.read_text(encoding='utf-8')
+          marker='<!-- ESI_APK_QUIZ2_MODULES_V4 -->'
+          tags='''\n<!-- ESI_APK_QUIZ2_MODULES_V4 -->\n<script src="quiz2-communication-v4.js"></script>\n<script src="quiz2-communication-hub.js"></script>\n<script src="quiz2-chat.js"></script>\n<script src="quiz2-studio-v3.js"></script>\n<script src="quiz2-nexus-v2.js"></script>\n<script src="quiz2-production.js"></script>\n'''
+          if marker not in s:
+              if '</body>' in s:
+                  s=s.replace('</body>',tags+'</body>',1)
+              else:
+                  s += tags
+          p.write_text(s,encoding='utf-8')
+          assert marker in s
+          for name in ['quiz2-communication-v4.js','quiz2-communication-hub.js','quiz2-chat.js','quiz2-studio-v3.js','quiz2-nexus-v2.js','quiz2-production.js']:
+              assert Path('android/app/src/main/assets/site/'+name).is_file(), name
+          print('Verified APK-only Quiz Studio module injection.')
+          PY
 
       - name: Apply targeted Android WebView image-file access fix
         shell: bash
@@ -203,7 +237,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ESI-APK-v4.3
+          name: ESI-APK-v4.7
           path: release/ESI.apk
           if-no-files-found: error
           retention-days: 30
@@ -214,12 +248,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="esi-v4.3-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          TAG="esi-v4.7-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
           gh release create "$TAG" release/ESI.apk \
-            --title "ESI Android APK v4.3" \
-            --notes "ESI Android APK v4.3. Built from commit ${GITHUB_SHA}. This release asset is the APK served by releases/latest/download/ESI.apk." \
+            --title "ESI Android APK v4.7" \
+            --notes "ESI Android APK v4.7. Built from commit ${GITHUB_SHA}. Quiz Studio communication modules are bundled and activated in the APK shell." \
             --latest
 
       - name: Confirm successful release
         shell: bash
-        run: echo "ESI v4.3 APK built, version-verified, and published as the latest release asset."
+        run: echo "ESI v4.7 APK built, version-verified, and published as the latest release asset."
