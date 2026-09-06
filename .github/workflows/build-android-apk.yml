@@ -34,18 +34,18 @@ jobs:
         run: |
           set -euo pipefail
           test -f quiz2.html
-          for f in quiz2-intelligence-v5.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js quiz2-quality-v21.js; do
+          for f in quiz2-intelligence-v5.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js quiz2-quality-v21.js quiz2-communication-v11.js; do
             test -f "$f" || { echo "Missing Quiz Studio module: $f"; exit 1; }
           done
       - name: Verify engines with Node syntax checks
         shell: bash
         run: |
           set -euo pipefail
-          for f in quiz2-intelligence-v5.js quiz2-chat.js quiz2-studio-v3.js quiz2-nexus-engine-v2.js quiz2-communication-hub.js quiz2-communication-v4.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js quiz2-quality-v21.js; do
+          for f in quiz2-intelligence-v5.js quiz2-chat.js quiz2-studio-v3.js quiz2-nexus-engine-v2.js quiz2-communication-hub.js quiz2-communication-v4.js quiz2-communication-v10.js quiz2-communication-v11.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js quiz2-quality-v21.js; do
             test -f "$f"
             node --check "$f"
           done
-          echo 'All Quiz Studio engine files passed node --check.'
+          echo 'All Quiz Studio engine and communication files passed node --check.'
       - name: Run deterministic engine smoke tests
         shell: bash
         run: |
@@ -55,11 +55,11 @@ jobs:
           const listeners={}; const store=new Map();
           const sandbox={console,structuredClone,Date,Math,JSON,
             localStorage:{getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)},
-            window:null,document:{readyState:'complete',addEventListener(){},querySelectorAll(){return[]},scripts:[]},
+            window:null,document:{readyState:'complete',addEventListener(){},querySelectorAll(){return[]},getElementById(){return null},scripts:[],head:{appendChild(){}}},
             CustomEvent:function(type,init){this.type=type;this.detail=init?.detail}};
           sandbox.window=sandbox; sandbox.dispatchEvent=e=>(listeners[e.type]||[]).forEach(fn=>fn(e)); sandbox.addEventListener=(n,fn)=>(listeners[n]??=[]).push(fn);
           vm.createContext(sandbox);
-          const files=['quiz2-engines-v7.js','quiz2-logic-v8.js','quiz2-intelligence-v9.js','quiz2-results-v10.js','quiz2-media-v11.js','quiz2-live-v12.js','quiz2-publish-v13.js','quiz2-sync-v14.js','quiz2-security-v15.js','quiz2-collaboration-v16.js','quiz2-accessibility-v17.js','quiz2-notifications-v18.js','quiz2-integration-v19.js','quiz2-diagnostics-v20.js','quiz2-quality-v21.js'];
+          const files=['quiz2-engines-v7.js','quiz2-logic-v8.js','quiz2-intelligence-v9.js','quiz2-results-v10.js','quiz2-media-v11.js','quiz2-live-v12.js','quiz2-publish-v13.js','quiz2-sync-v14.js','quiz2-security-v15.js','quiz2-collaboration-v16.js','quiz2-accessibility-v17.js','quiz2-notifications-v18.js','quiz2-integration-v19.js','quiz2-diagnostics-v20.js','quiz2-quality-v21.js','quiz2-communication-v10.js','quiz2-communication-v11.js'];
           for(const f of files) vm.runInContext(fs.readFileSync(f,'utf8'),sandbox,{filename:f});
           if(!sandbox.ESIQuizEnginesV7||!sandbox.ESIQuizLogicV8||!sandbox.ESIQuizIntelligenceV9) throw Error('Core engine boot failed');
           if(sandbox.ESIQuizLogicV8.applyScore(2,[{type:'multiply',value:2}],{})!==4) throw Error('V8 scoring test failed');
@@ -68,7 +68,14 @@ jobs:
           if(sandbox.ESIQuizIntelligenceV9.pools({questions:sample.questions}).math.length!==2) throw Error('V9 pool test failed');
           if(sandbox.ESIQuizIntelligenceV9.createBlueprint({questions:sample.questions,count:2,targetDifficulty:3}).questions.length!==2) throw Error('V9 blueprint test failed');
           if(!sandbox.ESIQuizIntegrationV19||!sandbox.ESIQuizDiagnosticsV20||!sandbox.ESIQuizQualityV21) throw Error('V19-V21 boot failed');
-          console.log('Quiz Studio V7-V21 smoke tests passed.');
+          if(!sandbox.ESICommunicationV11||typeof sandbox.ESICommunicationV11.addNotification!=='function'||typeof sandbox.ESICommunicationV11.addStatus!=='function'||typeof sandbox.ESICommunicationV11.addPublicRoom!=='function') throw Error('Communication V11 boot failed');
+          sandbox.ESICommunicationV11.addNotification({title:'Smoke',text:'ok'});
+          sandbox.ESICommunicationV11.addStatus({type:'text',title:'Smoke'});
+          sandbox.ESICommunicationV11.addPublicRoom({code:'ESI123',name:'Smoke Room'});
+          if(sandbox.ESICommunicationV11.unreadNotifications()!==1) throw Error('V11 notification test failed');
+          if(sandbox.ESICommunicationV11.activeStatuses().length!==1) throw Error('V11 status test failed');
+          if(sandbox.ESICommunicationV11.publicRooms('ESI123').length!==1) throw Error('V11 room test failed');
+          console.log('Quiz Studio V7-V21 + Communication V10-V11 smoke tests passed.');
           NODE
       - name: Prepare APK-only Quiz Studio shell
         shell: bash
@@ -125,6 +132,8 @@ jobs:
           quiz2-nexus-engine-v2.js
           quiz2-communication-hub.js
           quiz2-communication-v4.js
+          quiz2-communication-v10.js
+          quiz2-communication-v11.js
           firebase-config.js
           multiplayer.js
           singleplay.js
@@ -162,14 +171,16 @@ jobs:
             ('ESI_APK_QUIZ2_NOTIFICATIONS_V18','quiz2-notifications-v18.js'),
             ('ESI_APK_QUIZ2_INTEGRATION_V19','quiz2-integration-v19.js'),
             ('ESI_APK_QUIZ2_DIAGNOSTICS_V20','quiz2-diagnostics-v20.js'),
-            ('ESI_APK_QUIZ2_QUALITY_V21','quiz2-quality-v21.js')]
+            ('ESI_APK_QUIZ2_QUALITY_V21','quiz2-quality-v21.js'),
+            ('ESI_APK_QUIZ2_COMMUNICATION_V10','quiz2-communication-v10.js'),
+            ('ESI_APK_QUIZ2_COMMUNICATION_V11','quiz2-communication-v11.js')]
           for marker,src in tags:
               if marker not in s:
                   block=f'\n<!-- {marker} -->\n<script src="{src}"></script>\n'
                   s=s.replace('</body>',block+'</body>',1) if '</body>' in s else s+block
           p.write_text(s,encoding='utf-8')
           for marker,src in tags: assert marker in s and Path('android/app/src/main/assets/site/'+src).is_file()
-          print('V5 and V7-V21 activation verified.')
+          print('V5, V7-V21 and Communication V10-V11 activation verified.')
           PY
       - name: Apply targeted Android WebView compatibility checks
         shell: bash
@@ -225,4 +236,4 @@ jobs:
         run: |
           set -euo pipefail
           TAG="esi-v5.0-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
-          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v5.0" --notes "ESI Android APK v5.0 — Quiz Studio V5/V7-V21 integration, diagnostics and quality gate." --latest
+          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v5.0" --notes "ESI Android APK v5.0 — Quiz Studio V5/V7-V21 plus Communication V10/V11 integration, diagnostics and quality gate." --latest
