@@ -30,19 +30,57 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Normalize Quiz Studio V5 source
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          p=Path('quiz2.html')
+          s=p.read_text(encoding='utf-8')
+          changed=False
+          if 'ESI_QUIZ2_SOURCE_V5' not in s:
+              s=s.replace('<div class="brand"><b>ELITE SCHOLAR INSTITUTE</b><span>QUIZ STUDIO • USER WORKSPACE</span></div>','<div class="brand" aria-label="ESI"></div>')
+              s=re.sub(r'const novel=\[.*?\];','const novel=[];',s,count=1,flags=re.S)
+              s=re.sub(r'<div class="stat"><b>\$\{novel.length\}</b><span>Innovation ideas</span></div>','',s,count=1)
+              s=re.sub(r'<section class="panel"><div class="title"><div><h2>Novel feature registry — 140</h2>.*?</section>','',s,count=1,flags=re.S)
+              s=s.replace('Explore the complete ESI ecosystem map. Every major family and all 140 novel concepts have a named place in the product architecture.','Explore the product architecture, validation systems and outcome-driven analytics.')
+              s=s.replace('Drag five performance forces around a living pentagon and see the balance change.','See a living performance model computed from actual quiz outcomes.')
+              s=s.replace('Five forces meet in one living model: Speed, Accuracy, Difficulty, Consistency and Mastery. Drag the points on the pentagon or use the precision sliders. The balance score changes immediately.','Five forces are computed from actual quiz outcomes: Speed, Accuracy, Difficulty, Consistency and Mastery. The model is read-only and updates when results change.')
+              s=s.replace('Built to become response-driven when result data is connected.','Computed from the latest available quiz outcome; it updates automatically when result data changes.')
+              s=s.replace('</body>','<script src="quiz2-intelligence-v5.js"></script>\n<!-- ESI_QUIZ2_SOURCE_V5 -->\n</body>',1)
+              p.write_text(s,encoding='utf-8')
+              changed=True
+          print('Quiz Studio V5 source normalization:', 'changed' if changed else 'already normalized')
+          PY
+          grep -q 'ESI_QUIZ2_SOURCE_V5' quiz2.html
+          grep -q 'quiz2-intelligence-v5.js' quiz2.html
+          ! grep -q 'ELITE SCHOLAR INSTITUTE</b><span>QUIZ STUDIO' quiz2.html
+          ! grep -q 'Novel feature registry — 140' quiz2.html
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if ! git diff --quiet -- quiz2.html; then
+            git add quiz2.html
+            git commit -m 'Apply Quiz Studio V5 source cleanup [skip ci]'
+            git push
+          fi
       - name: Verify and align current JS build versions
         shell: bash
         run: |
           set -euo pipefail
-          sed -i "s/const BUILD = '[^']*'/const BUILD = '36.2404'/" app.js
-          sed -i "s/esi-cache-[0-9.]*/esi-cache-36.2404/" sw.js
-          sed -i "s/esi-pdf-cache-[0-9.]*/esi-pdf-cache-36.2404/" downloader.js
+          sed -i "s/const BUILD = '[^']*'/const BUILD = '36.2405'/" app.js
+          sed -i "s/esi-cache-[0-9.]*/esi-cache-36.2405/" sw.js
+          sed -i "s/esi-pdf-cache-[0-9.]*/esi-pdf-cache-36.2405/" downloader.js
           grep -m1 "const BUILD" app.js
           grep -m1 "CACHE_VERSION" sw.js
           grep -m1 "CACHE_NAME" downloader.js
           grep -E "versionCode|versionName" android/app/build.gradle.kts
           test -f Englishtextbook.html
           test -f quiz2.html
+          test -f quiz2-intelligence-v5.js
           test -f quiz2-chat.js
           test -f quiz2-studio-v3.js
           test -f quiz2-nexus-engine-v2.js
@@ -141,6 +179,7 @@ jobs:
           quiz1.html
           quiz.html
           quiz2.html
+          quiz2-intelligence-v5.js
           video.mp4
           firebase-config.js
           multiplayer.js
@@ -158,7 +197,7 @@ jobs:
           done < /tmp/esi-shell.txt
           rsync -a --files-from=/tmp/esi-shell.txt ./ android/app/src/main/assets/site/
           cp -f logo.jpg android/app/src/main/res/drawable/logo.jpg
-      - name: Activate Quiz Studio product layer inside APK shell only
+      - name: Activate Quiz Studio product layer inside APK shell
         shell: bash
         run: |
           set -euo pipefail
@@ -166,18 +205,16 @@ jobs:
           from pathlib import Path
           p=Path('android/app/src/main/assets/site/quiz2.html')
           s=p.read_text(encoding='utf-8')
-          marker='<!-- ESI_APK_QUIZ2_MODULES_V4 -->'
-          tags='''\n<!-- ESI_APK_QUIZ2_MODULES_V4 -->\n<script src="quiz2-communication-v4.js"></script>\n<script src="quiz2-communication-hub.js"></script>\n<script src="quiz2-chat.js"></script>\n<script src="quiz2-studio-v3.js"></script>\n<script src="quiz2-nexus-engine-v2.js"></script>\n'''
+          marker='<!-- ESI_APK_QUIZ2_MODULES_V5 -->'
+          tags='''\n<!-- ESI_APK_QUIZ2_MODULES_V5 -->\n<script src="quiz2-intelligence-v5.js"></script>\n<script src="quiz2-communication-v4.js"></script>\n<script src="quiz2-communication-hub.js"></script>\n<script src="quiz2-chat.js"></script>\n<script src="quiz2-studio-v3.js"></script>\n<script src="quiz2-nexus-engine-v2.js"></script>\n'''
           if marker not in s:
-              if '</body>' in s:
-                  s=s.replace('</body>',tags+'</body>',1)
-              else:
-                  s += tags
+              if '</body>' in s: s=s.replace('</body>',tags+'</body>',1)
+              else: s += tags
           p.write_text(s,encoding='utf-8')
           assert marker in s
-          for name in ['quiz2-communication-v4.js','quiz2-communication-hub.js','quiz2-chat.js','quiz2-studio-v3.js','quiz2-nexus-engine-v2.js']:
+          for name in ['quiz2-intelligence-v5.js','quiz2-communication-v4.js','quiz2-communication-hub.js','quiz2-chat.js','quiz2-studio-v3.js','quiz2-nexus-engine-v2.js']:
               assert Path('android/app/src/main/assets/site/'+name).is_file(), name
-          print('Verified APK-only Quiz Studio module injection.')
+          print('Verified Quiz Studio V5 + communication modules in APK shell.')
           PY
       - name: Apply targeted Android WebView image-file access fix
         shell: bash
@@ -185,11 +222,9 @@ jobs:
           set -euo pipefail
           TARGET="android/app/src/main/java/com/elitescholarinstitute/app/MainActivity.kt"
           test -f "$TARGET"
-          grep -q 'allowContentAccess = false' "$TARGET"
-          grep -q 'allowFileAccess = false' "$TARGET"
-          sed -i 's/allowContentAccess = false/allowContentAccess = true/' "$TARGET"
-          sed -i 's/allowFileAccess = false/allowFileAccess = true/' "$TARGET"
-          sed -i 's/ESIAndroid\/4\.0/ESIAndroid\/4.3/' "$TARGET"
+          if grep -q 'allowContentAccess = false' "$TARGET"; then sed -i 's/allowContentAccess = false/allowContentAccess = true/' "$TARGET"; fi
+          if grep -q 'allowFileAccess = false' "$TARGET"; then sed -i 's/allowFileAccess = false/allowFileAccess = true/' "$TARGET"; fi
+          sed -i 's/ESIAndroid\/4\.0/ESIAndroid\/4.3/g' "$TARGET"
           grep -q 'allowContentAccess = true' "$TARGET"
           grep -q 'allowFileAccess = true' "$TARGET"
           grep -q 'ESIAndroid/4.3' "$TARGET"
@@ -228,7 +263,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ESI-APK-v4.7
+          name: ESI-APK-v4.8
           path: release/ESI.apk
           if-no-files-found: error
           retention-days: 30
@@ -238,8 +273,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="esi-v4.7-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
-          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v4.7" --notes "ESI Android APK v4.7. Built from commit ${GITHUB_SHA}. Quiz Studio communication modules are bundled and activated in the APK shell." --latest
+          TAG="esi-v4.8-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v4.8" --notes "ESI Android APK v4.8. Quiz Studio V5 uses outcome-driven Nexus analytics, removes the 140-item registry, and removes the long header branding text." --latest
       - name: Confirm successful release
         shell: bash
-        run: echo "ESI v4.7 APK built, version-verified, and published as the latest release asset."
+        run: echo "ESI v4.8 APK built, version-verified, and published as the latest release asset."
