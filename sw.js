@@ -1,5 +1,5 @@
 /* Elite Scholar Institute service worker — offline shell + runtime cache */
-const CACHE_VERSION = 'esi-cache-36.2404';
+const CACHE_VERSION = 'esi-cache-36.2405';
 const APP_SHELL = [
   '/', '/index.html', '/logo.jpg', '/advert.png', '/esi.jpg', '/founder.jpg',
   '/manifest.json', '/offline.html', '/app.js', '/downloader.js',
@@ -19,7 +19,7 @@ const APP_SHELL = [
   '/governmentp.html', '/economicsp.html', '/accountingp.html', '/oau.html',
   '/notification.html', '/abu.html', '/futa.html', '/unilorin.html', '/unizik.html',
   '/password.js', '/credit.html', '/timetable1.jpg', '/timetable2.jpg', '/quiz1.html',
-  '/quiz.html', '/quiz2.html', '/video.mp4', '/firebase-config.js', '/multiplayer.js', '/singleplay.js',
+  '/quiz.html', '/quiz2.html', '/quiz2-intelligence-v5.js', '/video.mp4', '/firebase-config.js', '/multiplayer.js', '/singleplay.js',
   '/quiz2-chat.js', '/quiz2-studio-v3.js', '/quiz2-nexus-engine-v2.js', '/quiz2-communication-hub.js', '/quiz2-communication-v4.js'
 ];
 const isSameOrigin = request => new URL(request.url).origin === self.location.origin;
