@@ -1,7 +1,7 @@
-/* Elite Scholar Institute — application controller 36.2404 */
+/* Elite Scholar Institute — application controller 36.2405 */
 (() => {
   'use strict';
-  const BUILD='36.2404';
+  const BUILD='36.2405';
   const APK_URL='https://github.com/simonchisom96-alt/elitescholarinstitute/releases/latest/download/ESI.apk';
   const NOTIF_DB_URL='https://elite-notification-default-rtdb.firebaseio.com';
   const SW_URL='/sw.js?v='+BUILD;
