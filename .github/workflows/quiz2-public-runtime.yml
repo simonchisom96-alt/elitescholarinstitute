@@ -1,0 +1,60 @@
+name: ESI Quiz Studio Public Runtime
+on:
+  push:
+    branches: [main]
+    paths: ['quiz2.html','quiz2-runtime-v36.js','quiz2-ecosystem-v24.js','quiz2-api-contract-v25.js','quiz2-publish-ui-v26.js','quiz2-results-v27.js','quiz2-social-v28.js','quiz2-communication-v29.js','quiz2-backend-config-v30.js','quiz2-learning-v31.js','quiz2-creator-admin-v32.js','quiz2-media-v33.js','quiz2-types-v34.js','quiz2-arrangement-v35.js','.github/workflows/quiz2-public-runtime.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: quiz2-public-runtime
+  cancel-in-progress: false
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify runtime modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in quiz2-runtime-v36.js quiz2-ecosystem-v24.js quiz2-api-contract-v25.js quiz2-publish-ui-v26.js quiz2-results-v27.js quiz2-social-v28.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js; do test -s "$f" || { echo "Missing: $f"; exit 1; }; done
+          for f in quiz2-runtime-v36.js quiz2-ecosystem-v24.js quiz2-api-contract-v25.js quiz2-publish-ui-v26.js quiz2-results-v27.js quiz2-social-v28.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js; do node --check "$f"; done
+      - name: Activate V36 in public quiz2
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('quiz2.html')
+          s=p.read_text(encoding='utf-8')
+          marker='ESI_PUBLIC_V36'
+          if marker not in s:
+              tag='\n<!-- ESI_PUBLIC_V36 -->\n<script src="quiz2-runtime-v36.js"></script>\n'
+              if '</body>' in s:
+                  s=s.replace('</body>',tag+'</body>',1)
+              else:
+                  s+=tag
+              p.write_text(s,encoding='utf-8')
+              print('V36 activated in public quiz2.html')
+          else:
+              print('V36 already active')
+          PY
+      - name: Commit public activation
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- quiz2.html; then
+            echo 'No public activation commit needed.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add quiz2.html
+          git commit -m 'chore(quiz2): activate public V36 runtime'
+          git push origin main
