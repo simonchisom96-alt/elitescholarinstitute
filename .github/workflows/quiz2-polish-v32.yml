@@ -1,0 +1,42 @@
+name: Quiz2 UI Polish V32
+on:
+  push:
+    branches: [main]
+    paths:
+      - quiz2-polish-v32.js
+      - quiz2-communication-v29.js
+      - quiz2-learning-v31.js
+      - quiz2-backend-config-v30.js
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify modules
+        run: |
+          node --check quiz2-polish-v32.js
+          node --check quiz2-communication-v29.js
+          node --check quiz2-learning-v31.js
+          node --check quiz2-backend-config-v30.js
+      - name: Wire public quiz2
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('quiz2.html')
+          s=p.read_text()
+          marker='<!-- ESI_QUIZ2_SOURCE_V5 -->'
+          tags='''<script src="quiz2-communication-v29.js"></script>\n<script src="quiz2-learning-v31.js"></script>\n<script src="quiz2-backend-config-v30.js"></script>\n<script src="quiz2-polish-v32.js"></script>\n'''
+          if 'quiz2-polish-v32.js' not in s:
+              s=s.replace(marker,tags+marker)
+              p.write_text(s)
+          PY
+      - name: Commit public wiring
+        run: |
+          git config user.name "ESI Build"
+          git config user.email "actions@users.noreply.github.com"
+          git add quiz2.html
+          git diff --cached --quiet || git commit -m "Wire Quiz2 V29-V32 public UI polish"
+          git push
