@@ -89,10 +89,11 @@ jobs:
           const documentElement=makeElement('html');
           const body=makeElement('body');
           const documentHead=makeElement('head');
+          class FakeMutationObserver{constructor(callback){this.callback=callback}observe(){return this}disconnect(){return this}takeRecords(){return []}}
           const sandbox={
             console,structuredClone,Date,Math,JSON,URLSearchParams,URL,
             localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)},
-            window:null,navigator:{onLine:true},
+            window:null,navigator:{onLine:true},MutationObserver:FakeMutationObserver,
             document:{readyState:'loading',addEventListener(n,fn){if(n==='DOMContentLoaded')fn()},querySelectorAll(){return[]},querySelector(){return null},getElementById(){return null},createElement(tag){return makeElement(tag)},head:documentHead,body,documentElement,scripts:[]},
             CustomEvent:function(type,init){this.type=type;this.detail=init?.detail}
           };
