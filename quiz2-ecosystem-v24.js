@@ -54,7 +54,7 @@ function analytics(id=qid()){const a=read(EVENTS,[]).filter(x=>x.quizId===id),rs
 /* search/filter */
 function search(list,text){const t=String(text||'').trim().toLowerCase();if(!t)return list||[];return(list||[]).filter(x=>JSON.stringify(x).toLowerCase().includes(t))}
 /* accessibility */
-function applyAccessibility(){const s=settings();document.documentElement.dataset.contrast=s.highContrast?'high':'';document.documentElement.dataset.motion=s.reduceMotion?'reduced':'';document.documentElement.style.setProperty('--esi-font-scale',String(s.fontScale||1));document.body?.classList.toggle('esi-large-text',!!s.largeText);return s}
+function applyAccessibility(){const s=settings();const root=document?.documentElement;if(root){const dataset=root.dataset||(root.dataset={});dataset.contrast=s.highContrast?'high':'';dataset.motion=s.reduceMotion?'reduced':'';root.style?.setProperty?.('--esi-font-scale',String(s.fontScale||1));}document?.body?.classList?.toggle?.('esi-large-text',!!s.largeText);return s}
 /* API contract: URLs only, credentials stay server-side */
 const api={base:'',endpoints:{publish:'/api/quizzes',getQuiz:'/api/quizzes/:slug',responses:'/api/quizzes/:slug/responses',leaderboard:'/api/quizzes/:slug/leaderboard',comments:'/api/quizzes/:slug/comments',share:'/api/quizzes/:slug/share',notifications:'/api/notifications',status:'/api/status',chat:'/api/chat',rooms:'/api/rooms',ai:'/api/ai',media:'/api/media',analytics:'/api/quizzes/:slug/analytics'},configure(base){this.base=String(base||'').replace(/\/$/,'');return this},url(path){return this.base+String(path)},contract(){return clone({base:this.base,endpoints:this.endpoints})}};
 /* feature registry */
