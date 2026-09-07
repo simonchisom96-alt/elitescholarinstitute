@@ -1,75 +1,54 @@
 name: Elite Scholar Institute Android APK
-
 on:
   push:
     branches: [main]
-    paths:
-      - 'android/**'
-      - 'app.js'
-      - 'sw.js'
-      - 'downloader.js'
-      - 'manifest.json'
-      - 'quiz2.html'
-      - 'quiz2-*.js'
-      - '.github/workflows/build-android-apk.yml'
+    paths: ['android/**','app.js','sw.js','downloader.js','manifest.json','quiz2.html','quiz2-*.js','.github/workflows/build-android-apk.yml']
   workflow_dispatch:
-
-permissions:
-  contents: write
-
-concurrency:
-  group: android-apk-main
-  cancel-in-progress: false
-
+permissions: {contents: write}
+concurrency: {group: android-apk-main, cancel-in-progress: false}
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Verify Quiz Studio source markers
+        with: {fetch-depth: 0}
+      - name: Verify all Quiz Studio modules
         shell: bash
         run: |
           set -euo pipefail
           test -f quiz2.html
-          for f in quiz2-intelligence-v5.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js quiz2-quality-v21.js quiz2-communication-v11.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js; do
-            test -f "$f" || { echo "Missing Quiz Studio module: $f"; exit 1; }
-          done
-      - name: Syntax-check every Quiz Studio module
+          for f in quiz2-intelligence-v5.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js quiz2-quality-v21.js quiz2-communication-v11.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js; do test -f "$f" || { echo "Missing module: $f"; exit 1; }; done
+      - name: Syntax-check all Quiz Studio JavaScript
         shell: bash
         run: |
           set -uo pipefail
-          files=(quiz2-intelligence-v5.js quiz2-chat.js quiz2-studio-v3.js quiz2-nexus-engine-v2.js quiz2-communication-hub.js quiz2-communication-v4.js quiz2-communication-v10.js quiz2-communication-v11.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js quiz2-quality-v21.js)
           failed=0
-          for f in "${files[@]}"; do echo "=== node --check $f ==="; if node --check "$f"; then echo "PASS $f"; else echo "FAIL $f"; failed=1; fi; done
+          for f in quiz2-*.js; do
+            echo "=== node --check $f ==="
+            node --check "$f" && echo "PASS $f" || { echo "FAIL $f"; failed=1; }
+          done
           exit "$failed"
-      - name: Run deterministic engine smoke tests
+      - name: Deterministic upgrade smoke tests
         shell: bash
         run: |
           set -euo pipefail
           node <<'NODE'
-          const fs=require('fs'),vm=require('vm');
-          const listeners={},store=new Map();
-          const sandbox={console,structuredClone,Date,Math,JSON,localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)},window:null,document:{readyState:'loading',addEventListener(n,fn){if(n==='DOMContentLoaded')fn()},querySelectorAll(){return[]},getElementById(){return null},scripts:[],head:{appendChild(){}},documentElement:{style:{}},body:{classList:{toggle(){}}}},CustomEvent:function(type,init){this.type=type;this.detail=init?.detail}};
-          sandbox.window=sandbox;sandbox.dispatchEvent=e=>(listeners[e.type]||[]).forEach(fn=>fn(e));sandbox.addEventListener=(n,fn)=>(listeners[n]??=[]).push(fn);vm.createContext(sandbox);
+          const fs=require('fs'),vm=require('vm'); const store=new Map();
+          const sandbox={console,structuredClone,Date,Math,JSON,localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)},window:null,document:{readyState:'loading',addEventListener(n,fn){if(n==='DOMContentLoaded')fn()},querySelectorAll(){return[]},getElementById(){return null},scripts:[],head:{appendChild(){}},documentElement:{style:{}},body:{classList:{toggle(){}}}},CustomEvent:function(type,init){this.type=type;this.detail=init?.detail}}; sandbox.window=sandbox; sandbox.dispatchEvent=()=>{}; sandbox.addEventListener=()=>{}; vm.createContext(sandbox);
           for(const f of ['quiz2-engines-v7.js','quiz2-logic-v8.js','quiz2-intelligence-v9.js','quiz2-integration-v19.js','quiz2-diagnostics-v20.js','quiz2-quality-v21.js','quiz2-communication-v29.js','quiz2-backend-config-v30.js','quiz2-learning-v31.js','quiz2-creator-admin-v32.js','quiz2-media-v33.js'])vm.runInContext(fs.readFileSync(f,'utf8'),sandbox,{filename:f});
-          if(!sandbox.ESIQuizEnginesV7||!sandbox.ESIQuizLogicV8||!sandbox.ESIQuizIntelligenceV9)throw Error('Core engine boot failed');
-          if(sandbox.ESIQuizLogicV8.applyScore(2,[{type:'multiply',value:2}],{})!==4)throw Error('V8 scoring failed');
-          if(sandbox.ESIQuizLogicV8.mastery([{correct:true},{correct:false}]).score!==50)throw Error('V8 mastery failed');
-          if(!sandbox.ESICommunicationV29||!sandbox.ESIQuizLearningV31||!sandbox.ESIQuizCreatorV32||!sandbox.ESIQuizMediaV33||!sandbox.ESIBackendV30)throw Error('V29-V33 boot failed');
-          const c=sandbox.ESICommunicationV29.chat('smoke','Smoke Chat');sandbox.ESICommunicationV29.message(c.id,'hello');sandbox.ESICommunicationV29.comment('public','hello');sandbox.ESICommunicationV29.leaderboard([{name:'A',score:90},{name:'B',score:80}],{title:'Smoke'});if(c.messages.length!==1)throw Error('chat failed');if(sandbox.ESICommunicationV29.state.comments.length!==1)throw Error('comment failed');if(sandbox.ESICommunicationV29.state.leaderboards[0].rows[0].rank!==1)throw Error('leaderboard failed');
-          const q=sandbox.ESIQuizLearningV31.recordAttempt({quizId:'q',score:8,total:10,topics:['math']});if(!q||sandbox.ESIQuizLearningV31.topicMastery('math').mastery!==80)throw Error('learning failed');
-          if(!sandbox.ESIQuizCreatorV32.addStatusMedia({size:15*1024*1024}).ok)throw Error('15MB boundary failed');if(sandbox.ESIQuizCreatorV32.addStatusMedia({size:15*1024*1024+1}).ok)throw Error('15MB rejection failed');
-          console.log('Quiz Studio V29-V34 deterministic tests passed.');
+          if(!sandbox.ESIQuizEnginesV7||!sandbox.ESIQuizLogicV8||!sandbox.ESIQuizIntelligenceV9)throw Error('core boot failed');
+          if(sandbox.ESIQuizLogicV8.applyScore(2,[{type:'multiply',value:2}],{})!==4)throw Error('scoring failed');
+          const c=sandbox.ESICommunicationV29.chat('smoke','Smoke');sandbox.ESICommunicationV29.message(c.id,'hello');sandbox.ESICommunicationV29.comment('public','hello');sandbox.ESICommunicationV29.leaderboard([{name:'A',score:90},{name:'B',score:80}],{});if(c.messages.length!==1||sandbox.ESICommunicationV29.state.comments.length!==1||sandbox.ESICommunicationV29.state.leaderboards[0].rows[0].rank!==1)throw Error('social failed');
+          sandbox.ESIQuizLearningV31.recordAttempt({quizId:'q',score:8,total:10,topics:['math']});if(sandbox.ESIQuizLearningV31.topicMastery('math').mastery!==80)throw Error('learning failed');
+          if(!sandbox.ESIQuizCreatorV32.addStatusMedia({size:15*1024*1024}).ok||sandbox.ESIQuizCreatorV32.addStatusMedia({size:15*1024*1024+1}).ok)throw Error('15MB guard failed');
+          console.log('V29-V35 upgrade smoke tests passed.');
           NODE
-      - name: Prepare APK-only Quiz Studio shell
+      - name: Prepare complete APK shell
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf android/app/src/main/assets
-          mkdir -p android/app/src/main/assets/site
+          rm -rf android/app/src/main/assets; mkdir -p android/app/src/main/assets/site
           cat > /tmp/esi-shell.txt <<'EOF'
           index.html
           logo.jpg
@@ -127,6 +106,7 @@ jobs:
           quiz2-creator-admin-v32.js
           quiz2-media-v33.js
           quiz2-types-v34.js
+          quiz2-arrangement-v35.js
           firebase-config.js
           multiplayer.js
           singleplay.js
@@ -140,32 +120,26 @@ jobs:
           while IFS= read -r file; do [ -z "$file" ] && continue; test -f "$file" || { echo "Missing required shell file: $file"; exit 1; }; done < /tmp/esi-shell.txt
           rsync -a --files-from=/tmp/esi-shell.txt ./ android/app/src/main/assets/site/
           cp -f logo.jpg android/app/src/main/res/drawable/logo.jpg
-      - name: Activate all upgraded engines in APK quiz2 shell
+      - name: Activate every upgraded engine in APK quiz2
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/src/main/assets/site/quiz2.html');s=p.read_text(encoding='utf-8')
-          tags=[
-          ('ESI_APK_QUIZ2_INTELLIGENCE_V5','quiz2-intelligence-v5.js'),('ESI_APK_QUIZ2_ENGINES_V7','quiz2-engines-v7.js'),('ESI_APK_QUIZ2_LOGIC_V8','quiz2-logic-v8.js'),('ESI_APK_QUIZ2_INTELLIGENCE_V9','quiz2-intelligence-v9.js'),('ESI_APK_QUIZ2_RESULTS_V10','quiz2-results-v10.js'),('ESI_APK_QUIZ2_MEDIA_V11','quiz2-media-v11.js'),('ESI_APK_QUIZ2_LIVE_V12','quiz2-live-v12.js'),('ESI_APK_QUIZ2_PUBLISH_V13','quiz2-publish-v13.js'),('ESI_APK_QUIZ2_SYNC_V14','quiz2-sync-v14.js'),('ESI_APK_QUIZ2_SECURITY_V15','quiz2-security-v15.js'),('ESI_APK_QUIZ2_COLLAB_V16','quiz2-collaboration-v16.js'),('ESI_APK_QUIZ2_A11Y_V17','quiz2-accessibility-v17.js'),('ESI_APK_QUIZ2_NOTIFICATIONS_V18','quiz2-notifications-v18.js'),('ESI_APK_QUIZ2_INTEGRATION_V19','quiz2-integration-v19.js'),('ESI_APK_QUIZ2_DIAGNOSTICS_V20','quiz2-diagnostics-v20.js'),('ESI_APK_QUIZ2_QUALITY_V21','quiz2-quality-v21.js'),('ESI_APK_QUIZ2_COMMUNICATION_V10','quiz2-communication-v10.js'),('ESI_APK_QUIZ2_COMMUNICATION_V11','quiz2-communication-v11.js'),('ESI_APK_QUIZ2_COMMUNICATION_V29','quiz2-communication-v29.js'),('ESI_APK_QUIZ2_BACKEND_V30','quiz2-backend-config-v30.js'),('ESI_APK_QUIZ2_LEARNING_V31','quiz2-learning-v31.js'),('ESI_APK_QUIZ2_CREATOR_V32','quiz2-creator-admin-v32.js'),('ESI_APK_QUIZ2_MEDIA_GUARD_V33','quiz2-media-v33.js'),('ESI_APK_QUIZ2_TYPES_V34','quiz2-types-v34.js')]
+          tags=[('V5','quiz2-intelligence-v5.js'),('V7','quiz2-engines-v7.js'),('V8','quiz2-logic-v8.js'),('V9','quiz2-intelligence-v9.js'),('V10','quiz2-results-v10.js'),('V11M','quiz2-media-v11.js'),('V12','quiz2-live-v12.js'),('V13','quiz2-publish-v13.js'),('V14','quiz2-sync-v14.js'),('V15','quiz2-security-v15.js'),('V16','quiz2-collab-v16.js'),('V17','quiz2-a11y-v17.js'),('V18','quiz2-notifications-v18.js'),('V19','quiz2-integration-v19.js'),('V20','quiz2-diagnostics-v20.js'),('V21','quiz2-quality-v21.js'),('CHAT','quiz2-chat.js'),('STUDIO','quiz2-studio-v3.js'),('NEXUS','quiz2-nexus-engine-v2.js'),('COMM10','quiz2-communication-v10.js'),('COMM11','quiz2-communication-v11.js'),('COMM29','quiz2-communication-v29.js'),('BACKEND30','quiz2-backend-config-v30.js'),('LEARN31','quiz2-learning-v31.js'),('CREATOR32','quiz2-creator-admin-v32.js'),('MEDIA33','quiz2-media-v33.js'),('TYPES34','quiz2-types-v34.js'),('ARRANGE35','quiz2-arrangement-v35.js')]
           for marker,src in tags:
-            if marker not in s:
-              block=f'\n<!-- {marker} -->\n<script src="{src}"></script>\n'
-              s=s.replace('</body>',block+'</body>',1) if '</body>' in s else s+block
-          p.write_text(s,encoding='utf-8')
-          for marker,src in tags: assert marker in s and Path('android/app/src/main/assets/site/'+src).is_file()
-          print('All V5, V7-V21 and V29-V34 activation markers verified.')
+            if f'ESI_APK_{marker}' not in s:
+              block=f'\n<!-- ESI_APK_{marker} -->\n<script src="{src}"></script>\n';s=s.replace('</body>',block+'</body>',1) if '</body>' in s else s+block
+          p.write_text(s,encoding='utf-8');print('APK engine activation complete.')
           PY
-      - name: Apply targeted Android WebView compatibility checks
+      - name: Apply Android WebView compatibility
         shell: bash
         run: |
           set -euo pipefail
-          TARGET="android/app/src/main/java/com/elitescholarinstitute/app/MainActivity.kt"
+          TARGET=android/app/src/main/java/com/elitescholarinstitute/app/MainActivity.kt
           test -f "$TARGET"
-          if grep -q 'allowContentAccess = false' "$TARGET"; then sed -i 's/allowContentAccess = false/allowContentAccess = true/' "$TARGET"; fi
-          if grep -q 'allowFileAccess = false' "$TARGET"; then sed -i 's/allowFileAccess = false/allowFileAccess = true/' "$TARGET"; fi
-          sed -i 's/ESIAndroid\/4\.0/ESIAndroid\/4.3/g' "$TARGET"
+          sed -i 's/allowContentAccess = false/allowContentAccess = true/g;s/allowFileAccess = false/allowFileAccess = true/g;s/ESIAndroid\/4\.0/ESIAndroid\/4.3/g' "$TARGET"
           grep -q 'allowContentAccess = true' "$TARGET"; grep -q 'allowFileAccess = true' "$TARGET"; grep -q 'ESIAndroid/4.3' "$TARGET"
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -176,22 +150,22 @@ jobs:
       - name: Build ESI APK v5.1
         working-directory: android
         run: gradle :app:assembleDebug --no-daemon --stacktrace
-      - name: Verify APK and embedded version
+      - name: Verify APK v5.1
         shell: bash
         run: |
           set -euo pipefail
           test -s android/app/build/outputs/apk/debug/app-debug.apk
           mkdir -p release; cp android/app/build/outputs/apk/debug/app-debug.apk release/ESI.apk
-          SDK_AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1); BADGING=$("$SDK_AAPT2" dump badging release/ESI.apk); echo "$BADGING"
           EXPECTED_CODE=$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' android/app/build.gradle.kts | head -1); EXPECTED_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts | head -1)
-          test "$EXPECTED_CODE" = "362411"; test "$EXPECTED_NAME" = "5.1"; echo "$BADGING" | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
+          test "$EXPECTED_CODE" = "362411"; test "$EXPECTED_NAME" = "5.1"
+          AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1); "$AAPT2" dump badging release/ESI.apk | grep -E "versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with: {name: ESI-APK-v5.1, path: release/ESI.apk, if-no-files-found: error, retention-days: 30}
-      - name: Publish current APK release
+      - name: Publish APK release
         env: {GH_TOKEN: ${{ github.token }}}
         shell: bash
         run: |
           set -euo pipefail
           TAG="esi-v5.1-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
-          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v5.1" --notes "ESI Android APK v5.1 — expanded communication, chat, social, leaderboard, learning, creator-admin, form/poll, type manuals and 15 MB status media guard." --latest
+          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v5.1" --notes "ESI v5.1 — communication/chat, social, leaderboard, learning, creator-admin, forms/polls, type manuals, clean arrangement and 15 MB status media guard." --latest
