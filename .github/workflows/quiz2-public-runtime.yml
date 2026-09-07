@@ -25,13 +25,16 @@ jobs:
           from pathlib import Path
           p=Path('quiz2-communication-v29.js')
           s=p.read_text(encoding='utf-8')
-          bad="function esc(v){return String(v??'').replace(/[&<>\\\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\\"':'&quot;',\"'\":'&#39;'}[c))}"
-          good="function esc(v){return String(v??'').replace(/[&<>\\\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\\"':'&quot;',\"'\":'&#39;'}[c]))}"
-          if bad in s:
-              p.write_text(s.replace(bad,good),encoding='utf-8')
+          old='function esc(v){return String(v??\'\').replace(/[&<>"\']/g,c=>({\'&\':\'&amp;\',\'<\':\'&lt;\',\'>\':\'&gt;\',\'"\':\'&quot;\',"\'":\'&#39;\'}[c))}'
+          new=old.replace('[c))}', '[c])}')
+          if old in s:
+              p.write_text(s.replace(old,new,1),encoding='utf-8')
               print('Repaired V29 esc()')
+          elif '[c))}' in s:
+              p.write_text(s.replace('[c))}', '[c])}',1),encoding='utf-8')
+              print('Repaired V29 closing token')
           else:
-              print('V29 esc() already repaired or formatting differs')
+              print('V29 esc() already repaired')
           PY
       - name: Verify runtime modules
         shell: bash
