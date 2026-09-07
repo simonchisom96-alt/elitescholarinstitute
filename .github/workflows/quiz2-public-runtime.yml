@@ -27,7 +27,7 @@ jobs:
           s=p.read_text(encoding='utf-8')
           n=s.count('[c))}')
           if n:
-              s=s.replace('[c))}', '[c])}')
+              s=s.replace('[c))}', '[c]))}')
               p.write_text(s,encoding='utf-8')
               print(f'Repaired {n} V29 closing token(s).')
           else:
