@@ -1,0 +1,68 @@
+name: ESI Quiz Studio Next Batch Activation
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'quiz2.html'
+      - 'quiz2-*.js'
+      - 'quiz2-public-v23.html'
+      - '.github/workflows/quiz2-next-batch.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: quiz2-next-batch
+  cancel-in-progress: false
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Syntax and feature smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(quiz2-share-v22.js quiz2-ecosystem-v24.js quiz2-api-contract-v25.js quiz2-publish-ui-v26.js quiz2-results-v27.js quiz2-social-v28.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js quiz2-runtime-v36.js quiz2-runtime-v37.js quiz2-runtime-v38.js quiz2-ai-bridge-v39.js quiz2-import-export-v40.js quiz2-integrity-analytics-v41.js)
+          for f in "${files[@]}"; do test -s "$f"; node --check "$f"; done
+          test -s quiz2.html
+          test -s quiz2-public-v23.html
+          node <<'NODE'
+          const fs=require('fs'),vm=require('vm'),store=new Map();
+          const body={appendChild(){},classList:{toggle(){}}};
+          const document={readyState:'loading',body,head:{appendChild(){}},documentElement:{style:{}},scripts:[],addEventListener(n,fn){if(n==='DOMContentLoaded')fn()},querySelectorAll(){return[]},querySelector(){return null},getElementById(){return null},createElement(){return{style:{},setAttribute(){},appendChild(){},addEventListener(){},click(){},classList:{add(){},remove(){},toggle(){}}}}};
+          const w={console,structuredClone,Date,Math,JSON,URLSearchParams,URL,Blob,AbortController,localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)},window:null,navigator:{onLine:true},document,CustomEvent:function(t,i){this.type=t;this.detail=i?.detail},location:{origin:'https://elitescholarinstitute.pages.dev',href:'https://elitescholarinstitute.pages.dev/quiz2.html'},innerWidth:390,innerHeight:844,addEventListener(){},dispatchEvent(){}};w.window=w;vm.createContext(w);
+          for(const f of ['quiz2-share-v22.js','quiz2-ecosystem-v24.js','quiz2-api-contract-v25.js','quiz2-publish-ui-v26.js','quiz2-results-v27.js','quiz2-social-v28.js','quiz2-communication-v29.js','quiz2-backend-config-v30.js','quiz2-learning-v31.js','quiz2-creator-admin-v32.js','quiz2-media-v33.js','quiz2-types-v34.js','quiz2-arrangement-v35.js','quiz2-runtime-v36.js','quiz2-runtime-v37.js','quiz2-ai-bridge-v39.js','quiz2-import-export-v40.js','quiz2-integrity-analytics-v41.js','quiz2-runtime-v38.js'])vm.runInContext(fs.readFileSync(f,'utf8'),w,{filename:f});
+          const c=w.ESICommunicationV29.chat('smoke','Smoke');w.ESICommunicationV29.message(c.id,'hello');if(c.messages.length!==1)throw Error('chat failed');
+          if(w.ESIQuizShareV22.publicPage()!=='https://elitescholarinstitute.pages.dev/quiz2-public-v23.html')throw Error('share route failed');
+          const csv=w.ESIQuizImportExportV40.questionsFromCSV('question,type,option1,correct\n2+2?,multiple_choice,4,4');if(csv.length!==1)throw Error('CSV failed');
+          const sid=w.ESIQuizIntegrityAnalyticsV41.start('q');w.ESIQuizIntegrityAnalyticsV41.answer(sid,'1',{correct:true});if(w.ESIQuizIntegrityAnalyticsV41.summary('q').accuracy!==100)throw Error('analytics failed');
+          if(w.ESIQuizAIBridgeV39.ready())throw Error('AI unexpectedly configured');
+          if(!w.ESIQuizRuntimeV38.health().ok)throw Error('runtime health failed');
+          console.log('V22-V41 smoke PASS');
+          NODE
+      - name: Activate V22-V41 on public quiz2
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('quiz2.html'); s=p.read_text(encoding='utf-8')
+          modules=['quiz2-share-v22.js','quiz2-ecosystem-v24.js','quiz2-api-contract-v25.js','quiz2-publish-ui-v26.js','quiz2-results-v27.js','quiz2-social-v28.js','quiz2-communication-v29.js','quiz2-backend-config-v30.js','quiz2-learning-v31.js','quiz2-creator-admin-v32.js','quiz2-media-v33.js','quiz2-types-v34.js','quiz2-arrangement-v35.js','quiz2-runtime-v36.js','quiz2-runtime-v37.js','quiz2-ai-bridge-v39.js','quiz2-import-export-v40.js','quiz2-integrity-analytics-v41.js','quiz2-runtime-v38.js']
+          for src in modules:
+              marker='ESI_NEXT_BATCH_'+src[:-3].replace('-','_').upper()
+              if marker not in s:
+                  tag=f'\n<!-- {marker} -->\n<script src="{src}"></script>\n'
+                  s=s.replace('</body>',tag+'</body>',1) if '</body>' in s else s+tag
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit public activation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- quiz2.html; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add quiz2.html
+          git commit -m 'feat(quiz2): activate V22-V41 public ecosystem'
+          git push origin main
