@@ -11,7 +11,7 @@ function audit(){return{version:38,booted:s.booted,online:online(),modules:[...s
 function health(){return{ok:s.booted&&s.errors.length===0,version:38,online:online(),modules:s.modules.length,errors:s.errors.length}}
 function register(name){if(name&&!s.modules.includes(name))s.modules.push(name);return true}
 function bridge(){
- const names=['ESIQuizEcosystemV24','ESIQuizAPIContractV25','ESIQuizPublishUIV26','ESIQuizResultsV27','ESIQuizSocialV28','ESICommunicationV29','ESIBackendV30','ESIQuizLearningV31','ESIQuizCreatorV32','ESIQuizMediaV33','ESIQuizTypesV34','ESIQuizArrangementV35','ESIQuizRuntimeV36','ESIQuizRuntimeV37'];
+ const names=['ESIQuizEcosystemV24','ESIQuizAPIContractV25','ESIQuizPublishUIV26','ESIQuizResultsV27','ESIQuizSocialV28','ESICommunicationV29','ESIBackendV30','ESIQuizLearningV31','ESIQuizCreatorV32','ESIQuizMediaV33','ESIQuizTypesV34','ESIQuizArrangementV35','ESIQuizRuntimeV36','ESIQuizRuntimeV37','ESIQuizAIBridgeV39','ESIQuizImportExportV40','ESIQuizIntegrityAnalyticsV41'];
  names.forEach(register);
  return names.filter(n=>has(n));
 }
@@ -19,6 +19,7 @@ function configure(base){
  try{
   if(window.ESIQuizAPIContractV25?.configure)window.ESIQuizAPIContractV25.configure(base);
   if(window.ESIBackendV30?.configure)window.ESIBackendV30.configure(base);
+  if(window.ESIQuizAIBridgeV39?.configure)window.ESIQuizAIBridgeV39.configure(base);
   note('configure',{configured:!!base});return true;
  }catch(e){s.errors.push(String(e?.message||e));save();return false}
 }
