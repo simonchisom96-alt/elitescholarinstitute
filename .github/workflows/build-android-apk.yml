@@ -37,15 +37,17 @@ jobs:
           for f in quiz2-intelligence-v5.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js quiz2-quality-v21.js quiz2-communication-v11.js; do
             test -f "$f" || { echo "Missing Quiz Studio module: $f"; exit 1; }
           done
-      - name: Verify engines with Node syntax checks
+      - name: Syntax-check every module with explicit file reporting
         shell: bash
         run: |
-          set -euo pipefail
-          for f in quiz2-intelligence-v5.js quiz2-chat.js quiz2-studio-v3.js quiz2-nexus-engine-v2.js quiz2-communication-hub.js quiz2-communication-v4.js quiz2-communication-v10.js quiz2-communication-v11.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js quiz2-quality-v21.js; do
-            test -f "$f"
-            node --check "$f"
+          set -uo pipefail
+          files=(quiz2-intelligence-v5.js quiz2-chat.js quiz2-studio-v3.js quiz2-nexus-engine-v2.js quiz2-communication-hub.js quiz2-communication-v4.js quiz2-communication-v10.js quiz2-communication-v11.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js quiz2-quality-v21.js)
+          failed=0
+          for f in "${files[@]}"; do
+            echo "=== node --check $f ==="
+            if node --check "$f"; then echo "PASS $f"; else echo "FAIL $f"; failed=1; fi
           done
-          echo 'All Quiz Studio engine and communication files passed node --check.'
+          exit "$failed"
       - name: Run deterministic engine smoke tests
         shell: bash
         run: |
@@ -53,12 +55,8 @@ jobs:
           node <<'NODE'
           const fs=require('fs'),vm=require('vm');
           const listeners={}; const store=new Map();
-          const sandbox={console,structuredClone,Date,Math,JSON,
-            localStorage:{getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)},
-            window:null,document:{readyState:'complete',addEventListener(){},querySelectorAll(){return[]},getElementById(){return null},scripts:[],head:{appendChild(){}}},
-            CustomEvent:function(type,init){this.type=type;this.detail=init?.detail}};
-          sandbox.window=sandbox; sandbox.dispatchEvent=e=>(listeners[e.type]||[]).forEach(fn=>fn(e)); sandbox.addEventListener=(n,fn)=>(listeners[n]??=[]).push(fn);
-          vm.createContext(sandbox);
+          const sandbox={console,structuredClone,Date,Math,JSON,localStorage:{getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)},window:null,document:{readyState:'complete',addEventListener(){},querySelectorAll(){return[]},getElementById(){return null},scripts:[],head:{appendChild(){}}},CustomEvent:function(type,init){this.type=type;this.detail=init?.detail}};
+          sandbox.window=sandbox; sandbox.dispatchEvent=e=>(listeners[e.type]||[]).forEach(fn=>fn(e)); sandbox.addEventListener=(n,fn)=>(listeners[n]??=[]).push(fn); vm.createContext(sandbox);
           const files=['quiz2-engines-v7.js','quiz2-logic-v8.js','quiz2-intelligence-v9.js','quiz2-results-v10.js','quiz2-media-v11.js','quiz2-live-v12.js','quiz2-publish-v13.js','quiz2-sync-v14.js','quiz2-security-v15.js','quiz2-collaboration-v16.js','quiz2-accessibility-v17.js','quiz2-notifications-v18.js','quiz2-integration-v19.js','quiz2-diagnostics-v20.js','quiz2-quality-v21.js','quiz2-communication-v10.js','quiz2-communication-v11.js'];
           for(const f of files) vm.runInContext(fs.readFileSync(f,'utf8'),sandbox,{filename:f});
           if(!sandbox.ESIQuizEnginesV7||!sandbox.ESIQuizLogicV8||!sandbox.ESIQuizIntelligenceV9) throw Error('Core engine boot failed');
@@ -69,9 +67,7 @@ jobs:
           if(sandbox.ESIQuizIntelligenceV9.createBlueprint({questions:sample.questions,count:2,targetDifficulty:3}).questions.length!==2) throw Error('V9 blueprint test failed');
           if(!sandbox.ESIQuizIntegrationV19||!sandbox.ESIQuizDiagnosticsV20||!sandbox.ESIQuizQualityV21) throw Error('V19-V21 boot failed');
           if(!sandbox.ESICommunicationV11||typeof sandbox.ESICommunicationV11.addNotification!=='function'||typeof sandbox.ESICommunicationV11.addStatus!=='function'||typeof sandbox.ESICommunicationV11.addPublicRoom!=='function') throw Error('Communication V11 boot failed');
-          sandbox.ESICommunicationV11.addNotification({title:'Smoke',text:'ok'});
-          sandbox.ESICommunicationV11.addStatus({type:'text',title:'Smoke'});
-          sandbox.ESICommunicationV11.addPublicRoom({code:'ESI123',name:'Smoke Room'});
+          sandbox.ESICommunicationV11.addNotification({title:'Smoke',text:'ok'}); sandbox.ESICommunicationV11.addStatus({type:'text',title:'Smoke'}); sandbox.ESICommunicationV11.addPublicRoom({code:'ESI123',name:'Smoke Room'});
           if(sandbox.ESICommunicationV11.unreadNotifications()!==1) throw Error('V11 notification test failed');
           if(sandbox.ESICommunicationV11.activeStatuses().length!==1) throw Error('V11 status test failed');
           if(sandbox.ESICommunicationV11.publicRooms('ESI123').length!==1) throw Error('V11 room test failed');
@@ -153,31 +149,11 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('android/app/src/main/assets/site/quiz2.html')
-          s=p.read_text(encoding='utf-8')
-          tags=[
-            ('ESI_APK_QUIZ2_INTELLIGENCE_V5','quiz2-intelligence-v5.js'),
-            ('ESI_APK_QUIZ2_ENGINES_V7','quiz2-engines-v7.js'),
-            ('ESI_APK_QUIZ2_LOGIC_V8','quiz2-logic-v8.js'),
-            ('ESI_APK_QUIZ2_INTELLIGENCE_V9','quiz2-intelligence-v9.js'),
-            ('ESI_APK_QUIZ2_RESULTS_V10','quiz2-results-v10.js'),
-            ('ESI_APK_QUIZ2_MEDIA_V11','quiz2-media-v11.js'),
-            ('ESI_APK_QUIZ2_LIVE_V12','quiz2-live-v12.js'),
-            ('ESI_APK_QUIZ2_PUBLISH_V13','quiz2-publish-v13.js'),
-            ('ESI_APK_QUIZ2_SYNC_V14','quiz2-sync-v14.js'),
-            ('ESI_APK_QUIZ2_SECURITY_V15','quiz2-security-v15.js'),
-            ('ESI_APK_QUIZ2_COLLAB_V16','quiz2-collaboration-v16.js'),
-            ('ESI_APK_QUIZ2_A11Y_V17','quiz2-accessibility-v17.js'),
-            ('ESI_APK_QUIZ2_NOTIFICATIONS_V18','quiz2-notifications-v18.js'),
-            ('ESI_APK_QUIZ2_INTEGRATION_V19','quiz2-integration-v19.js'),
-            ('ESI_APK_QUIZ2_DIAGNOSTICS_V20','quiz2-diagnostics-v20.js'),
-            ('ESI_APK_QUIZ2_QUALITY_V21','quiz2-quality-v21.js'),
-            ('ESI_APK_QUIZ2_COMMUNICATION_V10','quiz2-communication-v10.js'),
-            ('ESI_APK_QUIZ2_COMMUNICATION_V11','quiz2-communication-v11.js')]
+          p=Path('android/app/src/main/assets/site/quiz2.html'); s=p.read_text(encoding='utf-8')
+          tags=[('ESI_APK_QUIZ2_INTELLIGENCE_V5','quiz2-intelligence-v5.js'),('ESI_APK_QUIZ2_ENGINES_V7','quiz2-engines-v7.js'),('ESI_APK_QUIZ2_LOGIC_V8','quiz2-logic-v8.js'),('ESI_APK_QUIZ2_INTELLIGENCE_V9','quiz2-intelligence-v9.js'),('ESI_APK_QUIZ2_RESULTS_V10','quiz2-results-v10.js'),('ESI_APK_QUIZ2_MEDIA_V11','quiz2-media-v11.js'),('ESI_APK_QUIZ2_LIVE_V12','quiz2-live-v12.js'),('ESI_APK_QUIZ2_PUBLISH_V13','quiz2-publish-v13.js'),('ESI_APK_QUIZ2_SYNC_V14','quiz2-sync-v14.js'),('ESI_APK_QUIZ2_SECURITY_V15','quiz2-security-v15.js'),('ESI_APK_QUIZ2_COLLAB_V16','quiz2-collaboration-v16.js'),('ESI_APK_QUIZ2_A11Y_V17','quiz2-accessibility-v17.js'),('ESI_APK_QUIZ2_NOTIFICATIONS_V18','quiz2-notifications-v18.js'),('ESI_APK_QUIZ2_INTEGRATION_V19','quiz2-integration-v19.js'),('ESI_APK_QUIZ2_DIAGNOSTICS_V20','quiz2-diagnostics-v20.js'),('ESI_APK_QUIZ2_QUALITY_V21','quiz2-quality-v21.js'),('ESI_APK_QUIZ2_COMMUNICATION_V10','quiz2-communication-v10.js'),('ESI_APK_QUIZ2_COMMUNICATION_V11','quiz2-communication-v11.js')]
           for marker,src in tags:
-              if marker not in s:
-                  block=f'\n<!-- {marker} -->\n<script src="{src}"></script>\n'
-                  s=s.replace('</body>',block+'</body>',1) if '</body>' in s else s+block
+            if marker not in s:
+              block=f'\n<!-- {marker} -->\n<script src="{src}"></script>\n'; s=s.replace('</body>',block+'</body>',1) if '</body>' in s else s+block
           p.write_text(s,encoding='utf-8')
           for marker,src in tags: assert marker in s and Path('android/app/src/main/assets/site/'+src).is_file()
           print('V5, V7-V21 and Communication V10-V11 activation verified.')
@@ -191,19 +167,13 @@ jobs:
           if grep -q 'allowContentAccess = false' "$TARGET"; then sed -i 's/allowContentAccess = false/allowContentAccess = true/' "$TARGET"; fi
           if grep -q 'allowFileAccess = false' "$TARGET"; then sed -i 's/allowFileAccess = false/allowFileAccess = true/' "$TARGET"; fi
           sed -i 's/ESIAndroid\/4\.0/ESIAndroid\/4.3/g' "$TARGET"
-          grep -q 'allowContentAccess = true' "$TARGET"
-          grep -q 'allowFileAccess = true' "$TARGET"
-          grep -q 'ESIAndroid/4.3' "$TARGET"
+          grep -q 'allowContentAccess = true' "$TARGET"; grep -q 'allowFileAccess = true' "$TARGET"; grep -q 'ESIAndroid/4.3' "$TARGET"
       - name: Set up JDK 17
         uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: gradle
+        with: {distribution: temurin, java-version: '17', cache: gradle}
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.11.1'
+        with: {gradle-version: '8.11.1'}
       - name: Build ESI APK v5.0
         working-directory: android
         run: gradle :app:assembleDebug --no-daemon --stacktrace
@@ -212,26 +182,15 @@ jobs:
         run: |
           set -euo pipefail
           test -s android/app/build/outputs/apk/debug/app-debug.apk
-          mkdir -p release
-          cp android/app/build/outputs/apk/debug/app-debug.apk release/ESI.apk
-          SDK_AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1)
-          BADGING=$("$SDK_AAPT2" dump badging release/ESI.apk)
-          echo "$BADGING"
-          EXPECTED_CODE=$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' android/app/build.gradle.kts | head -1)
-          EXPECTED_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts | head -1)
-          test "$EXPECTED_CODE" = "362410"
-          test "$EXPECTED_NAME" = "5.0"
-          echo "$BADGING" | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
+          mkdir -p release; cp android/app/build/outputs/apk/debug/app-debug.apk release/ESI.apk
+          SDK_AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1); BADGING=$("$SDK_AAPT2" dump badging release/ESI.apk); echo "$BADGING"
+          EXPECTED_CODE=$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' android/app/build.gradle.kts | head -1); EXPECTED_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts | head -1)
+          test "$EXPECTED_CODE" = "362410"; test "$EXPECTED_NAME" = "5.0"; echo "$BADGING" | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
-        with:
-          name: ESI-APK-v5.0
-          path: release/ESI.apk
-          if-no-files-found: error
-          retention-days: 30
+        with: {name: ESI-APK-v5.0, path: release/ESI.apk, if-no-files-found: error, retention-days: 30}
       - name: Publish current APK release
-        env:
-          GH_TOKEN: ${{ github.token }}
+        env: {GH_TOKEN: ${{ github.token }}}
         shell: bash
         run: |
           set -euo pipefail
