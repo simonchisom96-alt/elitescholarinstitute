@@ -74,14 +74,41 @@ jobs:
           node <<'NODE'
           const fs=require('fs'),vm=require('vm');
           const store=new Map();
+          function makeClassList(){return {add(){},remove(){},toggle(){},contains(){return false}}}
+          function makeElement(tag='div'){
+            const el={tagName:String(tag).toUpperCase(),style:{},classList:makeClassList(),children:[],dataset:{},value:'',innerHTML:'',textContent:'',onclick:null,onkeydown:null,
+              appendChild(c){this.children.push(c);return c},setAttribute(k,v){this[k]=String(v);if(k==='id')this.id=String(v)},addEventListener(){},insertAdjacentHTML(){},click(){if(typeof this.onclick==='function')this.onclick()},
+              querySelector(sel){
+                if(sel==='.v29body')return this.__body||null;
+                return makeElement('div');
+              },
+              querySelectorAll(){return []}
+            };
+            return el;
+          }
+          const documentElement=makeElement('html');
+          const body=makeElement('body');
+          const documentHead=makeElement('head');
           const sandbox={
             console,structuredClone,Date,Math,JSON,URLSearchParams,URL,
             localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)},
             window:null,navigator:{onLine:true},
-            document:{readyState:'loading',addEventListener(n,fn){if(n==='DOMContentLoaded')fn()},querySelectorAll(){return[]},querySelector(){return null},getElementById(){return null},createElement(){return {style:{},classList:{add(){},remove(){}},appendChild(){},setAttribute(){}}},head:{appendChild(){}},body:{appendChild(){},classList:{toggle(){}}},documentElement:{style:{}},scripts:[]},
+            document:{readyState:'loading',addEventListener(n,fn){if(n==='DOMContentLoaded')fn()},querySelectorAll(){return[]},querySelector(){return null},getElementById(){return null},createElement(tag){return makeElement(tag)},head:documentHead,body,documentElement,scripts:[]},
             CustomEvent:function(type,init){this.type=type;this.detail=init?.detail}
           };
-          sandbox.window=sandbox;sandbox.dispatchEvent=()=>{};sandbox.addEventListener=()=>{};vm.createContext(sandbox);
+          sandbox.window=sandbox;sandbox.dispatchEvent=()=>{};sandbox.addEventListener=()=>{};
+          const originalCreate=sandbox.document.createElement;
+          sandbox.document.createElement=function(tag){
+            const el=originalCreate(tag);
+            if(String(tag).toLowerCase()==='section'){
+              const v29body=makeElement('main');
+              el.__body=v29body;
+              el.querySelector=function(sel){if(sel==='.v29body')return v29body;return makeElement('button')};
+              el.querySelectorAll=function(){return []};
+            }
+            return el;
+          };
+          vm.createContext(sandbox);
           const files=['quiz2-engines-v7.js','quiz2-logic-v8.js','quiz2-intelligence-v9.js','quiz2-integration-v19.js','quiz2-diagnostics-v20.js','quiz2-quality-v21.js','quiz2-share-v22.js','quiz2-ecosystem-v24.js','quiz2-api-contract-v25.js','quiz2-communication-v29.js','quiz2-backend-config-v30.js','quiz2-learning-v31.js','quiz2-creator-admin-v32.js','quiz2-media-v33.js','quiz2-types-v34.js','quiz2-arrangement-v35.js','quiz2-runtime-v36.js','quiz2-runtime-v37.js','quiz2-runtime-v38.js','quiz2-ai-bridge-v39.js','quiz2-import-export-v40.js','quiz2-integrity-analytics-v41.js'];
           for(const f of files)vm.runInContext(fs.readFileSync(f,'utf8'),sandbox,{filename:f});
           if(!sandbox.ESIQuizEnginesV7||!sandbox.ESIQuizLogicV8||!sandbox.ESIQuizIntelligenceV9)throw Error('core boot failed');
