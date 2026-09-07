@@ -246,11 +246,11 @@ jobs:
         with:
           gradle-version: '8.11.1'
 
-      - name: Build ESI APK v5.4
+      - name: Build ESI APK v5.6
         working-directory: android
         run: gradle :app:assembleDebug --no-daemon --stacktrace
 
-      - name: Verify APK v5.4
+      - name: Verify APK v5.6
         shell: bash
         run: |
           set -euo pipefail
@@ -259,15 +259,14 @@ jobs:
           cp android/app/build/outputs/apk/debug/app-debug.apk release/ESI.apk
           EXPECTED_CODE=$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' android/app/build.gradle.kts | head -1)
           EXPECTED_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts | head -1)
-          test "$EXPECTED_CODE" = '362414'
-          test "$EXPECTED_NAME" = '5.4'
+          test "$EXPECTED_CODE" = '362416'
+          test "$EXPECTED_NAME" = '5.6'
           AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1)
           "$AAPT2" dump badging release/ESI.apk | grep -E "versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
-
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ESI-APK-v5.4
+          name: ESI-APK-v5.6
           path: release/ESI.apk
           if-no-files-found: error
           retention-days: 30
@@ -278,5 +277,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="esi-v5.4-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
-          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v5.4" --notes "ESI v5.4 — V41 integrity/analytics bridge, AI/backend boundary, import/export foundation, communication/chat, social, leaderboard, learning, creator-admin, forms/polls, type manuals, clean arrangement and 15 MB status media guard." --latest
+          TAG="esi-v5.6-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v5.6" --notes "ESI v5.6 — V41 integrity/analytics bridge, AI/backend boundary, import/export foundation, communication/chat, social, leaderboard, learning, creator-admin, forms/polls, type manuals, clean arrangement and 15 MB status media guard." --latest
