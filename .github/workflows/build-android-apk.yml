@@ -13,6 +13,23 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
         with: {fetch-depth: 0}
+      - name: Normalize V29 before build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('quiz2-communication-v29.js')
+          lines=p.read_text(encoding='utf-8').splitlines()
+          for i,line in enumerate(lines):
+              if line.startswith('function esc(v){'):
+                  lines[i]="function esc(v){return String(v??'').replace(/[&<>\\\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\\"':'&quot;',\"'\":'&#39;'}[c]))}"
+                  break
+          else:
+              raise SystemExit('V29 esc() function not found')
+          p.write_text('\n'.join(lines)+'\n',encoding='utf-8')
+          print('V29 normalized.')
+          PY
       - name: Verify all Quiz Studio modules
         shell: bash
         run: |
@@ -24,10 +41,7 @@ jobs:
         run: |
           set -uo pipefail
           failed=0
-          for f in quiz2-*.js; do
-            echo "=== node --check $f ==="
-            node --check "$f" && echo "PASS $f" || { echo "FAIL $f"; failed=1; }
-          done
+          for f in quiz2-*.js; do echo "=== node --check $f ==="; node --check "$f" && echo "PASS $f" || { echo "FAIL $f"; failed=1; }; done
           exit "$failed"
       - name: Deterministic upgrade smoke tests
         shell: bash
