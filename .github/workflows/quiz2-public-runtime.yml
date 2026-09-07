@@ -2,7 +2,7 @@ name: ESI Quiz Studio Public Runtime
 on:
   push:
     branches: [main]
-    paths: ['quiz2.html','quiz2-runtime-v36.js','quiz2-runtime-v37.js','quiz2-ecosystem-v24.js','quiz2-api-contract-v25.js','quiz2-publish-ui-v26.js','quiz2-results-v27.js','quiz2-social-v28.js','quiz2-communication-v29.js','quiz2-backend-config-v30.js','quiz2-learning-v31.js','quiz2-creator-admin-v32.js','quiz2-media-v33.js','quiz2-types-v34.js','quiz2-arrangement-v35.js','.github/workflows/quiz2-public-runtime.yml']
+    paths: ['quiz2.html','quiz2-runtime-v36.js','quiz2-runtime-v37.js','quiz2-runtime-v38.js','quiz2-ecosystem-v24.js','quiz2-api-contract-v25.js','quiz2-publish-ui-v26.js','quiz2-results-v27.js','quiz2-social-v28.js','quiz2-communication-v29.js','quiz2-backend-config-v30.js','quiz2-learning-v31.js','quiz2-creator-admin-v32.js','quiz2-media-v33.js','quiz2-types-v34.js','quiz2-arrangement-v35.js','.github/workflows/quiz2-public-runtime.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -24,22 +24,25 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p=Path('quiz2-communication-v29.js')
-          s=p.read_text(encoding='utf-8')
-          n=s.count('[c))}')
-          if n:
-              s=s.replace('[c))}', '[c]))}')
-              p.write_text(s,encoding='utf-8')
-              print(f'Repaired {n} V29 closing token(s).')
-          else:
-              print('V29 closing token already correct.')
+          lines=p.read_text(encoding='utf-8').splitlines()
+          fixed=False
+          for i,line in enumerate(lines):
+              if line.startswith('function esc(v){'):
+                  lines[i]="function esc(v){return String(v??'').replace(/[&<>\\\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\\"':'&quot;',\"'\":'&#39;'}[c]))}"
+                  fixed=True
+                  break
+          if not fixed:
+              raise SystemExit('V29 esc() function not found')
+          p.write_text('\n'.join(lines)+'\n',encoding='utf-8')
+          print('V29 esc() normalized deterministically.')
           PY
       - name: Verify runtime modules
         shell: bash
         run: |
           set -euo pipefail
-          for f in quiz2-runtime-v37.js quiz2-runtime-v36.js quiz2-ecosystem-v24.js quiz2-api-contract-v25.js quiz2-publish-ui-v26.js quiz2-results-v27.js quiz2-social-v28.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js; do test -s "$f" || { echo "Missing: $f"; exit 1; }; done
-          for f in quiz2-runtime-v37.js quiz2-runtime-v36.js quiz2-ecosystem-v24.js quiz2-api-contract-v25.js quiz2-publish-ui-v26.js quiz2-results-v27.js quiz2-social-v28.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js; do node --check "$f"; done
-      - name: Activate V37 in public quiz2
+          for f in quiz2-runtime-v38.js quiz2-runtime-v37.js quiz2-runtime-v36.js quiz2-ecosystem-v24.js quiz2-api-contract-v25.js quiz2-publish-ui-v26.js quiz2-results-v27.js quiz2-social-v28.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js; do test -s "$f" || { echo "Missing: $f"; exit 1; }; done
+          for f in quiz2-runtime-v38.js quiz2-runtime-v37.js quiz2-runtime-v36.js quiz2-ecosystem-v24.js quiz2-api-contract-v25.js quiz2-publish-ui-v26.js quiz2-results-v27.js quiz2-social-v28.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js; do node --check "$f"; done
+      - name: Activate V38 in public quiz2
         shell: bash
         run: |
           set -euo pipefail
@@ -47,17 +50,14 @@ jobs:
           from pathlib import Path
           p=Path('quiz2.html')
           s=p.read_text(encoding='utf-8')
-          marker='ESI_PUBLIC_V37'
+          marker='ESI_PUBLIC_V38'
           if marker not in s:
-              tag='\n<!-- ESI_PUBLIC_V37 -->\n<script src="quiz2-runtime-v37.js"></script>\n'
-              if '</body>' in s:
-                  s=s.replace('</body>',tag+'</body>',1)
-              else:
-                  s+=tag
+              tag='\n<!-- ESI_PUBLIC_V38 -->\n<script src="quiz2-runtime-v38.js"></script>\n'
+              if '</body>' in s:s=s.replace('</body>',tag+'</body>',1)
+              else:s+=tag
               p.write_text(s,encoding='utf-8')
-              print('V37 activated in public quiz2.html')
-          else:
-              print('V37 already active')
+              print('V38 activated in public quiz2.html')
+          else:print('V38 already active')
           PY
       - name: Commit repaired runtime and public activation
         shell: bash
@@ -65,12 +65,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if git diff --quiet -- quiz2.html quiz2-communication-v29.js; then
-            echo 'No repair/activation commit needed.'
-            exit 0
-          fi
+          if git diff --quiet -- quiz2.html quiz2-communication-v29.js; then echo 'No repair/activation commit needed.'; exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add quiz2.html quiz2-communication-v29.js
-          git commit -m 'chore(quiz2): repair V29 and activate V37 runtime'
+          git commit -m 'chore(quiz2): repair V29 and activate V38 runtime'
           git push origin main
