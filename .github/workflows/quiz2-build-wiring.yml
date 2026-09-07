@@ -2,49 +2,44 @@ name: ESI Quiz Studio Android Wiring Repair
 on:
   push:
     branches: [main]
-    paths:
-      - 'quiz2-*.js'
-      - 'android/app/build.gradle.kts'
-      - '.github/workflows/build-android-apk.yml'
-      - '.github/workflows/quiz2-build-wiring.yml'
+    paths: ['quiz2-*.js','android/app/build.gradle.kts','.github/workflows/build-android-apk.yml','.github/workflows/quiz2-build-wiring.yml']
   workflow_dispatch:
-permissions:
-  contents: write
-concurrency:
-  group: quiz2-build-wiring
-  cancel-in-progress: false
+permissions: {contents: write}
+concurrency: {group: quiz2-build-wiring, cancel-in-progress: false}
 jobs:
   wire:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Ensure V22-V41 modules are packaged by Android build
+      - name: Repair Android build wiring and version contract
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('.github/workflows/build-android-apk.yml')
-          s=p.read_text(encoding='utf-8')
+          p=Path('.github/workflows/build-android-apk.yml'); s=p.read_text(encoding='utf-8')
           modules=['quiz2-share-v22.js','quiz2-ecosystem-v24.js','quiz2-api-contract-v25.js','quiz2-publish-ui-v26.js','quiz2-results-v27.js','quiz2-social-v28.js','quiz2-communication-v29.js','quiz2-backend-config-v30.js','quiz2-learning-v31.js','quiz2-creator-admin-v32.js','quiz2-media-v33.js','quiz2-types-v34.js','quiz2-arrangement-v35.js','quiz2-runtime-v36.js','quiz2-runtime-v37.js','quiz2-runtime-v38.js','quiz2-ai-bridge-v39.js','quiz2-import-export-v40.js','quiz2-integrity-analytics-v41.js']
           for f in modules:
               if f not in s:
                   anchor='          quiz2-communication-v29.js'
                   if anchor in s:s=s.replace(anchor,'          '+f+'\n'+anchor,1)
           prefix="('SHARE22','quiz2-share-v22.js'),('ECO24','quiz2-ecosystem-v24.js'),('API25','quiz2-api-contract-v25.js'),('PUB26','quiz2-publish-ui-v26.js'),('RESULT27','quiz2-results-v27.js'),('SOCIAL28','quiz2-social-v28.js'),('COMM29','quiz2-communication-v29.js'),('BACKEND30','quiz2-backend-config-v30.js'),('LEARN31','quiz2-learning-v31.js'),('CREATOR32','quiz2-creator-admin-v32.js'),('MEDIA33','quiz2-media-v33.js'),('TYPES34','quiz2-types-v34.js'),('ARRANGE35','quiz2-arrangement-v35.js'),('RUNTIME36','quiz2-runtime-v36.js'),('RUNTIME37','quiz2-runtime-v37.js'),('RUNTIME38','quiz2-runtime-v38.js'),('AI39','quiz2-ai-bridge-v39.js'),('IMPORT40','quiz2-import-export-v40.js'),('INTEGRITY41','quiz2-integrity-analytics-v41.js'),"
-          if "('SHARE22','quiz2-share-v22.js')" not in s:
-              s=s.replace("tags=[('V5'",'tags=['+prefix+"('V5'",1)
+          if "('SHARE22','quiz2-share-v22.js')" not in s:s=s.replace("tags=[('V5'",'tags=['+prefix+"('V5'",1)
+          s=s.replace('versionCode = 362414','versionCode = 362415').replace('versionName = "5.4"','versionName = "5.5"')
+          s=s.replace('Build ESI APK v5.4','Build ESI APK v5.5').replace('Verify APK v5.4','Verify APK v5.5').replace('EXPECTED_CODE" = "362414"','EXPECTED_CODE" = "362415"').replace('EXPECTED_NAME" = "5.4"','EXPECTED_NAME" = "5.5"').replace('ESI-APK-v5.4','ESI-APK-v5.5').replace('esi-v5.4-','esi-v5.5-').replace('ESI Android APK v5.4','ESI Android APK v5.5')
           p.write_text(s,encoding='utf-8')
           PY
-      - name: Verify the wiring actually landed
+      - name: Verify wiring
         shell: bash
         run: |
           set -euo pipefail
-          for f in quiz2-share-v22.js quiz2-ecosystem-v24.js quiz2-api-contract-v25.js quiz2-publish-ui-v26.js quiz2-results-v27.js quiz2-social-v28.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js quiz2-runtime-v36.js quiz2-runtime-v37.js quiz2-runtime-v38.js quiz2-ai-bridge-v39.js quiz2-import-export-v40.js quiz2-integrity-analytics-v41.js; do grep -q "$f" .github/workflows/build-android-apk.yml || { echo "Not wired: $f"; exit 1; }; done
+          for f in quiz2-share-v22.js quiz2-ecosystem-v24.js quiz2-api-contract-v25.js quiz2-publish-ui-v26.js quiz2-results-v27.js quiz2-social-v28.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js quiz2-runtime-v36.js quiz2-runtime-v37.js quiz2-runtime-v38.js quiz2-ai-bridge-v39.js quiz2-import-export-v40.js quiz2-integrity-analytics-v41.js; do grep -q "$f" .github/workflows/build-android-apk.yml; done
           grep -q "('SHARE22','quiz2-share-v22.js')" .github/workflows/build-android-apk.yml
           grep -q "('INTEGRITY41','quiz2-integrity-analytics-v41.js')" .github/workflows/build-android-apk.yml
-      - name: Commit wiring only when needed
+          grep -q '362415' .github/workflows/build-android-apk.yml
+          grep -q '5.5' .github/workflows/build-android-apk.yml
+      - name: Commit repair only when needed
         shell: bash
         run: |
           set -euo pipefail
@@ -52,5 +47,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add .github/workflows/build-android-apk.yml
-          git commit -m 'fix(build): wire V22-V41 into Android APK shell'
+          git commit -m 'fix(build): wire V22-V41 and APK v5.5 contract'
           git push origin main
