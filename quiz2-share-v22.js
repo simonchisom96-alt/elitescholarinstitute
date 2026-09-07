@@ -1,4 +1,4 @@
-/* ESI Quiz Studio Share Engine V22.2 — public publishing contract */
+/* ESI Quiz Studio Share Engine V22.3 — public publishing contract */
 (()=>{'use strict';
 const KEY='esi.quiz2.share.v22';
 const clone=x=>{try{return structuredClone(x)}catch{return JSON.parse(JSON.stringify(x))}};
@@ -7,7 +7,7 @@ const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}ca
 const clean=s=>String(s||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,42)||'quiz';
 const rand=n=>{const a='abcdefghjkmnpqrstuvwxyz23456789';let s='';for(let i=0;i<n;i++)s+=a[Math.floor(Math.random()*a.length)];return s};
 const origin=()=>{try{return location.origin&&location.origin!=='null'?location.origin:'https://elitescholarinstitute.pages.dev'}catch{return'https://elitescholarinstitute.pages.dev'}};
-const publicPage=()=>`${origin()}/quiz2-public-v24.html`;
+const publicPage=()=>`${origin()}/quiz2-public-v23.html`;
 function makeSlug(title){return `${clean(title)}-${rand(7)}`}
 function current(){return clone(window.state&&typeof window.state==='object'?window.state:read('esi.quiz2.draft',{title:'Untitled Quiz',description:'',questions:[],sections:[]}));}
 function record(){return read(KEY,[])}
