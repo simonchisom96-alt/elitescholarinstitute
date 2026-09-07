@@ -1,0 +1,55 @@
+name: Quiz2 Syntax Debug
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'quiz2-*.js'
+      - '.github/workflows/quiz2-syntax-debug.yml'
+  workflow_dispatch:
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check each JavaScript file
+        shell: bash
+        run: |
+          set -uo pipefail
+          files=(
+            quiz2-intelligence-v5.js
+            quiz2-chat.js
+            quiz2-studio-v3.js
+            quiz2-nexus-engine-v2.js
+            quiz2-communication-hub.js
+            quiz2-communication-v4.js
+            quiz2-communication-v10.js
+            quiz2-communication-v11.js
+            quiz2-engines-v7.js
+            quiz2-logic-v8.js
+            quiz2-intelligence-v9.js
+            quiz2-results-v10.js
+            quiz2-media-v11.js
+            quiz2-live-v12.js
+            quiz2-publish-v13.js
+            quiz2-sync-v14.js
+            quiz2-security-v15.js
+            quiz2-collaboration-v16.js
+            quiz2-accessibility-v17.js
+            quiz2-notifications-v18.js
+            quiz2-integration-v19.js
+            quiz2-diagnostics-v20.js
+            quiz2-quality-v21.js
+          )
+          failed=0
+          for f in "${files[@]}"; do
+            echo "===== CHECKING $f ====="
+            if node --check "$f"; then
+              echo "PASS: $f"
+            else
+              echo "FAIL: $f"
+              failed=1
+            fi
+          done
+          exit "$failed"
