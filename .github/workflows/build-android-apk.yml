@@ -18,7 +18,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f quiz2.html
-          for f in quiz2-intelligence-v5.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js quiz2-quality-v21.js quiz2-communication-v11.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js quiz2-runtime-v36.js quiz2-runtime-v37.js; do test -f "$f" || { echo "Missing module: $f"; exit 1; }; done
+          for f in quiz2-intelligence-v5.js quiz2-engines-v7.js quiz2-logic-v8.js quiz2-intelligence-v9.js quiz2-results-v10.js quiz2-media-v11.js quiz2-live-v12.js quiz2-publish-v13.js quiz2-sync-v14.js quiz2-security-v15.js quiz2-collaboration-v16.js quiz2-accessibility-v17.js quiz2-notifications-v18.js quiz2-integration-v19.js quiz2-diagnostics-v20.js quiz2-quality-v21.js quiz2-communication-v11.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js quiz2-runtime-v36.js quiz2-runtime-v37.js quiz2-runtime-v38.js; do test -f "$f" || { echo "Missing module: $f"; exit 1; }; done
       - name: Syntax-check all Quiz Studio JavaScript
         shell: bash
         run: |
@@ -36,14 +36,15 @@ jobs:
           node <<'NODE'
           const fs=require('fs'),vm=require('vm'); const store=new Map();
           const sandbox={console,structuredClone,Date,Math,JSON,localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)},window:null,navigator:{onLine:true},document:{readyState:'loading',addEventListener(n,fn){if(n==='DOMContentLoaded')fn()},querySelectorAll(){return[]},querySelector(){return null},getElementById(){return null},scripts:[],head:{appendChild(){}},documentElement:{style:{}},body:{classList:{toggle(){}}}},CustomEvent:function(type,init){this.type=type;this.detail=init?.detail}}; sandbox.window=sandbox; sandbox.dispatchEvent=()=>{}; sandbox.addEventListener=()=>{}; vm.createContext(sandbox);
-          for(const f of ['quiz2-engines-v7.js','quiz2-logic-v8.js','quiz2-intelligence-v9.js','quiz2-integration-v19.js','quiz2-diagnostics-v20.js','quiz2-quality-v21.js','quiz2-communication-v29.js','quiz2-backend-config-v30.js','quiz2-learning-v31.js','quiz2-creator-admin-v32.js','quiz2-media-v33.js','quiz2-types-v34.js','quiz2-arrangement-v35.js','quiz2-runtime-v36.js','quiz2-runtime-v37.js'])vm.runInContext(fs.readFileSync(f,'utf8'),sandbox,{filename:f});
+          for(const f of ['quiz2-engines-v7.js','quiz2-logic-v8.js','quiz2-intelligence-v9.js','quiz2-integration-v19.js','quiz2-diagnostics-v20.js','quiz2-quality-v21.js','quiz2-communication-v29.js','quiz2-backend-config-v30.js','quiz2-learning-v31.js','quiz2-creator-admin-v32.js','quiz2-media-v33.js','quiz2-types-v34.js','quiz2-arrangement-v35.js','quiz2-runtime-v36.js','quiz2-runtime-v37.js','quiz2-runtime-v38.js'])vm.runInContext(fs.readFileSync(f,'utf8'),sandbox,{filename:f});
           if(!sandbox.ESIQuizEnginesV7||!sandbox.ESIQuizLogicV8||!sandbox.ESIQuizIntelligenceV9)throw Error('core boot failed');
           if(sandbox.ESIQuizLogicV8.applyScore(2,[{type:'multiply',value:2}],{})!==4)throw Error('scoring failed');
           const c=sandbox.ESICommunicationV29.chat('smoke','Smoke');sandbox.ESICommunicationV29.message(c.id,'hello');sandbox.ESICommunicationV29.comment('public','hello');sandbox.ESICommunicationV29.leaderboard([{name:'A',score:90},{name:'B',score:80}],{});if(c.messages.length!==1||sandbox.ESICommunicationV29.state.comments.length!==1||sandbox.ESICommunicationV29.state.leaderboards[0].rows[0].rank!==1)throw Error('social failed');
           sandbox.ESIQuizLearningV31.recordAttempt({quizId:'q',score:8,total:10,topics:['math']});if(sandbox.ESIQuizLearningV31.topicMastery('math').mastery!==80)throw Error('learning failed');
           if(!sandbox.ESIQuizCreatorV32.addStatusMedia({size:15*1024*1024}).ok||sandbox.ESIQuizCreatorV32.addStatusMedia({size:15*1024*1024+1}).ok)throw Error('15MB guard failed');
           if(!sandbox.ESIQuizRuntimeV37||sandbox.ESIQuizRuntimeV37.version!==37)throw Error('V37 runtime failed');
-          console.log('V29-V37 upgrade smoke tests passed.');
+          if(!sandbox.ESIQuizRuntimeV38||sandbox.ESIQuizRuntimeV38.version!==38||!sandbox.ESIQuizRuntimeV38.health().ok)throw Error('V38 runtime failed');
+          console.log('V29-V38 upgrade smoke tests passed.');
           NODE
       - name: Prepare complete APK shell
         shell: bash
@@ -110,6 +111,7 @@ jobs:
           quiz2-arrangement-v35.js
           quiz2-runtime-v36.js
           quiz2-runtime-v37.js
+          quiz2-runtime-v38.js
           firebase-config.js
           multiplayer.js
           singleplay.js
@@ -130,7 +132,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/src/main/assets/site/quiz2.html');s=p.read_text(encoding='utf-8')
-          tags=[('V5','quiz2-intelligence-v5.js'),('V7','quiz2-engines-v7.js'),('V8','quiz2-logic-v8.js'),('V9','quiz2-intelligence-v9.js'),('V10','quiz2-results-v10.js'),('V11M','quiz2-media-v11.js'),('V12','quiz2-live-v12.js'),('V13','quiz2-publish-v13.js'),('V14','quiz2-sync-v14.js'),('V15','quiz2-security-v15.js'),('V16','quiz2-collab-v16.js'),('V17','quiz2-a11y-v17.js'),('V18','quiz2-notifications-v18.js'),('V19','quiz2-integration-v19.js'),('V20','quiz2-diagnostics-v20.js'),('V21','quiz2-quality-v21.js'),('CHAT','quiz2-chat.js'),('STUDIO','quiz2-studio-v3.js'),('NEXUS','quiz2-nexus-engine-v2.js'),('COMM10','quiz2-communication-v10.js'),('COMM11','quiz2-communication-v11.js'),('COMM29','quiz2-communication-v29.js'),('BACKEND30','quiz2-backend-config-v30.js'),('LEARN31','quiz2-learning-v31.js'),('CREATOR32','quiz2-creator-admin-v32.js'),('MEDIA33','quiz2-media-v33.js'),('TYPES34','quiz2-types-v34.js'),('ARRANGE35','quiz2-arrangement-v35.js'),('RUNTIME36','quiz2-runtime-v36.js'),('RUNTIME37','quiz2-runtime-v37.js')]
+          tags=[('V5','quiz2-intelligence-v5.js'),('V7','quiz2-engines-v7.js'),('V8','quiz2-logic-v8.js'),('V9','quiz2-intelligence-v9.js'),('V10','quiz2-results-v10.js'),('V11M','quiz2-media-v11.js'),('V12','quiz2-live-v12.js'),('V13','quiz2-publish-v13.js'),('V14','quiz2-sync-v14.js'),('V15','quiz2-security-v15.js'),('V16','quiz2-collab-v16.js'),('V17','quiz2-a11y-v17.js'),('V18','quiz2-notifications-v18.js'),('V19','quiz2-integration-v19.js'),('V20','quiz2-diagnostics-v20.js'),('V21','quiz2-quality-v21.js'),('CHAT','quiz2-chat.js'),('STUDIO','quiz2-studio-v3.js'),('NEXUS','quiz2-nexus-engine-v2.js'),('COMM10','quiz2-communication-v10.js'),('COMM11','quiz2-communication-v11.js'),('COMM29','quiz2-communication-v29.js'),('BACKEND30','quiz2-backend-config-v30.js'),('LEARN31','quiz2-learning-v31.js'),('CREATOR32','quiz2-creator-admin-v32.js'),('MEDIA33','quiz2-media-v33.js'),('TYPES34','quiz2-types-v34.js'),('ARRANGE35','quiz2-arrangement-v35.js'),('RUNTIME36','quiz2-runtime-v36.js'),('RUNTIME37','quiz2-runtime-v37.js'),('RUNTIME38','quiz2-runtime-v38.js')]
           for marker,src in tags:
             if f'ESI_APK_{marker}' not in s:
               block=f'\n<!-- ESI_APK_{marker} -->\n<script src="{src}"></script>\n';s=s.replace('</body>',block+'</body>',1) if '</body>' in s else s+block
@@ -150,25 +152,25 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with: {gradle-version: '8.11.1'}
-      - name: Build ESI APK v5.3
+      - name: Build ESI APK v5.4
         working-directory: android
         run: gradle :app:assembleDebug --no-daemon --stacktrace
-      - name: Verify APK v5.3
+      - name: Verify APK v5.4
         shell: bash
         run: |
           set -euo pipefail
           test -s android/app/build/outputs/apk/debug/app-debug.apk
           mkdir -p release; cp android/app/build/outputs/apk/debug/app-debug.apk release/ESI.apk
           EXPECTED_CODE=$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' android/app/build.gradle.kts | head -1); EXPECTED_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts | head -1)
-          test "$EXPECTED_CODE" = "362413"; test "$EXPECTED_NAME" = "5.3"
+          test "$EXPECTED_CODE" = "362414"; test "$EXPECTED_NAME" = "5.4"
           AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1); "$AAPT2" dump badging release/ESI.apk | grep -E "versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
-        with: {name: ESI-APK-v5.3, path: release/ESI.apk, if-no-files-found: error, retention-days: 30}
+        with: {name: ESI-APK-v5.4, path: release/ESI.apk, if-no-files-found: error, retention-days: 30}
       - name: Publish APK release
         env: {GH_TOKEN: ${{ github.token }}}
         shell: bash
         run: |
           set -euo pipefail
-          TAG="esi-v5.3-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
-          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v5.3" --notes "ESI v5.3 — V37 resilient runtime, communication/chat, social, leaderboard, learning, creator-admin, forms/polls, type manuals, clean arrangement and 15 MB status media guard." --latest
+          TAG="esi-v5.4-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v5.4" --notes "ESI v5.4 — V38 resilient runtime health/offline bridge, communication/chat, social, leaderboard, learning, creator-admin, forms/polls, type manuals, clean arrangement and 15 MB status media guard." --latest
