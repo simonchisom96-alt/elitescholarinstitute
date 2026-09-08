@@ -1,4 +1,4 @@
-name: ESI Remove Hero Buttons
+name: ESI Complete Requested Edits
 
 on:
   push:
@@ -17,23 +17,95 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Remove requested hero buttons and bump release
+      - name: Apply requested edits and exact release bump
         shell: bash
         run: |
           python3 <<'PY'
           from pathlib import Path
           import re
 
-          # Remove ONLY the two hero buttons, not the side-menu links or other CTAs.
+          # index.html: remove ONLY the hero CTA block.
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          pattern = re.compile(r'\s*<div class="hero-buttons">.*?</div>', re.S)
-          s2, n = pattern.subn('', s, count=1)
+          s2, n = re.subn(r'\s*<div class="hero-buttons">.*?</div>', '', s, count=1, flags=re.S)
           if n != 1:
               raise SystemExit('ERROR: expected exactly one hero-buttons block')
-          p.write_text(s2, encoding='utf-8')
+          s = s2
 
-          # Exact Android release bump: 4.8 / 362408 -> 4.9 / 362409.
+          # Shorten the Welcome hero description to roughly half, preserving meaning.
+          hero_old = 'Elite Scholar Institute is an online academic platform helping students dominate JAMB, WAEC, NECO and Post-UTME through smart tutoring, CBT drilling, mentorship, revision systems and examination strategies.'
+          hero_new = 'A smart academic platform for JAMB, WAEC, NECO and Post-UTME success.'
+          if hero_old in s:
+              s = s.replace(hero_old, hero_new, 1)
+          elif hero_new not in s:
+              raise SystemExit('ERROR: Welcome hero description not found')
+
+          # Ensure the requested menu prompt exists in the Welcome/hero area.
+          if 'PROCEED TO OUR MENU' not in s:
+              marker = hero_new
+              s = s.replace(marker, marker + '\nPROCEED TO OUR MENU', 1)
+
+          # Shorten the founders' descriptions while retaining the names and roles.
+          old1 = 'Semiu Awwal, Founder and visionary head of Elite Scholar Institute. His passion for academic excellence and youth development led to the establishment of a tutorial platform focused on transforming average students into outstanding scholars.'
+          new1 = 'Semiu Awwal, Founder and visionary head of Elite Scholar Institute, established the platform to promote academic excellence and develop outstanding scholars.'
+          if old1 in s:
+              s = s.replace(old1, new1, 1)
+
+          old2 = 'Sir. Simon Daniel, the administrative head of Elite Scholar Institute. His precision, consistency towards the development of the elite community and student-first leadership transformed the institute into a structured, results-driven academy built for real academic growth and excellence. He is also the developer of this website.'
+          new2 = 'Sir. Simon Daniel, administrative head of Elite Scholar Institute, drives its structure, consistency and student-first leadership. He is also the developer of this website.'
+          if old2 in s:
+              s = s.replace(old2, new2, 1)
+
+          # Shorten Our Academic Mission to roughly half without making it too short.
+          oldm1 = 'Elite Scholar Institute has trained numerous past JAMB candidates and has helped build strong academicp foundations for students preparing for WAEC, NECO and Post-UTME examinations.'
+          newm1 = 'Elite Scholar Institute has trained past JAMB candidates and built strong academic foundations for WAEC, NECO and Post-UTME preparation.'
+          if oldm1 in s:
+              s = s.replace(oldm1, newm1, 1)
+          oldm2 = 'Students are guided through smart revision systems, repeated question analysis, speed techniques, mock examinations, brainstorming sessions, motivational classes and mentorship systems.'
+          newm2 = 'Students receive smart revision systems, question analysis, speed techniques, mock exams, brainstorming, motivation and mentorship.'
+          if oldm2 in s:
+              s = s.replace(oldm2, newm2, 1)
+          oldm3 = 'Elite Scholar Institute formally called ESI was built to help Nigerian students compete academically at the highest level through discipline, mentorship, revision systems, CBT drilling and examination intelligence.'
+          newm3 = 'ESI was built to help Nigerian students compete academically through discipline, mentorship, revision systems, CBT drilling and exam intelligence.'
+          if oldm3 in s:
+              s = s.replace(oldm3, newm3, 1)
+
+          # Remove the entire WHY STUDENTS CHOOSE block if still present.
+          why = re.compile(r'\s*<section\s+class="section"[^>]*>\s*<div\s+class="title"[^>]*>\s*WHY STUDENTS CHOOSE ELITE SCHOLAR INSTITUTE\s*</div>.*?</section>', re.I | re.S)
+          s, nwhy = why.subn('', s, count=1)
+          if nwhy != 1:
+              raise SystemExit('ERROR: WHY STUDENTS CHOOSE block not found exactly once')
+
+          # Replace the results section heading and remove only its pre-picture description.
+          results_section = re.compile(r'(<section\b[^>]*>)(.*?HOW\s+ELITE\s+SCHOLAR\s+INSTITUTE\s+STUDENTS\s+SCORE\s+HIGH.*?)(</section>)', re.I | re.S)
+          m = results_section.search(s)
+          if not m:
+              raise SystemExit('ERROR: results section heading not found')
+          body = m.group(2)
+          heading = re.compile(r'<(h[1-6]|div|p)\b([^>]*)>\s*HOW\s+ELITE\s+SCHOLAR\s+INSTITUTE\s+STUDENTS\s+SCORE\s+HIGH\s*</\1>', re.I | re.S)
+          body, nh = heading.subn('<div class="title">TOP RESULTS OF PREVIOUS ELITES</div>', body, count=1)
+          if nh != 1:
+              raise SystemExit('ERROR: results heading element not replaced')
+          first_img = re.search(r'<img\b', body, re.I)
+          if first_img:
+              before = body[:first_img.start()]
+              after = body[first_img.start():]
+              before = re.sub(r'<p\b[^>]*>.*?</p>', '', before, flags=re.I | re.S)
+              body = before + after
+          s = s[:m.start()] + m.group(1) + body + m.group(3) + s[m.end():]
+
+          p.write_text(s, encoding='utf-8')
+
+          # app.js: uppercase the install-popup statement only.
+          p = Path('app.js')
+          s = p.read_text(encoding='utf-8')
+          if 'Install the Elite Scholar App' in s:
+              s = s.replace('Install the Elite Scholar App', 'INSTALL THE ELITE SCHOLAR APP', 1)
+          elif 'INSTALL THE ELITE SCHOLAR APP' not in s:
+              raise SystemExit('ERROR: install popup statement not found')
+          p.write_text(s, encoding='utf-8')
+
+          # Exact Android bump from the currently verified 4.8 release.
           p = Path('android/app/build.gradle.kts')
           s = p.read_text(encoding='utf-8')
           if 'versionCode = 362408' not in s or 'versionName = "4.8"' not in s:
@@ -42,7 +114,7 @@ jobs:
           s = s.replace('versionName = "4.8"', 'versionName = "4.9"', 1)
           p.write_text(s, encoding='utf-8')
 
-          # Keep the web-app build/cache identifier aligned with the Android bump.
+          # Exact app.js build bump from the currently verified 36.2348 release.
           p = Path('app.js')
           s = p.read_text(encoding='utf-8')
           if "const BUILD = '36.2348';" not in s:
@@ -51,17 +123,29 @@ jobs:
           s = s.replace("const BUILD = '36.2348';", "const BUILD = '36.2349';", 1)
           p.write_text(s, encoding='utf-8')
 
-          # Verify the requested block is gone and no unrelated CTA was removed.
+          # Hard verification before commit.
           final_index = Path('index.html').read_text(encoding='utf-8')
           if '<div class="hero-buttons">' in final_index:
-              raise SystemExit('ERROR: hero-buttons block still exists')
+              raise SystemExit('ERROR: hero buttons remain')
+          if 'PROCEED TO OUR MENU' not in final_index:
+              raise SystemExit('ERROR: menu prompt missing')
+          if 'WHY STUDENTS CHOOSE ELITE SCHOLAR INSTITUTE' in final_index:
+              raise SystemExit('ERROR: WHY block remains')
+          if 'HOW ELITE SCHOLAR INSTITUTE STUDENTS SCORE HIGH' in final_index.upper():
+              raise SystemExit('ERROR: old results heading remains')
+          if 'TOP RESULTS OF PREVIOUS ELITES' not in final_index:
+              raise SystemExit('ERROR: new results heading missing')
           if '🎓 JOIN FREE ONE-MONTH CLASS' not in final_index:
-              raise SystemExit('ERROR: side-menu Join Free Class link unexpectedly changed')
-          if 'Join Free' in final_index or 'View Plans' in final_index:
-              raise SystemExit('ERROR: old hero CTA text remains unexpectedly')
-          assert 'versionCode = 362409' in Path('android/app/build.gradle.kts').read_text(encoding='utf-8')
-          assert 'versionName = "4.9"' in Path('android/app/build.gradle.kts').read_text(encoding='utf-8')
-          assert "const BUILD = '36.2349';" in Path('app.js').read_text(encoding='utf-8')
+              raise SystemExit('ERROR: side-menu Join Free Class link was unexpectedly removed')
+          final_app = Path('app.js').read_text(encoding='utf-8')
+          if 'INSTALL THE ELITE SCHOLAR APP' not in final_app:
+              raise SystemExit('ERROR: uppercase install statement missing')
+          if 'const BUILD = \'36.2349\';' not in final_app:
+              raise SystemExit('ERROR: app.js build bump missing')
+          final_gradle = Path('android/app/build.gradle.kts').read_text(encoding='utf-8')
+          if 'versionCode = 362409' not in final_gradle or 'versionName = "4.9"' not in final_gradle:
+              raise SystemExit('ERROR: Android 4.9 bump missing')
+          print('ALL REQUESTED EDITS VERIFIED')
           PY
 
       - name: Commit requested changes and remove temporary workflow
@@ -73,5 +157,5 @@ jobs:
           git add index.html app.js android/app/build.gradle.kts .github/workflows/esi-remove-hero-buttons.yml
           git diff --cached --check
           git diff --cached --name-only
-          git commit -m 'feat: remove hero CTAs and bump Android to v4.9'
+          git commit -m 'feat: complete requested index edits and bump Android to v4.9'
           git push origin HEAD:main
