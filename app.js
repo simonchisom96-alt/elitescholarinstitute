@@ -1,8 +1,8 @@
-/* Elite Scholar Institute — application controller 36.2347 */
+/* Elite Scholar Institute — application controller 36.2348 */
 (() => {
   'use strict';
 
-  const BUILD = '36.2347';
+  const BUILD = '36.2348';
   const APK_URL = 'https://github.com/simonchisom96-alt/elitescholarinstitute/releases/latest/download/ESI.apk';
   const NOTIF_DB_URL = 'https://elite-notification-default-rtdb.firebaseio.com';
   const SW_URL = '/sw.js?v=' + BUILD;
@@ -118,7 +118,7 @@
     const text = installBox.querySelector('[data-install-text]');
     const button = installBox.querySelector('[data-install]');
     text.textContent = isAndroid && !isInstalled() ? 'Works offline, faster access, better architecture, completely safe.' : isIOS ? 'Add Elite Scholar Institute to your Home Screen.' : 'Add Elite Scholar Institute to your device.';
-    button.textContent = 'Install Elite Scholar App';
+    button.textContent = 'INSTALL THE ELITE SCHOLAR APP';
   }
   function showInstall() { if (isInstalled()) return; createInstallUI(); updateInstallText(); installBox.style.opacity='1';installBox.style.visibility='visible';installBox.style.pointerEvents='auto';installBox.style.transform='translate(-50%,0)';clearTimeout(hideTimer);hideTimer=setTimeout(hideInstall,10000); }
   function scheduleInstall(delay=15000){ if(isInstalled()||installTimer)return;clearTimeout(installTimer);installTimer=setTimeout(()=>{installTimer=null;showInstall();},delay); }
