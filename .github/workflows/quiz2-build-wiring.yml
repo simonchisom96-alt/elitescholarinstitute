@@ -22,13 +22,13 @@ jobs:
           # V42 lives in the existing quiz2-polish-v32.js filename because quiz2.html already loads it.
           if 'quiz2-polish-v32.js' not in s:
               anchor="          quiz2-communication-v29.js"
-              s=s.replace(anchor,"          quiz2-polish-v32.js\\n"+anchor,1)
+              s=s.replace(anchor,"          quiz2-polish-v32.js\n"+anchor,1)
           modules=['quiz2-share-v22.js','quiz2-ecosystem-v24.js','quiz2-api-contract-v25.js','quiz2-publish-ui-v26.js','quiz2-results-v27.js','quiz2-social-v28.js','quiz2-communication-v29.js','quiz2-backend-config-v30.js','quiz2-learning-v31.js','quiz2-creator-admin-v32.js','quiz2-media-v33.js','quiz2-types-v34.js','quiz2-arrangement-v35.js','quiz2-runtime-v36.js','quiz2-runtime-v37.js','quiz2-runtime-v38.js','quiz2-ai-bridge-v39.js','quiz2-import-export-v40.js','quiz2-integrity-analytics-v41.js','quiz2-polish-v32.js']
           # Ensure every upgraded JS is included in the APK shell file list.
           for f in modules:
               if f not in s:
                   anchor='          quiz2-communication-v29.js'
-                  if anchor in s:s=s.replace(anchor,'          '+f+'\\n'+anchor,1)
+                  if anchor in s:s=s.replace(anchor,'          '+f+'\n'+anchor,1)
           # Ensure the activation contract knows about the final V42 builder layer.
           if "('V42','quiz2-polish-v32.js')" not in s:
               marker="tags=[('V5'"
@@ -36,7 +36,6 @@ jobs:
           # Keep the release contract monotonic: v5.6 / 362416 -> v5.7 / 362417.
           for old_code in ('362414','362415','362416'):
               s=s.replace('versionCode = '+old_code,'versionCode = 362417')
-              s=s.replace("EXPECTED_CODE' = '"+old_code,"EXPECTED_CODE' = '362417")
           for old_name in ('5.4','5.5','5.6'):
               s=s.replace('versionName = "'+old_name+'"','versionName = "5.7"')
               s=s.replace('Build ESI APK v'+old_name,'Build ESI APK v5.7')
