@@ -1,0 +1,77 @@
+name: ESI Remove Hero Buttons
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  edit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove requested hero buttons and bump release
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          # Remove ONLY the two hero buttons, not the side-menu links or other CTAs.
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          pattern = re.compile(r'\s*<div class="hero-buttons">.*?</div>', re.S)
+          s2, n = pattern.subn('', s, count=1)
+          if n != 1:
+              raise SystemExit('ERROR: expected exactly one hero-buttons block')
+          p.write_text(s2, encoding='utf-8')
+
+          # Exact Android release bump: 4.8 / 362408 -> 4.9 / 362409.
+          p = Path('android/app/build.gradle.kts')
+          s = p.read_text(encoding='utf-8')
+          if 'versionCode = 362408' not in s or 'versionName = "4.8"' not in s:
+              raise SystemExit('ERROR: Android version was not exactly 4.8 / 362408 before bump')
+          s = s.replace('versionCode = 362408', 'versionCode = 362409', 1)
+          s = s.replace('versionName = "4.8"', 'versionName = "4.9"', 1)
+          p.write_text(s, encoding='utf-8')
+
+          # Keep the web-app build/cache identifier aligned with the Android bump.
+          p = Path('app.js')
+          s = p.read_text(encoding='utf-8')
+          if "const BUILD = '36.2348';" not in s:
+              raise SystemExit('ERROR: app.js BUILD was not exactly 36.2348 before bump')
+          s = s.replace("application controller 36.2348", "application controller 36.2349", 1)
+          s = s.replace("const BUILD = '36.2348';", "const BUILD = '36.2349';", 1)
+          p.write_text(s, encoding='utf-8')
+
+          # Verify the requested block is gone and no unrelated CTA was removed.
+          final_index = Path('index.html').read_text(encoding='utf-8')
+          if '<div class="hero-buttons">' in final_index:
+              raise SystemExit('ERROR: hero-buttons block still exists')
+          if '🎓 JOIN FREE ONE-MONTH CLASS' not in final_index:
+              raise SystemExit('ERROR: side-menu Join Free Class link unexpectedly changed')
+          if 'Join Free' in final_index or 'View Plans' in final_index:
+              raise SystemExit('ERROR: old hero CTA text remains unexpectedly')
+          assert 'versionCode = 362409' in Path('android/app/build.gradle.kts').read_text(encoding='utf-8')
+          assert 'versionName = "4.9"' in Path('android/app/build.gradle.kts').read_text(encoding='utf-8')
+          assert "const BUILD = '36.2349';" in Path('app.js').read_text(encoding='utf-8')
+          PY
+
+      - name: Commit requested changes and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -f .github/workflows/esi-remove-hero-buttons.yml
+          git add index.html app.js android/app/build.gradle.kts .github/workflows/esi-remove-hero-buttons.yml
+          git diff --cached --check
+          git diff --cached --name-only
+          git commit -m 'feat: remove hero CTAs and bump Android to v4.9'
+          git push origin HEAD:main
