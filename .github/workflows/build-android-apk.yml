@@ -47,7 +47,8 @@ jobs:
             quiz2-social-v28.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js \
             quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js \
             quiz2-runtime-v36.js quiz2-runtime-v37.js quiz2-runtime-v38.js \
-            quiz2-ai-bridge-v39.js quiz2-import-export-v40.js quiz2-integrity-analytics-v41.js; do
+            quiz2-ai-bridge-v39.js quiz2-import-export-v40.js quiz2-integrity-analytics-v41.js \
+            quiz2-polish-v32.js; do
             test -f "$f" || { echo "Missing required Quiz Studio file: $f"; exit 1; }
           done
 
@@ -110,7 +111,7 @@ jobs:
             return el;
           };
           vm.createContext(sandbox);
-          const files=['quiz2-engines-v7.js','quiz2-logic-v8.js','quiz2-intelligence-v9.js','quiz2-integration-v19.js','quiz2-diagnostics-v20.js','quiz2-quality-v21.js','quiz2-share-v22.js','quiz2-ecosystem-v24.js','quiz2-api-contract-v25.js','quiz2-communication-v29.js','quiz2-backend-config-v30.js','quiz2-learning-v31.js','quiz2-creator-admin-v32.js','quiz2-media-v33.js','quiz2-types-v34.js','quiz2-arrangement-v35.js','quiz2-runtime-v36.js','quiz2-runtime-v37.js','quiz2-runtime-v38.js','quiz2-ai-bridge-v39.js','quiz2-import-export-v40.js','quiz2-integrity-analytics-v41.js'];
+          const files=['quiz2-engines-v7.js','quiz2-logic-v8.js','quiz2-intelligence-v9.js','quiz2-integration-v19.js','quiz2-diagnostics-v20.js','quiz2-quality-v21.js','quiz2-share-v22.js','quiz2-ecosystem-v24.js','quiz2-api-contract-v25.js','quiz2-communication-v29.js','quiz2-backend-config-v30.js','quiz2-learning-v31.js','quiz2-creator-admin-v32.js','quiz2-media-v33.js','quiz2-types-v34.js','quiz2-arrangement-v35.js','quiz2-runtime-v36.js','quiz2-runtime-v37.js','quiz2-runtime-v38.js','quiz2-ai-bridge-v39.js','quiz2-import-export-v40.js','quiz2-integrity-analytics-v41.js','quiz2-polish-v32.js'];
           for(const f of files)vm.runInContext(fs.readFileSync(f,'utf8'),sandbox,{filename:f});
           if(!sandbox.ESIQuizEnginesV7||!sandbox.ESIQuizLogicV8||!sandbox.ESIQuizIntelligenceV9)throw Error('core boot failed');
           if(sandbox.ESIQuizLogicV8.applyScore(2,[{type:'multiply',value:2}],{})!==4)throw Error('scoring failed');
@@ -122,7 +123,8 @@ jobs:
           if(!sandbox.ESIQuizRuntimeV37||sandbox.ESIQuizRuntimeV37.version!==37)throw Error('V37 runtime failed');
           if(!sandbox.ESIQuizRuntimeV38||sandbox.ESIQuizRuntimeV38.version!==38||!sandbox.ESIQuizRuntimeV38.health().ok)throw Error('V38 runtime failed');
           if(!sandbox.ESIQuizAPIContractV25||!sandbox.ESIBackendV30)throw Error('backend contract failed');
-          console.log('V22-V41 smoke tests passed.');
+          if(!sandbox.ESIQuizPolishV32Esc||sandbox.ESIQuizPolishV32Esc.version!==32)throw Error('V42 polish bridge failed');
+          console.log('V22-V42 smoke tests passed.');
           NODE
 
       - name: Prepare complete APK shell
@@ -202,6 +204,7 @@ jobs:
           quiz2-ai-bridge-v39.js
           quiz2-import-export-v40.js
           quiz2-integrity-analytics-v41.js
+          quiz2-polish-v32.js
           firebase-config.js
           multiplayer.js
           singleplay.js
@@ -241,14 +244,15 @@ jobs:
             ('BACKEND30','quiz2-backend-config-v30.js'),('LEARN31','quiz2-learning-v31.js'),('CREATOR32','quiz2-creator-admin-v32.js'),
             ('MEDIA33','quiz2-media-v33.js'),('TYPES34','quiz2-types-v34.js'),('ARRANGE35','quiz2-arrangement-v35.js'),
             ('RUNTIME36','quiz2-runtime-v36.js'),('RUNTIME37','quiz2-runtime-v37.js'),('RUNTIME38','quiz2-runtime-v38.js'),
-            ('AI39','quiz2-ai-bridge-v39.js'),('IMPORT40','quiz2-import-export-v40.js'),('ANALYTICS41','quiz2-integrity-analytics-v41.js')
+            ('AI39','quiz2-ai-bridge-v39.js'),('IMPORT40','quiz2-import-export-v40.js'),('ANALYTICS41','quiz2-integrity-analytics-v41.js'),
+            ('V42','quiz2-polish-v32.js')
           ]
           for marker,src in tags:
             if f'ESI_APK_{marker}' not in s:
               block=f'\n<!-- ESI_APK_{marker} -->\n<script src="{src}"></script>\n'
               s=s.replace('</body>',block+'</body>',1) if '</body>' in s else s+block
           p.write_text(s,encoding='utf-8')
-          print('APK engine activation complete: V5-V41.')
+          print('APK engine activation complete: V5-V42.')
           PY
 
       - name: Apply Android WebView compatibility
@@ -274,11 +278,11 @@ jobs:
         with:
           gradle-version: '8.11.1'
 
-      - name: Build ESI APK v5.6
+      - name: Build ESI APK v5.8
         working-directory: android
         run: gradle :app:assembleDebug --no-daemon --stacktrace
 
-      - name: Verify APK v5.6
+      - name: Verify APK v5.8
         shell: bash
         run: |
           set -euo pipefail
@@ -287,14 +291,14 @@ jobs:
           cp android/app/build/outputs/apk/debug/app-debug.apk release/ESI.apk
           EXPECTED_CODE=$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' android/app/build.gradle.kts | head -1)
           EXPECTED_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts | head -1)
-          test "$EXPECTED_CODE" = '362416'
-          test "$EXPECTED_NAME" = '5.6'
+          test "$EXPECTED_CODE" = '362418'
+          test "$EXPECTED_NAME" = '5.8'
           AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1)
           "$AAPT2" dump badging release/ESI.apk | grep -E "versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ESI-APK-v5.6
+          name: ESI-APK-v5.8
           path: release/ESI.apk
           if-no-files-found: error
           retention-days: 30
@@ -305,5 +309,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="esi-v5.6-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
-          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v5.6" --notes "ESI v5.6 — V41 integrity/analytics bridge, AI/backend boundary, import/export foundation, communication/chat, social, leaderboard, learning, creator-admin, forms/polls, type manuals, clean arrangement and 15 MB status media guard." --latest
+          TAG="esi-v5.8-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          gh release create "$TAG" release/ESI.apk --title "ESI Android APK v5.8" --notes "ESI v5.8 — Quiz Studio V42 builder upgrade, V41 integrity/analytics bridge, AI/backend boundary, import/export foundation, communication/chat, social, leaderboard, learning, creator-admin, forms/polls, type manuals, clean arrangement and 15 MB status media guard." --latest
