@@ -11,8 +11,8 @@ android {
         applicationId = "com.elitescholarinstitute.app"
         minSdk = 23
         targetSdk = 35
-        versionCode = 362408
-        versionName = "4.8"
+        versionCode = 362409
+        versionName = "4.9"
     }
 
     buildTypes {
