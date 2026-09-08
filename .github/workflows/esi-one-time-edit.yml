@@ -1,0 +1,121 @@
+name: ESI One-Time Edit
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  edit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply requested edits
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          # quiz.html: replace only the requested mode/gate wording.
+          p = Path('quiz.html')
+          s = p.read_text(encoding='utf-8')
+          old = 'Single Player is free. Multiplayer is a one-time unlock.'
+          if old in s:
+              s = s.replace(old, 'Choose your mode and enjoy real-life gameplay with scholars worldwide.')
+          old_status = '🔒 Multiplayer Locked'
+          if old_status in s:
+              s = s.replace(old_status, '🌍 Real-Life Gameplay Worldwide')
+          p.write_text(s, encoding='utf-8')
+
+          # index.html: shorten only the requested copy and remove the full WHY block.
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          s = s.replace(
+              'Elite Scholar Institute is an online academic platform helping students dominate JAMB, WAEC, NECO and Post-UTME through smart tutoring, CBT drilling, mentorship, revision systems and examination strategies.',
+              'A smart academic platform helping students excel in JAMB, WAEC, NECO and Post-UTME.'
+          )
+
+          s = s.replace('Semiu Awwal, Founder and visionary head of Elite Scholar Institute. His passion for academic excellence and youth development led to the establishment of a tutorial platform focused on transforming average students into outstanding scholars.',
+                        'Semiu Awwal, Founder and visionary head of Elite Scholar Institute, built a tutorial platform driven by academic excellence and youth development.')
+          s = s.replace('Sir. Simon Daniel, the administrative head of Elite Scholar Institute. His precision, consistency towards the development of the elite community and student-first leadership transformed the institute into a structured, results-driven academy built for real academic growth and excellence. He is also the developer of this website.',
+                        'Sir. Simon Daniel, administrative head, helped shape ESI into a structured, results-driven academy through consistency, precision and student-first leadership. He is also the developer of this website.')
+
+          s = s.replace('Elite Scholar Institute has trained numerous past JAMB candidates and has helped build strong academicp foundations for students preparing for WAEC, NECO and Post-UTME examinations.',
+                        'Elite Scholar Institute has trained past JAMB candidates and built strong academic foundations for WAEC, NECO and Post-UTME preparation.')
+          s = s.replace('Students are guided through smart revision systems, repeated question analysis, speed techniques, mock examinations, brainstorming sessions, motivational classes and mentorship systems.',
+                        'Students receive smart revision, question analysis, speed techniques, mock exams, brainstorming, motivation and mentorship.')
+          s = s.replace('Elite Scholar Institute formally called ESI was built to help Nigerian students compete academically at the highest level through discipline, mentorship, revision systems, CBT drilling and examination intelligence.',
+                        'ESI was built to help Nigerian students compete academically through discipline, mentorship, revision, CBT drilling and examination intelligence.')
+
+          why = re.compile(r'\s*<section class="section">\s*<div class="title">\s*WHY STUDENTS CHOOSE ELITE SCHOLAR INSTITUTE\s*</div>.*?</section>', re.S)
+          s, n = why.subn('', s, count=1)
+          if n != 1:
+              raise SystemExit('ERROR: requested WHY STUDENTS block was not found exactly once')
+
+          # Shorten the hero CTA labels without changing their links/styles.
+          s = s.replace('>\n        Join Free Class\n      </a>', '>\n        Join Free\n      </a>', 1)
+          s = s.replace('>\n        View Pricing\n      </a>', '>\n        View Plans\n      </a>', 1)
+
+          # Add the requested menu prompt in the hero area if it is not already present.
+          if 'PROCEED TO OUR MENU' not in s:
+              marker = '<div class="btn-row">'
+              if marker not in s:
+                  raise SystemExit('ERROR: hero button row marker not found')
+              s = s.replace(marker, '<div style="margin:0 0 12px;text-align:center;font-weight:800;color:#ffd700;font-size:13px;">PROCEED TO OUR MENU</div>\n    ' + marker, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+          # app.js: requested install text + cache/build bump.
+          p = Path('app.js')
+          s = p.read_text(encoding='utf-8')
+          if "button.textContent = 'Install Elite Scholar App';" not in s:
+              raise SystemExit('ERROR: install button text not found')
+          s = s.replace("button.textContent = 'Install Elite Scholar App';", "button.textContent = 'INSTALL THE ELITE SCHOLAR APP';", 1)
+          s = s.replace("application controller 36.2347", "application controller 36.2348", 1)
+          s = s.replace("const BUILD = '36.2347';", "const BUILD = '36.2348';", 1)
+          p.write_text(s, encoding='utf-8')
+
+          # Android release bump: 4.7/362407 -> 4.8/362408.
+          p = Path('android/app/build.gradle.kts')
+          s = p.read_text(encoding='utf-8')
+          if 'versionCode = 362407' not in s or 'versionName = "4.7"' not in s:
+              raise SystemExit('ERROR: Android version was not exactly 4.7 / 362407 before bump')
+          s = s.replace('versionCode = 362407', 'versionCode = 362408', 1)
+          s = s.replace('versionName = "4.7"', 'versionName = "4.8"', 1)
+          p.write_text(s, encoding='utf-8')
+
+          # Final assertions so the commit cannot contain a partial edit.
+          q = Path('quiz.html').read_text(encoding='utf-8')
+          i = Path('index.html').read_text(encoding='utf-8')
+          a = Path('app.js').read_text(encoding='utf-8')
+          g = Path('android/app/build.gradle.kts').read_text(encoding='utf-8')
+          assert old not in q
+          assert old_status not in q
+          assert 'Choose your mode and enjoy real-life gameplay with scholars worldwide.' in q
+          assert 'WHY STUDENTS CHOOSE ELITE SCHOLAR INSTITUTE' not in i
+          assert 'PROCEED TO OUR MENU' in i
+          assert 'INSTALL THE ELITE SCHOLAR APP' in a
+          assert "const BUILD = '36.2348';" in a
+          assert 'versionCode = 362408' in g and 'versionName = "4.8"' in g
+          PY
+
+      - name: Commit requested changes and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -f .github/workflows/esi-one-time-edit.yml
+          git add quiz.html index.html app.js android/app/build.gradle.kts .github/workflows/esi-one-time-edit.yml
+          git diff --cached --check
+          git diff --cached --name-only
+          git commit -m 'feat: update ESI copy and bump Android to v4.8'
+          git push origin HEAD:main
