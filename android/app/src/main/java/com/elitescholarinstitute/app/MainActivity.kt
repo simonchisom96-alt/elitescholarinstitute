@@ -3,16 +3,23 @@ package com.elitescholarinstitute.app
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
+import android.app.DownloadManager
+import android.content.ContentValues
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Base64
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.JsResult
 import android.webkit.MimeTypeMap
+import android.webkit.URLUtil
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -20,6 +27,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
@@ -117,6 +125,101 @@ class MainActivity : ComponentActivity() {
         return networkAsset(pathAndQuery, path)
     }
 
+    private fun sanitizeDownloadName(name: String, url: String, mime: String): String {
+        val guessed = URLUtil.guessFileName(url, null, mime)
+        val candidate = name.substringAfterLast('/').trim().ifBlank { guessed }
+        return candidate.replace(Regex("[\\\\/:*?\"<>|]"), "_").ifBlank { guessed.ifBlank { "download" } }
+    }
+
+    private fun saveLocalDownload(name: String, mime: String, bytes: ByteArray) {
+        val safeName = sanitizeDownloadName(name, name, mime)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, safeName)
+                put(MediaStore.Downloads.MIME_TYPE, mime.ifBlank { "application/octet-stream" })
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                put(MediaStore.Downloads.IS_PENDING, 1)
+            }
+            val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                ?: throw IllegalStateException("Unable to create download")
+            try {
+                contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                    ?: throw IllegalStateException("Unable to open download")
+                val done = ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }
+                contentResolver.update(uri, done, null, null)
+            } catch (e: Exception) {
+                contentResolver.delete(uri, null, null)
+                throw e
+            }
+        } else {
+            val dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: filesDir
+            dir.mkdirs()
+            File(dir, safeName).writeBytes(bytes)
+        }
+        runOnUiThread { Toast.makeText(this, "Downloaded: $safeName", Toast.LENGTH_SHORT).show() }
+    }
+
+    private fun downloadAppAsset(url: String, requestedName: String, requestedMime: String) {
+        Thread {
+            try {
+                val uri = Uri.parse(url)
+                val path = uri.path?.removePrefix("/") ?: throw FileNotFoundException("Missing asset path")
+                val pathAndQuery = if (uri.query.isNullOrEmpty()) "/$path" else "/$path?${uri.query}"
+                val mime = requestedMime.ifBlank { mimeType(path) }
+                val name = sanitizeDownloadName(requestedName, path, mime)
+                val bytes = try {
+                    assets.open("site/$path").use { it.readBytes() }
+                } catch (_: Exception) {
+                    val cached = File(diskCache, cacheKey(pathAndQuery))
+                    if (cached.isFile && cached.length() > 0L) {
+                        cached.readBytes()
+                    } else {
+                        val response = networkAsset(pathAndQuery, path)
+                            ?: throw FileNotFoundException("Unable to fetch $path")
+                        response.data?.use { it.readBytes() }
+                            ?: throw FileNotFoundException("Empty asset $path")
+                    }
+                }
+                saveLocalDownload(name, mime, bytes)
+            } catch (_: Exception) {
+                runOnUiThread { Toast.makeText(this, "Download failed", Toast.LENGTH_SHORT).show() }
+            }
+        }.start()
+    }
+
+    private fun startNativeDownload(url: String, requestedName: String, requestedMime: String, contentDisposition: String? = null) {
+        val uri = Uri.parse(url)
+        val mime = requestedMime.ifBlank { mimeType(uri.path ?: url) }
+        val guessedName = URLUtil.guessFileName(url, contentDisposition, mime)
+        val name = sanitizeDownloadName(requestedName.ifBlank { guessedName }, url, mime)
+        if (uri.host == "appassets.androidplatform.net") {
+            downloadAppAsset(url, name, mime)
+            return
+        }
+        if (uri.scheme == "http" || uri.scheme == "https") {
+            try {
+                val manager = getSystemService(DownloadManager::class.java)
+                    ?: throw IllegalStateException("Download service unavailable")
+                val request = DownloadManager.Request(uri).apply {
+                    setTitle(name)
+                    setDescription("Elite Scholar Institute")
+                    setMimeType(mime)
+                    setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
+                    addRequestHeader("User-Agent", webView.settings.userAgentString)
+                    val cookie = CookieManager.getInstance().getCookie(url)
+                    if (!cookie.isNullOrBlank()) addRequestHeader("Cookie", cookie)
+                }
+                manager.enqueue(request)
+                Toast.makeText(this, "Download started: $name", Toast.LENGTH_SHORT).show()
+            } catch (_: Exception) {
+                Toast.makeText(this, "Download failed", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+        Toast.makeText(this, "Unsupported download", Toast.LENGTH_SHORT).show()
+    }
+
     private fun injectAppJs() = webView.evaluateJavascript(buildAndroidBridgeJs(), null)
 
     private fun buildAndroidBridgeJs(): String = """
@@ -154,6 +257,35 @@ class MainActivity : ComponentActivity() {
             window.ESIAndroid.share(data.title || 'Elite Scholar Institute', data.text || '', data.url || '');
             return Promise.resolve();
           };
+          document.addEventListener('click', function(event){
+            const anchor = event.target && event.target.closest ? event.target.closest('a[download]') : null;
+            if(!anchor) return;
+            const href = anchor.href || anchor.getAttribute('href') || '';
+            if(!href) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const name = anchor.getAttribute('download') || '';
+            const type = anchor.dataset.mime || '';
+            if(href.indexOf('blob:') === 0 || href.indexOf('data:') === 0){
+              fetch(href).then(r => r.blob()).then(blob => {
+                const reader = new FileReader();
+                reader.onload = function(){
+                  const result = String(reader.result || '');
+                  const comma = result.indexOf(',');
+                  const base64 = comma >= 0 ? result.slice(comma + 1) : result;
+                  const chunkSize = 180000;
+                  window.ESIAndroid.beginDownloadFile(name || 'download', blob.type || type || 'application/octet-stream');
+                  for(let i=0; i<base64.length; i+=chunkSize){
+                    window.ESIAndroid.appendDownloadChunk(base64.slice(i, i+chunkSize));
+                  }
+                  window.ESIAndroid.finishDownloadFile();
+                };
+                reader.readAsDataURL(blob);
+              }).catch(() => window.ESIAndroid.downloadUrl(href, name, type));
+            } else {
+              window.ESIAndroid.downloadUrl(href, name, type);
+            }
+          }, true);
         })();
     """.trimIndent()
 
@@ -163,6 +295,9 @@ class MainActivity : ComponentActivity() {
         private var pendingTitle = ""
         private var pendingText = ""
         private var pendingOutput: FileOutputStream? = null
+        private var pendingDownloadName = "download"
+        private var pendingDownloadMime = "application/octet-stream"
+        private var pendingDownloadOutput: FileOutputStream? = null
 
         @JavascriptInterface
         fun beginShareFile(name: String, mime: String, title: String, text: String) {
@@ -205,6 +340,63 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
+        fun beginDownloadFile(name: String, mime: String) {
+            synchronized(this) {
+                pendingDownloadOutput?.close()
+                pendingDownloadName = name.substringAfterLast('/').ifBlank { "download" }
+                pendingDownloadMime = mime.ifBlank { "application/octet-stream" }
+                pendingDownloadOutput = FileOutputStream(File(cacheDir, "esi-download-$${System.nanoTime()}.part"), false)
+            }
+        }
+
+        @JavascriptInterface
+        fun appendDownloadChunk(chunk: String) {
+            synchronized(this) {
+                val out = pendingDownloadOutput ?: throw IllegalStateException("No download is open")
+                out.write(Base64.decode(chunk, Base64.DEFAULT))
+            }
+        }
+
+        @JavascriptInterface
+        fun finishDownloadFile() {
+            val temp: File
+            val name: String
+            val mime: String
+            synchronized(this) {
+                pendingDownloadOutput?.flush()
+                pendingDownloadOutput?.close()
+                pendingDownloadOutput = null
+                temp = File(cacheDir, "esi-download-temp-$${System.nanoTime()}.bin")
+                throwIfNoPendingDownload(temp)
+                name = pendingDownloadName
+                mime = pendingDownloadMime
+            }
+            Thread {
+                try {
+                    saveLocalDownload(name, mime, temp.readBytes())
+                } catch (_: Exception) {
+                    runOnUiThread { Toast.makeText(this@MainActivity, "Download failed", Toast.LENGTH_SHORT).show() }
+                } finally {
+                    temp.delete()
+                }
+            }.start()
+        }
+
+        private fun throwIfNoPendingDownload(target: File) {
+            val candidates = cacheDir.listFiles { file -> file.name.startsWith("esi-download-") && file.name.endsWith(".part") }
+            val source = candidates?.maxByOrNull { it.lastModified() } ?: throw IllegalStateException("No download is open")
+            if (!source.renameTo(target)) {
+                source.copyTo(target, overwrite = true)
+                source.delete()
+            }
+        }
+
+        @JavascriptInterface
+        fun downloadUrl(url: String, name: String, mime: String) {
+            runOnUiThread { startNativeDownload(url, name, mime) }
+        }
+
+        @JavascriptInterface
         fun openPdf(name: String, base64: String) {
             try {
                 val safeName = name.substringAfterLast('/').ifBlank { "document.pdf" }
@@ -215,7 +407,7 @@ class MainActivity : ComponentActivity() {
                 }
                 runOnUiThread { openLocalPdf(file) }
             } catch (_: Exception) {
-                runOnUiThread { android.widget.Toast.makeText(this@MainActivity, "Unable to open PDF", android.widget.Toast.LENGTH_SHORT).show() }
+                runOnUiThread { Toast.makeText(this@MainActivity, "Unable to open PDF", Toast.LENGTH_SHORT).show() }
             }
         }
 
@@ -247,7 +439,7 @@ class MainActivity : ComponentActivity() {
             }
             startActivity(Intent.createChooser(intent, "Open PDF with"))
         } catch (_: Exception) {
-            android.widget.Toast.makeText(this, "No PDF viewer is available", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "No PDF viewer is available", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -263,7 +455,7 @@ class MainActivity : ComponentActivity() {
             }
             startActivity(Intent.createChooser(intent, "Share with"))
         } catch (_: Exception) {
-            android.widget.Toast.makeText(this, "Unable to share file", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Unable to share file", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -326,11 +518,14 @@ class MainActivity : ComponentActivity() {
             mediaPlaybackRequiresUserGesture = true
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString ESIAndroid/4.0"
+            userAgentString = "$userAgentString ESIAndroid/4.10"
         }
         webView.addJavascriptInterface(androidBridge, "ESIAndroid")
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
+        webView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+            startNativeDownload(url, URLUtil.guessFileName(url, contentDisposition, mimeType), mimeType, contentDisposition)
+        }
 
         webView.webChromeClient = object : WebChromeClient() {
             override fun onJsAlert(view: WebView?, url: String?, message: String?, result: JsResult): Boolean {
@@ -402,7 +597,7 @@ class MainActivity : ComponentActivity() {
                 if (uri.scheme == "http" || uri.scheme == "https") return false
                 if (uri.scheme == "blob" && uri.toString().startsWith("blob:")) {
                     val quoted = org.json.JSONObject.quote(uri.toString())
-                    view.evaluateJavascript("fetch($quoted).then(r=>r.blob()).then(b=>{const x=new FileReader();x.onload=()=>{const s=String(x.result||'');window.ESIAndroid.beginShareFile('document.pdf','application/pdf','','');window.ESIAndroid.appendShareChunk(s.slice(s.indexOf(',')+1));window.ESIAndroid.finishShareFile()};x.readAsDataURL(b)})", null)
+                    view.evaluateJavascript("fetch($quoted).then(r=>r.blob()).then(b=>{const x=new FileReader();x.onload=()=>{const s=String(x.result||'');window.ESIAndroid.beginDownloadFile('document.pdf','application/pdf');window.ESIAndroid.appendDownloadChunk(s.slice(s.indexOf(',')+1));window.ESIAndroid.finishDownloadFile()};x.readAsDataURL(b)})", null)
                     return true
                 }
                 return try { startActivity(Intent(Intent.ACTION_VIEW, uri)); true } catch (_: Exception) { true }
