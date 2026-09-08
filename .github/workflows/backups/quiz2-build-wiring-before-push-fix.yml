@@ -1,0 +1,70 @@
+name: ESI Quiz Studio Android Wiring Repair
+on:
+  push:
+    branches: [main]
+    paths: ['quiz2-*.js','android/app/build.gradle.kts','.github/workflows/build-android-apk.yml','.github/workflows/quiz2-build-wiring.yml']
+  workflow_dispatch:
+permissions: {contents: write}
+concurrency: {group: quiz2-build-wiring, cancel-in-progress: false}
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Repair Android build wiring and version contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/build-android-apk.yml')
+          s=p.read_text(encoding='utf-8')
+          # V42 uses the existing quiz2-polish-v32.js filename because quiz2.html already loads it.
+          if 'quiz2-polish-v32.js' not in s:
+              anchor='            quiz2-share-v22.js'
+              s=s.replace(anchor, '            quiz2-polish-v32.js '+"\\n"+anchor, 1)
+          # Add V42 to the required source-set check.
+          if 'quiz2-integrity-analytics-v41.js; do' in s and 'quiz2-polish-v32.js' not in s.split('quiz2-integrity-analytics-v41.js; do',1)[0]:
+              s=s.replace('quiz2-integrity-analytics-v41.js; do', 'quiz2-integrity-analytics-v41.js quiz2-polish-v32.js; do', 1)
+          # Add V42 to the deterministic smoke-test load list without changing existing tests.
+          if "'quiz2-integrity-analytics-v41.js'];" in s:
+              s=s.replace("'quiz2-integrity-analytics-v41.js'];", "'quiz2-integrity-analytics-v41.js','quiz2-polish-v32.js'];", 1)
+          # Ensure the activation contract knows about V42.
+          if "('V42','quiz2-polish-v32.js')" not in s:
+              marker="('V5','quiz2-intelligence-v5.js')"
+              s=s.replace(marker, "('V42','quiz2-polish-v32.js'),"+marker, 1)
+          # Keep the Android release contract synchronized at v5.7 / 362417.
+          import re
+          s=re.sub(r'versionCode = [0-9]+', 'versionCode = 362417', s)
+          s=re.sub(r'versionName = "[^"]+"', 'versionName = "5.7"', s)
+          s=re.sub(r'Build ESI APK v[0-9.]+', 'Build ESI APK v5.7', s)
+          s=re.sub(r'Verify APK v[0-9.]+', 'Verify APK v5.7', s)
+          s=re.sub(r'ESI-APK-v[0-9.]+', 'ESI-APK-v5.7', s)
+          s=re.sub(r'ESI Android APK v[0-9.]+', 'ESI Android APK v5.7', s)
+          s=s.replace("test \"$EXPECTED_CODE\" = '362416'", "test \"$EXPECTED_CODE\" = '362417'")
+          s=s.replace("test \"$EXPECTED_NAME\" = '5.6'", "test \"$EXPECTED_NAME\" = '5.7'")
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Verify wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f quiz2-polish-v32.js
+          grep -q 'quiz2-polish-v32.js' .github/workflows/build-android-apk.yml
+          grep -q "('V42','quiz2-polish-v32.js')" .github/workflows/build-android-apk.yml
+          grep -q '362417' .github/workflows/build-android-apk.yml
+          grep -q '5.7' .github/workflows/build-android-apk.yml
+          grep -q 'Build ESI APK v5.7' .github/workflows/build-android-apk.yml
+          grep -q 'Verify APK v5.7' .github/workflows/build-android-apk.yml
+          for f in quiz2-share-v22.js quiz2-ecosystem-v24.js quiz2-api-contract-v25.js quiz2-publish-ui-v26.js quiz2-results-v27.js quiz2-social-v28.js quiz2-communication-v29.js quiz2-backend-config-v30.js quiz2-learning-v31.js quiz2-creator-admin-v32.js quiz2-media-v33.js quiz2-types-v34.js quiz2-arrangement-v35.js quiz2-runtime-v36.js quiz2-runtime-v37.js quiz2-runtime-v38.js quiz2-ai-bridge-v39.js quiz2-import-export-v40.js quiz2-integrity-analytics-v41.js quiz2-polish-v32.js; do grep -q "$f" .github/workflows/build-android-apk.yml; done
+      - name: Commit repair only when needed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- .github/workflows/build-android-apk.yml; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/build-android-apk.yml
+          git commit -m 'fix(build): wire Quiz2 V42 and APK v5.7 contract'
+          git push origin main
