@@ -31,17 +31,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify and align current JS build versions
+      - name: Verify source and APK version
         shell: bash
         run: |
           set -euo pipefail
-          sed -i "s/const BUILD = '[^']*'/const BUILD = '36.2411'/" app.js
-          sed -i "s/esi-cache-[0-9.]*/esi-cache-36.2411/" sw.js
-          sed -i "s/esi-pdf-cache-[0-9.]*/esi-pdf-cache-36.2411/" downloader.js
           grep -m1 "const BUILD" app.js
           grep -m1 "CACHE_VERSION" sw.js
           grep -m1 "CACHE_NAME" downloader.js
           grep -E "versionCode|versionName" android/app/build.gradle.kts
+          grep -q 'versionCode = 362415' android/app/build.gradle.kts
+          grep -q 'versionName = "4.15"' android/app/build.gradle.kts
           test -f Englishtextbook.html
 
       - name: Bundle defined ESI offline shell
@@ -149,49 +148,27 @@ jobs:
           rsync -a --files-from=/tmp/esi-shell.txt ./ android/app/src/main/assets/site/
           cp -f logo.jpg android/app/src/main/res/drawable/logo.jpg
 
-      - name: Apply targeted Android WebView download fixes
+      - name: Apply minimal Android download build repair
         shell: bash
         run: |
           set -euo pipefail
           TARGET="android/app/src/main/java/com/elitescholarinstitute/app/MainActivity.kt"
           test -f "$TARGET"
-          sed -i 's/allowContentAccess = false/allowContentAccess = true/' "$TARGET"
-          sed -i 's/allowFileAccess = false/allowFileAccess = true/' "$TARGET"
-          sed -i 's/ESIAndroid\/4\.0/ESIAndroid\/4.10/' "$TARGET"
-          python3 - <<'PY'
-          from pathlib import Path
-          import base64
-          p = Path("android/app/src/main/java/com/elitescholarinstitute/app/MainActivity.kt")
-          s = p.read_text()
-          s = s.replace('$${System.nanoTime()}', '${System.nanoTime()}')
-          fn = base64.b64decode("ICAgIHByaXZhdGUgZnVuIGJ1aWxkVW5pdmVyc2FsSW1hZ2VEb3dubG9hZEpzKCk6IFN0cmluZyA9ICIiIgooZnVuY3Rpb24oKXsKIGlmKHdpbmRvdy5fX2VzaVVuaXZlcnNhbEltYWdlRG93bmxvYWRJbnN0YWxsZWRyZXR1cm47CiB3aW5kb3cuX19lc2lVbml2ZXJzYWxJbWFnZURvd25sb2FkSW5zdGFsbGVkPXRydWU7CiBmdW5jdGlvbiBmaWxlbmFtZSh1cmwpewogIHRyeXt2YXIg cD1uZXcgVVJMKHVybCxs b2NhdGlvbi5ocmVmKS5wYXRobmFtZTt2YXIg bj1wLnNwbGl0KCcvJykucG9wKCk7cmV0dXJuIG58fCdpbWFnZS5qcGc nO30gY2F0Y2goZSl7cmV0dXJuICdpbWFnZS5qcGc nO30KIH0KIGZ1bmN0aW9uIHNlbmQodXJsLG5hbWUpewogIGlmKCF1cmx8fHVybC5pbmRleE9mKCdqYXZhc2NyaXB0OicpPT09MClyZXR1cm4gZmFsc2U7CiAgdmFyIGlzSW1hZ2U9L1wuKGpwZT9nfHBuZ3xnaWZ8d2VicHxzdmcpKD86Wz8jXXwkKS9pLnRlc3QoU3RyaW5nKHVybCkpOwogIGlmKCFpc0ltYWdlKXJldHVybiBmYWxzZTsKICB0cnl7d2luZG93LkVTSUFuZHJvaWQuZG93bmxvYWRVcmwodXJsLG5hbWV8fGZpbGVuYW1lKHVybCksJycpO3JldHVybiB0cnVlO31jYXRjaChlKXtyZXR1cm4gZmFsc2U7fQogfQogZG9jdW1lLmFkZEV2ZW50TGlzdGVuZXIoJ2NsaWNrJyxmdW5jdGlvbihlKXsKICB2YXIgZWw9ZS50YXJnZXQ7CiAgd2hpbGUoZWwmJmVsIT09ZG9jdW1lbnQmJighKChlbC50YWdOYW1lfHwnJykudG9Mb3dlckNhc2UoKT09PSdhJ3x8KGVsLnRhZ05hbWV8fCcnKS50b0xvd2VyQ2FzZSgpPT09J2J1dHRvbicnfHxlbC5nZXRBdHRyaWJ1dGUmJmVsLmdldEF0dHJpYnV0ZSgncm9sZScpPT09J2J1dHRvbicpKWVsPWVsLnBhcmVudEVsZW1lbnQ7CiAgaWYoIWVsKXJldHVybjsKICB2YXIg aHJlZj1lbC5nZXRBdHRyaWJ1dGUoJ2RhdGEtZG93bmxvYWQtdXJsJyl8fGVsLmdldEF0dHJpYnV0ZSgnZGF0YS1ocmVmJyl8fGVsLmdldEF0dHJpYnV0ZSgnZGF0YS11cmwnKXx8ZWwuZ2V0QXR0cmlidXRlKCdocmVmJyk7CiAgdmFyIGltZz1lbC5xdWVyeVNlbGVjdG9yJiZlbC5xdWVyeVNlbGVjdG9yKCdpbWcnKTsKICBpZighaHJlZiYmaW1nKWdyZWY9aW1nLmN1cnJlbnRTcmN8fGltZy5zcmM7CiAgdmFyIG5hbWU9ZWwuZ2V0QXR0cmlidGUoJ2Rvd25sb2FkJyl8fGVsLmdldEF0dHJpYnV0ZSgnZGF0YS1kb3dubG9hZC1uYW1lJyl8fCcnOwogIGlmKCFuYW1lJiZpbWcpbmFtZT0oaW1nLmdldEF0dHJpYnV0ZSgnYWx0Jyl8fCcnKS50cmltKCk7CiAgaWYoc2VuZChoZWYsbmFtZSkpe2UucHJldmVudERlZmF1bHQoKTtlLnN0b3BJbW1lZGlhdGVQcm9wYWdhdGlvbigpO30KICB9LHRydWUpOwp9KSgpOwoiIiIudHJpbUluZGVudCgp
-" ).decode()
-          marker = 'private inner class AndroidBridge'
-          if 'buildUniversalImageDownloadJs' not in s:
-              if marker not in s:
-                  raise SystemExit('AndroidBridge marker not found')
-              s = s.replace(marker, fn + '\n' + marker, 1)
-          needle = 'webView.evaluateJavascript(buildAndroidBridgeJs(), null)'
-          if needle not in s:
-              raise SystemExit('bridge injection call not found')
-          if 'buildUniversalImageDownloadJs(), null' not in s:
-              s = s.replace(needle, needle + '\n                webView.evaluateJavascript(buildUniversalImageDownloadJs(), null)', 1)
-          p.write_text(s)
-          PY
+          sed -i 's/allowContentAccess = false/allowContentAccess = true/g' "$TARGET"
+          sed -i 's/allowFileAccess = false/allowFileAccess = true/g' "$TARGET"
+          sed -i 's/ESIAndroid\/4\.0/ESIAndroid\/4.10/g' "$TARGET"
           perl -0pi -e 's/\$\$\{System\.nanoTime\(\)\}/\${System.nanoTime()}/g' "$TARGET"
           if grep -n '\$\${System.nanoTime()}' "$TARGET"; then
-            echo "Invalid double-dollar nanoTime template remains" >&2
+            echo "ERROR: invalid double-dollar System.nanoTime template remains" >&2
             exit 1
           fi
           grep -q 'allowContentAccess = true' "$TARGET"
           grep -q 'allowFileAccess = true' "$TARGET"
           grep -q 'setDownloadListener' "$TARGET"
           grep -q 'downloadUrl' "$TARGET"
-          grep -q 'buildUniversalImageDownloadJs' "$TARGET"
-          grep -q 'ESIAndroid.downloadUrl' "$TARGET"
           grep -q 'versionCode = 362415' android/app/build.gradle.kts
           grep -q 'versionName = "4.15"' android/app/build.gradle.kts
-          echo "Verified image-download bridge, Kotlin nanoTime templates, and APK version 4.15 before Gradle build."
+          echo "Android source passed the targeted pre-build checks."
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -216,8 +193,6 @@ jobs:
           test -s android/app/build/outputs/apk/debug/app-debug.apk
           mkdir -p release
           cp android/app/build/outputs/apk/debug/app-debug.apk release/ESI.apk
-          echo "APK SHA-256: $(sha256sum release/ESI.apk | cut -d' ' -f1)"
-          echo "APK bytes: $(wc -c < release/ESI.apk)"
           SDK_AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1)
           BADGING=$("$SDK_AAPT2" dump badging release/ESI.apk)
           echo "$BADGING"
@@ -225,8 +200,9 @@ jobs:
           EXPECTED_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts | head -1)
           test "$EXPECTED_CODE" = "362415"
           test "$EXPECTED_NAME" = "4.15"
-          echo "Expected APK version: code=$EXPECTED_CODE name=$EXPECTED_NAME"
           echo "$BADGING" | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
+          echo "APK SHA-256: $(sha256sum release/ESI.apk | cut -d' ' -f1)"
+          echo "APK bytes: $(wc -c < release/ESI.apk)"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -245,9 +221,5 @@ jobs:
           TAG="esi-v4.15-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
           gh release create "$TAG" release/ESI.apk \
             --title "ESI Android APK v4.15" \
-            --notes "ESI Android APK v4.15. Built from commit ${GITHUB_SHA}. This release asset is the APK served by releases/latest/download/ESI.apk." \
+            --notes "ESI Android APK v4.15. Built from commit ${GITHUB_SHA}." \
             --latest
-
-      - name: Confirm successful release
-        shell: bash
-        run: echo "ESI v4.15 APK built, version-verified, and published as the latest release asset."
