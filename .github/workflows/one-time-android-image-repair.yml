@@ -1,0 +1,89 @@
+name: One-time Android image download repair
+on:
+  push:
+    paths:
+      - '.github/workflows/one-time-android-image-repair.yml'
+permissions:
+  contents: write
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch native image-download bridge and bump APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET="android/app/src/main/java/com/elitescholarinstitute/app/MainActivity.kt"
+          test -f "$TARGET"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("android/app/src/main/java/com/elitescholarinstitute/app/MainActivity.kt")
+          s=p.read_text()
+          marker='private class AndroidBridge'
+          if 'buildUniversalImageDownloadJs' not in s:
+              fn=r'''private fun buildUniversalImageDownloadJs(): String = """
+(function(){
+ if(window.__esiUniversalImageDownloadInstalled)return;
+ window.__esiUniversalImageDownloadInstalled=true;
+ function filename(url){
+  try{var p=new URL(url,location.href).pathname;var n=p.split('/').pop();return n||'image.jpg';}catch(e){return 'image.jpg';}
+ }
+ function send(url,name){
+  if(!url||url.indexOf('javascript:')===0)return false;
+  var isImage=/\\.(jpe?g|png|gif|webp|svg)(?:[?#]|$)/i.test(String(url));
+  if(!isImage)return false;
+  try{window.ESIAndroid.downloadUrl(url,name||filename(url),'');return true;}catch(e){return false;}
+ }
+ document.addEventListener('click',function(e){
+  var el=e.target;
+  while(el&&el!==document&&!((el.tagName||'').toLowerCase()==='a'||(el.tagName||'').toLowerCase()==='button'||el.getAttribute&&el.getAttribute('role')==='button'))el=el.parentElement;
+  if(!el)return;
+  var href=el.getAttribute('data-download-url')||el.getAttribute('data-href')||el.getAttribute('data-url')||el.getAttribute('href');
+  var img=el.querySelector&&el.querySelector('img');
+  if(!href&&img)href=img.currentSrc||img.src;
+  var name=el.getAttribute('download')||el.getAttribute('data-download-name')||'';
+  if(!name&&img)name=(img.getAttribute('alt')||'').trim();
+  if(send(href,name)){e.preventDefault();e.stopImmediatePropagation();}
+ },true);
+})();
+""".trimIndent()
+'''
+              if marker not in s: raise SystemExit('AndroidBridge marker not found')
+              s=s.replace(marker,fn+'\n'+marker,1)
+          needle='webView.evaluateJavascript(buildAndroidBridgeJs(), null)'
+          if needle not in s: raise SystemExit('bridge injection call not found')
+          call=needle+'\n                webView.evaluateJavascript(buildUniversalImageDownloadJs(), null)'
+          if 'buildUniversalImageDownloadJs(), null' not in s:
+              s=s.replace(needle,call,1)
+          p.write_text(s)
+          g=Path("android/app/build.gradle.kts")
+          gs=g.read_text()
+          gs=gs.replace('versionCode = 362411','versionCode = 362412')
+          gs=gs.replace('versionName = "4.11"','versionName = "4.12"')
+          g.write_text(gs)
+          PY
+          grep -q 'buildUniversalImageDownloadJs' "$TARGET"
+          grep -q 'ESIAndroid.downloadUrl' "$TARGET"
+          grep -q 'versionCode = 362412' android/app/build.gradle.kts
+          grep -q 'versionName = "4.12"' android/app/build.gradle.kts
+      - name: Commit repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add android/app/src/main/java/com/elitescholarinstitute/app/MainActivity.kt android/app/build.gradle.kts
+          git commit -m "fix(android): make image downloads reliable in app mode" || exit 0
+          git push
+      - name: Remove one-time repair workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/one-time-android-image-repair.yml
+          git add -A
+          git commit -m "chore: remove one-time Android repair workflow" || exit 0
+          git push
