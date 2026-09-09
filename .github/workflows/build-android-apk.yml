@@ -155,8 +155,6 @@ jobs:
           set -euo pipefail
           TARGET="android/app/src/main/java/com/elitescholarinstitute/app/MainActivity.kt"
           test -f "$TARGET"
-          grep -q 'allowContentAccess = false' "$TARGET"
-          grep -q 'allowFileAccess = false' "$TARGET"
           sed -i 's/allowContentAccess = false/allowContentAccess = true/' "$TARGET"
           sed -i 's/allowFileAccess = false/allowFileAccess = true/' "$TARGET"
           sed -i 's/ESIAndroid\/4\.0/ESIAndroid\/4.10/' "$TARGET"
