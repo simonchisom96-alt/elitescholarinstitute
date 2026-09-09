@@ -42,12 +42,9 @@
 
     /*
        LEADERBOARD SAFETY FIX
-       The core leaderboard historically orders by the stored rankScore, while
-       the table displays the current ELO. rankScore can be stale after ELO
-       changes, which can make a low/current ELO player appear above a higher one.
-       Do not rewrite or delete any Firebase data here. After the core finishes
-       its normal load, reorder only the rendered leaderboard by the CURRENT ELO.
-       This also keeps the podium aligned with the corrected table order.
+       The core leaderboard historically orders by stored rankScore, while the
+       displayed table uses current ELO. rankScore can be stale after an ELO
+       change. Firebase data is never rewritten here.
     */
     const originalOpenLB = window.openLB;
     if(typeof originalOpenLB === 'function'){
@@ -67,34 +64,28 @@
             return (Number.isFinite(be)?be:-Infinity) - (Number.isFinite(ae)?ae:-Infinity);
           });
 
-          rows.forEach((row, index)=>{
-            row.cells[0].textContent = String(index + 1);
+          rows.forEach((row,index)=>{
+            row.cells[0].textContent=String(index+1);
             body.appendChild(row);
           });
 
-          /* The core renders podium as [silver, gold, bronze]. Move the same
-             existing cards (never recreate/delete data) so they match the
-             corrected current-ELO table: [2nd, 1st, 3rd]. */
-          const podium = document.getElementById('lbPodium');
-          if(podium && rows.length >= 3){
-            const topNames = rows.slice(0,3).map(r=>String(r.cells[1].textContent||'').trim());
-            const cards = Array.from(podium.children);
-            const ranked = cards.map(card=>{
-              const text = String(card.textContent||'');
-              const idx = topNames.findIndex(name=>name && text.includes(name));
-              return {card, idx};
-            }).filter(x=>x.idx >= 0);
-
-            if(ranked.length >= 3){
-              ranked.sort((a,b)=>a.idx-b.idx);
-              const byRank = ranked.reduce((acc,x)=>{ acc[x.idx]=x.card; return acc; },{});
-              [byRank[1], byRank[0], byRank[2]].forEach(card=>{
-                if(card) podium.appendChild(card);
-              });
-            }
+          /* Rebuild only the visible podium from the already-rendered top-three
+             table rows. This avoids trusting stale rankScore and does not touch
+             Firebase or any stored player data. */
+          const podium=document.getElementById('lbPodium');
+          if(podium && rows.length>=3){
+            const top=rows.slice(0,3);
+            const makeCard=(row,rank)=>{
+              const nameCell=row.cells[1];
+              const elo=String(row.cells[2].textContent||'').trim();
+              const medal=rank===1?'🥇':rank===2?'🥈':'🥉';
+              const big=rank===1;
+              return `<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:${big?'linear-gradient(180deg,rgba(255,215,0,0.28),rgba(255,215,0,0.08))':'rgba(192,192,192,0.15)'};padding:${big?'14px':'10px'} 6px;border-radius:${big?'14px':'12px'};border:${big?'1.5px solid gold':'1px solid #c0c0c0'};word-break:break-word"><div style="font-size:${big?26:20}px">${medal}</div><div style="font-size:${big?12:11}px;font-weight:900;line-height:1.2;color:var(--text)">${nameCell.innerHTML}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">ELO ${elo}</div></div>`;
+            };
+            podium.innerHTML='<div style="display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;align-items:stretch;margin:12px 0">'+makeCard(top[1],2)+makeCard(top[0],1)+makeCard(top[2],3)+'</div>';
           }
         }catch(e){
-          console.warn('[MP-LB] current-ELO reorder failed:', e);
+          console.warn('[MP-LB] current-ELO reorder failed:',e);
         }
 
         return result;
