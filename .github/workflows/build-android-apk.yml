@@ -149,7 +149,7 @@ jobs:
           rsync -a --files-from=/tmp/esi-shell.txt ./ android/app/src/main/assets/site/
           cp -f logo.jpg android/app/src/main/res/drawable/logo.jpg
 
-      - name: Apply targeted Android WebView compatibility fixes
+      - name: Apply targeted Android WebView download fixes
         shell: bash
         run: |
           set -euo pipefail
@@ -162,17 +162,32 @@ jobs:
           sed -i 's/ESIAndroid\/4\.0/ESIAndroid\/4.10/' "$TARGET"
           python3 - <<'PY'
           from pathlib import Path
+          import base64
           p = Path("android/app/src/main/java/com/elitescholarinstitute/app/MainActivity.kt")
           s = p.read_text()
           s = s.replace('$${System.nanoTime()}', '${System.nanoTime()}')
+          fn = base64.b64decode("ICAgIHByaXZhdGUgZnVuIGJ1aWxkVW5pdmVyc2FsSW1hZ2VEb3dubG9hZEpzKCk6IFN0cmluZyA9ICIiIgooZnVuY3Rpb24oKXsKIGlmKHdpbmRvdy5fX2VzaVVuaXZlcnNhbEltYWdlRG93bmxvYWRJbnN0YWxsZWQpcmV0dXJuOwogd2luZG93Ll9fZXNpVW5pdmVyc2FsSW1hZ2VEb3dubG9hZEluc3RhbGxlZD10cnVlOwogZnVuY3Rpb24gZmlsZW5hbWUodXJsKXsKICB0cnl7dmFyIHA9bmV3IFVSTCh1cmwsbG9jYXRpb24uaHJlZikucGF0aG5hbWU7dmFyIG49cC5zcGxpdCgnLycpLnBvcCgpO3JldHVybiBufHwnaW1hZ2UuanBnJzt9Y2F0Y2goZSl7cmV0dXJuICdpbWFnZS5qcGcnO30KIH0KIGZ1bmN0aW9uIHNlbmQodXJsLG5hbWUpewogIGlmKCF1cmx8fHVybC5pbmRleE9mKCdqYXZhc2NyaXB0OicpPT09MClyZXR1cm4gZmFsc2U7CiAgdmFyIGlzSW1hZ2U9L1wuKGpwZT9nfHBuZ3xnaWZ8d2VicHxzdmcpKD86Wz8jXXwkKS9pLnRlc3QoU3RyaW5nKHVybCkpOwogIGlmKCFpc0ltYWdlKXJldHVybiBmYWxzZTsKICB0cnl7d2luZG93LkVTSUFuZHJvaWQuZG93bmxvYWRVcmwodXJsLG5hbWV8fGZpbGVuYW1lKHVybCksJycpO3JldHVybiB0cnVlO31jYXRjaChlKXtyZXR1cm4gZmFsc2U7fQogfQogZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLGZ1bmN0aW9uKGUpewogIHZhciBlbD1lLnRhcmdldDsKICB3aGlsZShlbCYmZWwhPT1kb2N1bWVudCYmISgoZWwudGFnTmFtZXx8JycpLnRvTG93ZXJDYXNlKCk9PT0nYSd8fChlbC50YWdOYW1lfHwnJykudG9Mb3dlckNhc2UoKT09PSdidXR0b24nfHxlbC5nZXRBdHRyaWJ1dGUmJmVsLmdldEF0dHJpYnV0ZSgncm9sZScpPT09J2J1dHRvbicpKWVsPWVsLnBhcmVudEVsZW1lbnQ7CiAgaWYoIWVsKXJldHVybjsKICB2YXIgaHJlZj1lbC5nZXRBdHRyaWJ1dGUoJ2RhdGEtZG93bmxvYWQtdXJsJyl8fGVsLmdldEF0dHJpYnV0ZSgnZGF0YS1ocmVmJyl8fGVsLmdldEF0dHJpYnV0ZSgnZGF0YS11cmwnKXx8ZWwuZ2V0QXR0cmlidXRlKCdocmVmJyk7CiAgdmFyIGltZz1lbC5xdWVyeVNlbGVjdG9yJiZlbC5xdWVyeVNlbGVjdG9yKCdpbWcnKTsKICBpZighaHJlZiYmaW1nKWhyZWY9aW1nLmN1cnJlbnRTcmN8fGltZy5zcmM7CiAgdmFyIG5hbWU9ZWwuZ2V0QXR0cmlidXRlKCdkb3dubG9hZCcpfHxlbC5nZXRBdHRyaWJ1dGUoJ2RhdGEtZG93bmxvYWQtbmFtZScpfHwnJzsKICBpZighbmFtZSYmaW1nKW5hbWU9KGltZy5nZXRBdHRyaWJ1dGUoJ2FsdCcpfHwnJykudHJpbSgpOwogIGlmKHNlbmQoaHJlZixuYW1lKSl7ZS5wcmV2ZW50RGVmYXVsdCgpO2Uuc3RvcEltbWVkaWF0ZVByb3BhZ2F0aW9uKCk7fQogfSx0cnVlKTsKfSkoKTsKIiIiLnRyaW1JbmRlbnQoKQo=" ).decode()
+          marker = 'private class AndroidBridge'
+          if 'buildUniversalImageDownloadJs' not in s:
+              if marker not in s:
+                  raise SystemExit('AndroidBridge marker not found')
+              s = s.replace(marker, fn + '\n' + marker, 1)
+          needle = 'webView.evaluateJavascript(buildAndroidBridgeJs(), null)'
+          if needle not in s:
+              raise SystemExit('bridge injection call not found')
+          if 'buildUniversalImageDownloadJs(), null' not in s:
+              s = s.replace(needle, needle + '\n                webView.evaluateJavascript(buildUniversalImageDownloadJs(), null)', 1)
           p.write_text(s)
           PY
           grep -q 'allowContentAccess = true' "$TARGET"
           grep -q 'allowFileAccess = true' "$TARGET"
-          grep -q 'ESIAndroid/4.10' "$TARGET"
           grep -q 'setDownloadListener' "$TARGET"
           grep -q 'downloadUrl' "$TARGET"
-          echo "Verified native WebView download layer and file-access compatibility fixes."
+          grep -q 'buildUniversalImageDownloadJs' "$TARGET"
+          grep -q 'ESIAndroid.downloadUrl' "$TARGET"
+          grep -q 'versionCode = 362412' android/app/build.gradle.kts
+          grep -q 'versionName = "4.12"' android/app/build.gradle.kts
+          echo "Verified image-download bridge and APK version 4.12 before Gradle build."
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -204,15 +219,15 @@ jobs:
           echo "$BADGING"
           EXPECTED_CODE=$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' android/app/build.gradle.kts | head -1)
           EXPECTED_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts | head -1)
-          test -n "$EXPECTED_CODE"
-          test -n "$EXPECTED_NAME"
+          test "$EXPECTED_CODE" = "362412"
+          test "$EXPECTED_NAME" = "4.12"
           echo "Expected APK version: code=$EXPECTED_CODE name=$EXPECTED_NAME"
           echo "$BADGING" | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ESI-APK-v4.10
+          name: ESI-APK-v4.12
           path: release/ESI.apk
           if-no-files-found: error
           retention-days: 30
@@ -223,12 +238,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="esi-v4.10-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          TAG="esi-v4.12-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
           gh release create "$TAG" release/ESI.apk \
-            --title "ESI Android APK v4.10" \
-            --notes "ESI Android APK v4.10. Built from commit ${GITHUB_SHA}. This release asset is the APK served by releases/latest/download/ESI.apk." \
+            --title "ESI Android APK v4.12" \
+            --notes "ESI Android APK v4.12. Built from commit ${GITHUB_SHA}. This release asset is the APK served by releases/latest/download/ESI.apk." \
             --latest
 
       - name: Confirm successful release
         shell: bash
-        run: echo "ESI v4.10 APK built, version-verified, and published as the latest release asset."
+        run: echo "ESI v4.12 APK built, version-verified, and published as the latest release asset."
