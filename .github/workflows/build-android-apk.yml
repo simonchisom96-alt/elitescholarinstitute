@@ -35,9 +35,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sed -i "s/const BUILD = '[^']*'/const BUILD = '36.2410'/" app.js
-          sed -i "s/esi-cache-[0-9.]*/esi-cache-36.2410/" sw.js
-          sed -i "s/esi-pdf-cache-[0-9.]*/esi-pdf-cache-36.2410/" downloader.js
+          sed -i "s/const BUILD = '[^']*'/const BUILD = '36.2411'/" app.js
+          sed -i "s/esi-cache-[0-9.]*/esi-cache-36.2411/" sw.js
+          sed -i "s/esi-pdf-cache-[0-9.]*/esi-pdf-cache-36.2411/" downloader.js
           grep -m1 "const BUILD" app.js
           grep -m1 "CACHE_VERSION" sw.js
           grep -m1 "CACHE_NAME" downloader.js
@@ -166,8 +166,8 @@ jobs:
           p = Path("android/app/src/main/java/com/elitescholarinstitute/app/MainActivity.kt")
           s = p.read_text()
           s = s.replace('$${System.nanoTime()}', '${System.nanoTime()}')
-          fn = base64.b64decode("ICAgIHByaXZhdGUgZnVuIGJ1aWxkVW5pdmVyc2FsSW1hZ2VEb3dubG9hZEpzKCk6IFN0cmluZyA9ICIiIgooZnVuY3Rpb24oKXsKIGlmKHdpbmRvdy5fX2VzaVVuaXZlcnNhbEltYWdlRG93bmxvYWRJbnN0YWxsZWQpcmV0dXJuOwogd2luZG93Ll9fZXNpVW5pdmVyc2FsSW1hZ2VEb3dubG9hZEluc3RhbGxlZD10cnVlOwogZnVuY3Rpb24gZmlsZW5hbWUodXJsKXsKICB0cnl7dmFyIHA9bmV3IFVSTCh1cmwsbG9jYXRpb24uaHJlZikucGF0aG5hbWU7dmFyIG49cC5zcGxpdCgnLycpLnBvcCgpO3JldHVybiBufHwnaW1hZ2UuanBnJzt9Y2F0Y2goZSl7cmV0dXJuICdpbWFnZS5qcGcnO30KIH0KIGZ1bmN0aW9uIHNlbmQodXJsLG5hbWUpewogIGlmKCF1cmx8fHVybC5pbmRleE9mKCdqYXZhc2NyaXB0OicpPT09MClyZXR1cm4gZmFsc2U7CiAgdmFyIGlzSW1hZ2U9L1wuKGpwZT9nfHBuZ3xnaWZ8d2VicHxzdmcpKD86Wz8jXXwkKS9pLnRlc3QoU3RyaW5nKHVybCkpOwogIGlmKCFpc0ltYWdlKXJldHVybiBmYWxzZTsKICB0cnl7d2luZG93LkVTSUFuZHJvaWQuZG93bmxvYWRVcmwodXJsLG5hbWV8fGZpbGVuYW1lKHVybCksJycpO3JldHVybiB0cnVlO31jYXRjaChlKXtyZXR1cm4gZmFsc2U7fQogfQogZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLGZ1bmN0aW9uKGUpewogIHZhciBlbD1lLnRhcmdldDsKICB3aGlsZShlbCYmZWwhPT1kb2N1bWVudCYmISgoZWwudGFnTmFtZXx8JycpLnRvTG93ZXJDYXNlKCk9PT0nYSd8fChlbC50YWdOYW1lfHwnJykudG9Mb3dlckNhc2UoKT09PSdidXR0b24nfHxlbC5nZXRBdHRyaWJ1dGUmJmVsLmdldEF0dHJpYnV0ZSgncm9sZScpPT09J2J1dHRvbicpKWVsPWVsLnBhcmVudEVsZW1lbnQ7CiAgaWYoIWVsKXJldHVybjsKICB2YXIgaHJlZj1lbC5nZXRBdHRyaWJ1dGUoJ2RhdGEtZG93bmxvYWQtdXJsJyl8fGVsLmdldEF0dHJpYnV0ZSgnZGF0YS1ocmVmJyl8fGVsLmdldEF0dHJpYnV0ZSgnZGF0YS11cmwnKXx8ZWwuZ2V0QXR0cmlidXRlKCdocmVmJyk7CiAgdmFyIGltZz1lbC5xdWVyeVNlbGVjdG9yJiZlbC5xdWVyeVNlbGVjdG9yKCdpbWcnKTsKICBpZighaHJlZiYmaW1nKWhyZWY9aW1nLmN1cnJlbnRTcmN8fGltZy5zcmM7CiAgdmFyIG5hbWU9ZWwuZ2V0QXR0cmlidXRlKCdkb3dubG9hZCcpfHxlbC5nZXRBdHRyaWJ1dGUoJ2RhdGEtZG93bmxvYWQtbmFtZScpfHwnJzsKICBpZighbmFtZSYmaW1nKW5hbWU9KGltZy5nZXRBdHRyaWJ1dGUoJ2FsdCcpfHwnJykudHJpbSgpOwogIGlmKHNlbmQoaHJlZixuYW1lKSl7ZS5wcmV2ZW50RGVmYXVsdCgpO2Uuc3RvcEltbWVkaWF0ZVByb3BhZ2F0aW9uKCk7fQogfSx0cnVlKTsKfSkoKTsKIiIiLnRyaW1JbmRlbnQoKQo=" ).decode()
-          marker = 'private class AndroidBridge'
+          fn = base64.b64decode("ICAgIHByaXZhdGUgZnVuIGJ1aWxkVW5pdmVyc2FsSW1hZ2VEb3dubG9hZEpzKCk6IFN0cmluZyA9ICIiIgooZnVuY3Rpb24oKXsKIGlmKHdpbmRvdy5fX2VzaVVuaXZlcnNhbEltYWdlRG93bmxvYWRJbnN0YWxsZWQpcmV0dXJuOwogd2luZG93Ll9fZXNpVW5pdmVyc2FsSW1hZ2VEb3dubG9hZEluc3RhbGxlZD10cnVlOwogZnVuY3Rpb24gZmlsZW5hbWUodXJsKXsKICB0cnl7dmFyIHA9bmV3IFVSTCh1cmwsbG9jYXRpb24uaHJlZikucGF0aG5hbWU7dmFyIG49cC5zcGxpdCgnLycpLnBvcCgpO3JldHVybiBufHwnaW1hZ2UuanBnJzt9Y2F0Y2goZSl7cmV0dXJuICdpbWFnZS5qcGcnO30KIH0KIGZ1bmN0aW9uIHNlbmQodXJsLG5hbWUpewogIGlmKCF1cmx8fHVybC5pbmRleE9mKCdqYXZhc2NyaXB0OicpPT09MClyZXR1cm4gZmFsc2U7CiAgdmFyIGlzSW1hZ2U9L1wuKGpwZT9nfHBuZ3xnaWZ8d2VicHxzdmcpKD86Wz8jXXwkKS9pLnRlc3QoU3RyaW5nKHVybCkpOwogIGlmKCFpc0ltYWdlKXJldHVybiBmYWxzZTsKICB0cnl7d2luZG93LkVTSUFuZHJvaWQuZG93bmxvYWRVcmwodXJsLG5hbWV8fGZpbGVuYW1lKHVybCksJycpO3JldHVybiB0cnVlO31jYXRjaChlKXtyZXR1cm4gZmFsc2U7fQogfQogZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLGZ1bmN0aW9uKGUpewogIHZhciBlbD1lLnRhcmdldDsKICB3aGlsZShlbCYmZWwhPT1kb2N1bWVudCYmISgoZWwudGFnTmFtZXx8JycpLnRvTG93ZXJDYXNlKCk9PT0nYSd8fChlbC50YWdOYW1lfHwnJykudG9Mb3dlckNhc2UoKT09PSdidXR0b24nfHxlbC5nZXRBdHRyaWJ1dGUmJmVsLmdldEF0dHJpYnV0ZSgncm9sZScpPT09J2J1dHRvbicpKWVsPWVsLnBhcmVudEVsZW1lbnQ7CiAgaWYoIWVsKXJldHVybjsKICB2YXIgaHJlZj1lbC5nZXRBdHRyaWJ1dGUoJ2RhdGEtZG93bmxvYWQtdXJsJyl8fGVsLmdldEF0dHJpYnV0ZSgnZGF0YS1ocmVmJyl8fGVsLmdldEF0dHJpYnV0ZSgnZGF0YS11cmwnKXx8ZWwuZ2V0QXR0cmlidXRlKCdocmVmJyk7CiAgdmFyIGltZz1lbC5xdWVyeVNlbGVjdG9yJiZlbC5xdWVyeVNlbGVjdG9yKCdpbWcnKTsKICBpZighaHJlZiYmaW1nKWdyZWY9aW1nLmN1cnJlbnRTcmN8fGltZy5zcmM7CiAgdmFyIG5hbWU9ZWwuZ2V0QXR0cmlidXRlKCdkb3dubG9hZCcpfHxlbC5nZXRBdHRyaWJ1dGUoJ2RhdGEtZG93bmxvYWQtbmFtZScpfHwnJzsKICBpZighbmFtZSYmaW1nKW5hbWU9KGltZy5nZXRBdHRyaWJ1dGUoJ2FsdCcpfHwnJykudHJpbSgpOwogIGlmKHNlbmQoaHJlZixuYW1lKSl7ZS5wcmV2ZW50RGVmYXVsdCgpO2Uuc3RvcEltbWVkaWF0ZVByb3BhZ2F0aW9uKCk7fQogfSx0cnVlKTsKfSkoKTsKIiIiLnRyaW1JbmRlbnQoKQo=" ).decode()
+          marker = 'private inner class AndroidBridge'
           if 'buildUniversalImageDownloadJs' not in s:
               if marker not in s:
                   raise SystemExit('AndroidBridge marker not found')
@@ -185,9 +185,9 @@ jobs:
           grep -q 'downloadUrl' "$TARGET"
           grep -q 'buildUniversalImageDownloadJs' "$TARGET"
           grep -q 'ESIAndroid.downloadUrl' "$TARGET"
-          grep -q 'versionCode = 362412' android/app/build.gradle.kts
-          grep -q 'versionName = "4.12"' android/app/build.gradle.kts
-          echo "Verified image-download bridge and APK version 4.12 before Gradle build."
+          grep -q 'versionCode = 362413' android/app/build.gradle.kts
+          grep -q 'versionName = "4.13"' android/app/build.gradle.kts
+          echo "Verified image-download bridge and APK version 4.13 before Gradle build."
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -219,15 +219,15 @@ jobs:
           echo "$BADGING"
           EXPECTED_CODE=$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' android/app/build.gradle.kts | head -1)
           EXPECTED_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts | head -1)
-          test "$EXPECTED_CODE" = "362412"
-          test "$EXPECTED_NAME" = "4.12"
+          test "$EXPECTED_CODE" = "362413"
+          test "$EXPECTED_NAME" = "4.13"
           echo "Expected APK version: code=$EXPECTED_CODE name=$EXPECTED_NAME"
           echo "$BADGING" | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ESI-APK-v4.12
+          name: ESI-APK-v4.13
           path: release/ESI.apk
           if-no-files-found: error
           retention-days: 30
@@ -238,12 +238,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="esi-v4.12-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          TAG="esi-v4.13-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
           gh release create "$TAG" release/ESI.apk \
-            --title "ESI Android APK v4.12" \
-            --notes "ESI Android APK v4.12. Built from commit ${GITHUB_SHA}. This release asset is the APK served by releases/latest/download/ESI.apk." \
+            --title "ESI Android APK v4.13" \
+            --notes "ESI Android APK v4.13. Built from commit ${GITHUB_SHA}. This release asset is the APK served by releases/latest/download/ESI.apk." \
             --latest
 
       - name: Confirm successful release
         shell: bash
-        run: echo "ESI v4.12 APK built, version-verified, and published as the latest release asset."
+        run: echo "ESI v4.13 APK built, version-verified, and published as the latest release asset."
