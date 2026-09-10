@@ -22,6 +22,10 @@ function allowedOrigin(request) {
   const origin = request.headers.get('Origin') || '';
   if (origin === PRODUCTION_ORIGIN || origin === PAGES_ORIGIN) return origin;
 
+  // Android WebViews can use a null origin. The sender is still protected by
+  // the Firebase admin bearer token, so this is safe for the APK transport.
+  if (origin === 'null') return '*';
+
   // Render creates a different onrender.com origin for PR/service previews.
   // Those previews must be able to call this secured sender while testing.
   try {
