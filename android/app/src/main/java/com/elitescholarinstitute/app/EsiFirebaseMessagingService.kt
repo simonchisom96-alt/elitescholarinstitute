@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -19,9 +20,16 @@ class EsiFirebaseMessagingService : FirebaseMessagingService() {
         private const val TOPIC = "esi_all"
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        // Subscribe on every service start as well as token refresh. This covers
+        // existing installs whose FCM token was created before this service existed.
+        FirebaseMessaging.getInstance().subscribeToTopic(TOPIC)
+    }
+
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic(TOPIC)
+        FirebaseMessaging.getInstance().subscribeToTopic(TOPIC)
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
