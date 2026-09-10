@@ -3,6 +3,7 @@
   'use strict';
 
   const FCM_SENDER_URL = window.ESI_FCM_SENDER_URL || 'https://esi-fcm.onrender.com/send';
+  const FCM_REGISTER_URL = FCM_SENDER_URL.replace(/\/send\/?$/, '/register');
   const VAPID_KEY = 'BJGp_RkyA76f90dCB3wu4egPaJFhVK2LmSIwvW_TIyt9SEyqqJT12NAxYnKikHrcFFa8Ie2YVFpR29PlETx4bwM';
   const MESSAGING_SDK = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js';
   let messagingReady = null;
@@ -53,6 +54,13 @@
     const sw = await registerMessagingWorker();
     const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: sw });
     if (!token) return false;
+
+    const response = await fetch(FCM_REGISTER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    if (!response.ok) throw new Error('FCM registration returned HTTP ' + response.status);
 
     localStorage.setItem('esi_fcm_web_registered', '1');
     return true;
@@ -125,8 +133,6 @@
         }
         const ref = db.ref('notifications').push(data);
         ref.then(async () => {
-          const item = { ...data, id: ref.key, timestamp: Date.now() };
-          if (window.cache) window.cache[ref.key] = item;
           try {
             await sendFcm(titleFor(data), previewFor(data).slice(0, 2000), '/notification.html');
             if (typeof window.showToast === 'function') window.showToast('Broadcast sent successfully ✓', '#2563eb');
