@@ -54,6 +54,19 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'esi-fcm', firebase: Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON) });
 });
 
+app.post('/register', async (req, res) => {
+  const token = String(req.body?.token || '').trim();
+  if (!token || token.length < 20) return res.status(400).json({ ok: false, error: 'Invalid token' });
+
+  try {
+    await getFirebaseApp().messaging().subscribeToTopic([token], 'esi_all');
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('FCM registration failed:', error && error.message);
+    res.status(500).json({ ok: false, error: 'FCM registration failed' });
+  }
+});
+
 app.post('/send', async (req, res) => {
   try {
     await requireAdmin(req);
