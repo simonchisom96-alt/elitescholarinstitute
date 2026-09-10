@@ -70,11 +70,9 @@ function buildMessage(data) {
     included_segments: ['Subscribed Users'],
     headings: { en: 'Elite Scholar Institute' },
     contents: { en: body.slice(0, 4096) },
-    // Always route notification clicks to the real production Render site,
-    // even when the admin sends from a Render preview deployment.
-    url: type === 'poll' || type === 'quiz'
-      ? `${PRODUCTION_ORIGIN}/notification.html`
-      : `${PRODUCTION_ORIGIN}/index.html`,
+    // Every notification created by notification.html is part of that
+    // notification feed, so every notification click must return there.
+    url: `${PRODUCTION_ORIGIN}/notification.html`,
     data: {
       esi_type: type || 'message'
     }
