@@ -3,10 +3,36 @@
   if(!/notification\.html(?:$|\?)/i.test(location.pathname) || window.__esiOneSignalSendBridge) return;
   window.__esiOneSignalSendBridge = true;
 
-  const ONESIGNAL_SEND_ORIGIN = 'https://elitescholarinstitute.pages.dev';
+  // The live ESI UI is served from Render. Prefer the same-origin API path so
+  // a Render rewrite/web-service can handle the secure send without a browser
+  // CORS hop. Keep the existing Pages sender as a controlled fallback so this
+  // change does not break an already-working backend deployment.
+  const SEND_ENDPOINTS = [
+    '/api/onesignal/send',
+    'https://elitescholarinstitute.pages.dev/api/onesignal/send'
+  ];
 
   function notify(text, color){
     if(typeof toast === 'function') toast(text, color);
+  }
+
+  async function requestSend(endpoint, data, idToken){
+    const controller = new AbortController();
+    const timeout = setTimeout(()=>controller.abort(), 15000);
+    try{
+      return await fetch(endpoint, {
+        method:'POST',
+        headers:{
+          'content-type':'application/json',
+          'authorization':'Bearer ' + idToken
+        },
+        body:JSON.stringify(data),
+        credentials:'omit',
+        signal:controller.signal
+      });
+    }finally{
+      clearTimeout(timeout);
+    }
   }
 
   async function sendOneSignal(data){
@@ -14,23 +40,39 @@
       throw new Error('Admin Firebase session not available');
     }
 
-    const idToken = await auth.currentUser.getIdToken();
-    const response = await fetch(ONESIGNAL_SEND_ORIGIN + '/api/onesignal/send', {
-      method:'POST',
-      headers:{
-        'content-type':'application/json',
-        'authorization':'Bearer ' + idToken
-      },
-      body:JSON.stringify(data),
-      credentials:'omit'
-    });
+    const idToken = await auth.currentUser.getIdToken(true);
+    let lastError = null;
 
-    const result = await response.json().catch(()=>({}));
-    if(!response.ok || !result.ok){
-      const detail = typeof result.error === 'string' ? result.error : 'OneSignal send failed';
-      throw new Error(detail);
+    for(const endpoint of SEND_ENDPOINTS){
+      try{
+        const response = await requestSend(endpoint, data, idToken);
+        const result = await response.json().catch(()=>({}));
+
+        // A real HTTP response means the endpoint is reachable. Do not hide a
+        // useful backend error behind a generic "Failed to fetch" message.
+        if(response.ok && result.ok) return result;
+
+        const detail = typeof result.error === 'string'
+          ? result.error
+          : (result.error ? JSON.stringify(result.error) : `HTTP ${response.status}`);
+        lastError = new Error(detail);
+
+        // A same-origin 404/405/5xx means that Render has no usable sender
+        // route; try the known secure fallback before giving up.
+        if(endpoint === SEND_ENDPOINTS[0] && [404,405,500,502,503].includes(response.status)) continue;
+        throw lastError;
+      }catch(err){
+        lastError = err;
+        // Network/CORS failures on the same-origin route are also allowed to
+        // fall through to the secure fallback. Other backend responses are
+        // already actionable and should be surfaced immediately.
+        if(endpoint === SEND_ENDPOINTS[0]) continue;
+        throw err;
+      }
     }
-    return result;
+
+    if(lastError?.name === 'AbortError') throw new Error('OneSignal sender timed out');
+    throw lastError || new Error('OneSignal sender unavailable');
   }
 
   function installBridge(){
