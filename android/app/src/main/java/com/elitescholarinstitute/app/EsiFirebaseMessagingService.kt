@@ -21,8 +21,6 @@ class EsiFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        // Android devices are addressed through the shared ESI topic.
-        // No token is stored in the website or APK source code.
         com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic(TOPIC)
     }
 
@@ -58,13 +56,17 @@ class EsiFirebaseMessagingService : FirebaseMessagingService() {
         )
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.logo)
+            .setSmallIcon(R.drawable.ic_stat_esi)
+            .setLargeIcon(android.graphics.BitmapFactory.decodeResource(resources, R.drawable.logo))
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setWhen(System.currentTimeMillis())
+            .setShowWhen(true)
             .setContentIntent(tapPendingIntent)
             .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .build()
 
         NotificationManagerCompat.from(this).notify(requestCode, notification)
@@ -75,7 +77,7 @@ class EsiFirebaseMessagingService : FirebaseMessagingService() {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "ESI Notifications",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Elite Scholar Institute notifications"
             }
