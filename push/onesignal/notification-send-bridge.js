@@ -6,16 +6,15 @@
   const ONESIGNAL_SEND_ORIGIN = 'https://elitescholarinstitute.pages.dev';
 
   function notify(text, color){
-    if(typeof window.toast === 'function') window.toast(text, color);
+    if(typeof toast === 'function') toast(text, color);
   }
 
   async function sendOneSignal(data){
-    const currentUser = window.auth && window.auth.currentUser;
-    if(!currentUser || currentUser.email !== 'admin@elitescholarinstitute.app'){
+    if(typeof auth === 'undefined' || !auth.currentUser || auth.currentUser.email !== 'admin@elitescholarinstitute.app'){
       throw new Error('Admin Firebase session not available');
     }
 
-    const idToken = await currentUser.getIdToken();
+    const idToken = await auth.currentUser.getIdToken();
     const response = await fetch(ONESIGNAL_SEND_ORIGIN + '/api/onesignal/send', {
       method:'POST',
       headers:{
@@ -34,27 +33,27 @@
     return result;
   }
 
-  // password.js defines pushNotif before this isolated loader runs on notification.html.
-  // Replace only that one composer entry point; all other notification functionality stays untouched.
-  if(typeof window.pushNotif !== 'function'){
-    console.warn('[ESI OneSignal] composer bridge loaded before pushNotif; no send hook installed');
+  // password.js is loaded before app.js on notification.html, so pushNotif is
+  // already defined when this isolated bridge is injected by onesignal-init.js.
+  if(typeof pushNotif !== 'function'){
+    console.warn('[ESI OneSignal] pushNotif is not ready; bridge not installed');
     return;
   }
 
-  window.pushNotif = function(data){
+  pushNotif = function(data){
     if(!data || typeof data !== 'object') return;
 
-    if(!window.db || typeof window.db.ref !== 'function'){
+    if(typeof db === 'undefined' || !db || typeof db.ref !== 'function'){
       notify('Send failed: Firebase is not ready','orange');
       return;
     }
 
-    const ref = window.db.ref('notifications').push(data);
+    const ref = db.ref('notifications').push(data);
     ref.then(async ()=>{
       closeCompose();
       notify('Broadcast saved to ESI ✓','blue');
-      if(window.cache) window.cache[ref.key] = { ...data, id: ref.key, timestamp: Date.now() };
-      if(typeof window.renderFeed === 'function') window.renderFeed();
+      cache[ref.key] = { ...data, id: ref.key, timestamp: Date.now() };
+      renderFeed();
 
       try{
         const result = await sendOneSignal(data);
