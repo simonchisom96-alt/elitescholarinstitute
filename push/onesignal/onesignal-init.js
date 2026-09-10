@@ -18,11 +18,21 @@
     document.head.appendChild(s);
   }
 
-  if (/notification\.html(?:$|\?)/i.test(location.pathname) && !document.querySelector('script[data-esi-composer-preview]')) {
-    const preview = document.createElement('script');
-    preview.src = '/push/onesignal/notification-preview.js';
-    preview.defer = true;
-    preview.dataset.esiComposerPreview = '1';
-    document.head.appendChild(preview);
+  if (/notification\.html(?:$|\?)/i.test(location.pathname)) {
+    if (!document.querySelector('script[data-esi-composer-preview]')) {
+      const preview = document.createElement('script');
+      preview.src = '/push/onesignal/notification-preview.js';
+      preview.defer = true;
+      preview.dataset.esiComposerPreview = '1';
+      document.head.appendChild(preview);
+    }
+
+    if (!document.querySelector('script[data-esi-composer-send]')) {
+      const bridge = document.createElement('script');
+      bridge.src = '/push/onesignal/notification-send-bridge.js';
+      bridge.defer = true;
+      bridge.dataset.esiComposerSend = '1';
+      document.head.appendChild(bridge);
+    }
   }
 })();
