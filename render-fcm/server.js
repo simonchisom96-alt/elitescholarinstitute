@@ -65,11 +65,9 @@ app.post('/send', async (req, res) => {
 
     const messageId = await getFirebaseApp().messaging().send({
       topic: 'esi_all',
-      notification: { title, body: messageBody },
-      data: { title, body: messageBody, path },
       android: {
         priority: 'high',
-        notification: { channelId: 'esi_fcm_notifications' }
+        data: { title, body: messageBody, path }
       },
       webpush: {
         notification: {
