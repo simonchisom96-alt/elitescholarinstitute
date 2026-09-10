@@ -1,6 +1,8 @@
 const FIREBASE_API_KEY = 'AIzaSyDkjELsB4qeaumvsMAIDGIFZgNzl6eoBPM';
 const FIREBASE_ADMIN_EMAIL = 'admin@elitescholarinstitute.app';
 const ONESIGNAL_APP_ID = '6399359d-1281-4013-8914-b4ccb2e13382';
+const PRODUCTION_ORIGIN = 'https://elitescholarinstitute.onrender.com';
+const PAGES_ORIGIN = 'https://elitescholarinstitute.pages.dev';
 
 function json(data, status = 200, origin = '') {
   const headers = {
@@ -18,10 +20,18 @@ function json(data, status = 200, origin = '') {
 
 function allowedOrigin(request) {
   const origin = request.headers.get('Origin') || '';
-  return [
-    'https://elitescholarinstitute.onrender.com',
-    'https://elitescholarinstitute.pages.dev'
-  ].includes(origin) ? origin : '';
+  if (origin === PRODUCTION_ORIGIN || origin === PAGES_ORIGIN) return origin;
+
+  // Render creates a different onrender.com origin for PR/service previews.
+  // Those previews must be able to call this secured sender while testing.
+  try {
+    const url = new URL(origin);
+    if (url.protocol === 'https:' && url.hostname.endsWith('.onrender.com')) {
+      return origin;
+    }
+  } catch {}
+
+  return '';
 }
 
 async function verifyFirebaseAdmin(idToken) {
@@ -40,7 +50,7 @@ async function verifyFirebaseAdmin(idToken) {
   return !!(user && user.email === FIREBASE_ADMIN_EMAIL && user.emailVerified !== false);
 }
 
-function buildMessage(data, origin) {
+function buildMessage(data) {
   const type = data && data.type;
   let body = '';
 
@@ -60,9 +70,11 @@ function buildMessage(data, origin) {
     included_segments: ['Subscribed Users'],
     headings: { en: 'Elite Scholar Institute' },
     contents: { en: body.slice(0, 4096) },
+    // Always route notification clicks to the real production Render site,
+    // even when the admin sends from a Render preview deployment.
     url: type === 'poll' || type === 'quiz'
-      ? `${origin}/notification.html`
-      : `${origin}/index.html`,
+      ? `${PRODUCTION_ORIGIN}/notification.html`
+      : `${PRODUCTION_ORIGIN}/index.html`,
     data: {
       esi_type: type || 'message'
     }
@@ -103,7 +115,7 @@ export async function onRequestPost(context) {
     return json({ ok: false, error: 'Invalid JSON body' }, 400, origin);
   }
 
-  const payload = buildMessage(data, origin);
+  const payload = buildMessage(data);
   const apiKey = context.env.ONESIGNAL_REST_API_KEY;
   if (!apiKey) {
     return json({ ok: false, error: 'OneSignal server key is not configured' }, 503, origin);
