@@ -33,39 +33,50 @@
     return result;
   }
 
-  // password.js is loaded before app.js on notification.html, so pushNotif is
-  // already defined when this isolated bridge is injected by onesignal-init.js.
-  if(typeof pushNotif !== 'function'){
-    console.warn('[ESI OneSignal] pushNotif is not ready; bridge not installed');
-    return;
+  function installBridge(){
+    if(window.__esiOneSignalPushBridgeInstalled) return true;
+    if(typeof pushNotif !== 'function') return false;
+    window.__esiOneSignalPushBridgeInstalled = true;
+
+    pushNotif = function(data){
+      if(!data || typeof data !== 'object') return;
+
+      if(typeof db === 'undefined' || !db || typeof db.ref !== 'function'){
+        notify('Send failed: Firebase is not ready','orange');
+        return;
+      }
+
+      const ref = db.ref('notifications').push(data);
+      ref.then(async ()=>{
+        closeCompose();
+        notify('Broadcast saved to ESI ✓','blue');
+        cache[ref.key] = { ...data, id: ref.key, timestamp: Date.now() };
+        renderFeed();
+
+        try{
+          const result = await sendOneSignal(data);
+          if(result.onesignalId){
+            notify('OneSignal push sent ✓','blue');
+          }else{
+            notify('Broadcast saved, but no OneSignal subscribers were eligible','orange');
+          }
+        }catch(err){
+          console.error('[ESI OneSignal] send failed:', err);
+          notify('Broadcast saved, but OneSignal push failed: '+err.message,'orange');
+        }
+      }).catch(e=>notify('Send failed: '+e.message,'orange'));
+    };
+    return true;
   }
 
-  pushNotif = function(data){
-    if(!data || typeof data !== 'object') return;
-
-    if(typeof db === 'undefined' || !db || typeof db.ref !== 'function'){
-      notify('Send failed: Firebase is not ready','orange');
-      return;
-    }
-
-    const ref = db.ref('notifications').push(data);
-    ref.then(async ()=>{
-      closeCompose();
-      notify('Broadcast saved to ESI ✓','blue');
-      cache[ref.key] = { ...data, id: ref.key, timestamp: Date.now() };
-      renderFeed();
-
-      try{
-        const result = await sendOneSignal(data);
-        if(result.onesignalId){
-          notify('OneSignal push sent ✓','blue');
-        }else{
-          notify('Broadcast saved, but no OneSignal subscribers were eligible','orange');
-        }
-      }catch(err){
-        console.error('[ESI OneSignal] send failed:', err);
-        notify('Broadcast saved, but OneSignal push failed: '+err.message,'orange');
-      }
-    }).catch(e=>notify('Send failed: '+e.message,'orange'));
-  };
+  // notification.html/app.js/password.js can finish loading after this
+  // dynamically injected bridge. Do not permanently abandon the bridge just
+  // because pushNotif is not defined on the first tick.
+  if(!installBridge()){
+    let attempts = 0;
+    const timer = setInterval(()=>{
+      attempts++;
+      if(installBridge() || attempts >= 100) clearInterval(timer);
+    }, 100);
+  }
 })();
