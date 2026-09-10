@@ -17,4 +17,12 @@
     s.dataset.esiOneSignalSdk = '1';
     document.head.appendChild(s);
   }
+
+  if (/notification\.html(?:$|\?)/i.test(location.pathname) && !document.querySelector('script[data-esi-composer-preview]')) {
+    const preview = document.createElement('script');
+    preview.src = '/push/onesignal/notification-preview.js';
+    preview.defer = true;
+    preview.dataset.esiComposerPreview = '1';
+    document.head.appendChild(preview);
+  }
 })();
