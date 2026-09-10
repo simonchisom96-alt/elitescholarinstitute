@@ -1,0 +1,15 @@
+{
+  "name": "esi-fcm-render-server",
+  "private": true,
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "firebase-admin": "^14.3.0"
+  }
+}
