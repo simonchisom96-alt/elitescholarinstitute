@@ -3,6 +3,8 @@
   if (window.__esiOneSignalInit) return;
   window.__esiOneSignalInit = true;
 
+  const VERSION = '36.2402';
+
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
@@ -26,7 +28,7 @@
   if (/notification\.html(?:$|\?)/i.test(location.pathname)) {
     if (!document.querySelector('script[data-esi-composer-preview]')) {
       const preview = document.createElement('script');
-      preview.src = '/push/onesignal/notification-preview.js';
+      preview.src = '/push/onesignal/notification-preview.js?v=' + VERSION;
       preview.defer = true;
       preview.dataset.esiComposerPreview = '1';
       document.head.appendChild(preview);
@@ -34,7 +36,7 @@
 
     if (!document.querySelector('script[data-esi-composer-send]')) {
       const bridge = document.createElement('script');
-      bridge.src = '/push/onesignal/notification-send-bridge.js';
+      bridge.src = '/push/onesignal/notification-send-bridge.js?v=' + VERSION;
       bridge.defer = true;
       bridge.dataset.esiComposerSend = '1';
       document.head.appendChild(bridge);
