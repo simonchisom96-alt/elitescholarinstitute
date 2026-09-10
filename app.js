@@ -123,7 +123,7 @@
   function showInstall() { if (isInstalled()) return; createInstallUI(); updateInstallText(); installBox.style.opacity='1';installBox.style.visibility='visible';installBox.style.pointerEvents='auto';installBox.style.transform='translate(-50%,0)';clearTimeout(hideTimer);hideTimer=setTimeout(hideInstall,10000); }
   function scheduleInstall(delay=15000){ if(isInstalled()||installTimer)return;clearTimeout(installTimer);installTimer=setTimeout(()=>{installTimer=null;showInstall();},delay); }
   function hideInstall(){ if(!installBox)return;installBox.style.opacity='0';installBox.style.visibility='hidden';installBox.style.pointerEvents='none';installBox.style.transform='translate(-50%,-18px)';clearTimeout(hideTimer); }
-  async function installNow(){ hideInstall(); if(isAndroid&&!isInstalled()){window.location.assign(APK_URL);return;} if(deferredInstall){const event=deferredInstall;deferredInstall=null;try{event.prompt();await event.userChoice;}catch(_){}return;} if(isIOS){toast('Tap Share, then choose Add to Home Screen.','#2563eb');return;} toast('Use your browser menu and choose Install app or Add to Home screen.','#2563eb'); }
+  async function installNow(){ hideInstall(); if(isAndroid&&!isInstalled()){window.location.assign(APK_URL);return;} if(deferredInstall){const event=deferredInstall;deferredInstall=null;try{event.prompt();await event.userChoice;}catch(_){}return;} if(isIOS){toast('Tap Share, then choose Add to Home Screen.','#2563eb');return;} toast('Use your browser menu and choose Install app or Add to home screen.','#2563eb'); }
   window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstall=event;window.__esiInstallAvailable=true;if(!isAndroid&&!isIOS)scheduleInstall(15000);});
   window.addEventListener('appinstalled',()=>{deferredInstall=null;window.__esiInstallAvailable=false;hideInstall();toast('App installed successfully','#16a34a');});
 
@@ -136,7 +136,17 @@
   function loadFirebase(done){if(window.firebase?.database&&window.firebase?.auth)return done();const urls=['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js','https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js','https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js'];let i=0;const next=()=>{if(i>=urls.length)return done();const s=document.createElement('script');s.src=urls[i++];s.onload=next;s.onerror=next;document.head.appendChild(s);};next();}
   function setupBell(){ensureBell();loadFirebase(()=>{if(!window.firebase?.database||!window.firebase?.auth)return;let app;try{const config=window.FIREBASE_CONFIG||{apiKey:'AIzaSyDkjELsB4qeaumvsMAIDGIFZgNzl6eoBPM',authDomain:'elite-notification.firebaseapp.com',databaseURL:NOTIF_DB_URL,projectId:'elite-notification',storageBucket:'elite-notification.firebasestorage.app',messagingSenderId:'359910414254',appId:'1:359910414254:web:a1bafd3e23fd554a975a3f'};app=firebase.apps.find(a=>a.name==='notifications')||firebase.initializeApp(config,'notifications');}catch(_){return;}const auth=app.auth(),db=app.database(),ready=auth.currentUser?Promise.resolve():auth.signInAnonymously().catch(()=>null);ready.then(()=>{db.ref('notifications').orderByChild('timestamp').limitToLast(50).on('value',snap=>{notifications=snap.val()||{};updateBell();window.dispatchEvent(new CustomEvent('esi:notifications-updated',{detail:notifications}));});});});}
   addEventListener('online',()=>toast('Back Online','#16a34a')); addEventListener('offline',()=>toast('You are offline','#dc2626')); addEventListener('storage',e=>{if(e.key==='notif_read_ids')updateBell();});
-  async function boot(){ensureManifest();repairMobileCompatibilityCSS();createInstallUI();scheduleInstall(15000);setupBell();scheduleInitialLoaderFallback();await registerServiceWorker();}
+
+  function loadOneSignal(){
+    if(window.__esiOneSignalLoader)return;
+    window.__esiOneSignalLoader=true;
+    const s=document.createElement('script');
+    s.src='/push/onesignal/onesignal-init.js';
+    s.defer=true;
+    document.head.appendChild(s);
+  }
+
+  async function boot(){ensureManifest();repairMobileCompatibilityCSS();createInstallUI();scheduleInstall(15000);setupBell();loadOneSignal();scheduleInitialLoaderFallback();await registerServiceWorker();}
   addEventListener('pageshow',()=>{repairMobileCompatibilityCSS();if(!isInstalled())scheduleInstall(15000);});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
