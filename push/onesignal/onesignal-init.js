@@ -6,7 +6,12 @@
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
-      appId: "6399359d-1281-4013-8914-b4ccb2e13382"
+      appId: "6399359d-1281-4013-8914-b4ccb2e13382",
+      serviceWorkerPath: "push/onesignal/OneSignalSDKWorker.js",
+      serviceWorkerParam: { scope: "/push/onesignal/" },
+      notificationClickHandlerMatch: "exact",
+      notificationClickHandlerAction: "navigate",
+      autoResubscribe: true
     });
   });
 
