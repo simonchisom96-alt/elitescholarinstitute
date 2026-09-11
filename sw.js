@@ -1,6 +1,6 @@
 /* Elite Scholar Institute service worker — offline shell + runtime cache + Pusher Beams */
 importScripts('https://js.pusher.com/beams/service-worker.js');
-const CACHE_VERSION = 'esi-cache-36.2402';
+const CACHE_VERSION = 'esi-cache-36.2403';
 const APP_SHELL = [
   '/', '/index.html', '/logo.jpg', '/advert.png', '/esi.jpg', '/founder.jpg',
   '/manifest.json', '/offline.html', '/app.js', '/downloader.js', '/push-notifications.html',
@@ -40,7 +40,7 @@ self.addEventListener('fetch', event => {
   if (!isGet(request) || !isSameOrigin(request)) return;
   const url = new URL(request.url);
   if (url.pathname.startsWith('/api/')) return;
-  if (/\\.pdf$/i.test(url.pathname)) return;
+  if (/\.pdf$/i.test(url.pathname)) return;
   if (request.mode === 'navigate') {
     event.respondWith((async () => { try { const network = await fetch(request); if (network.ok) { const cache = await caches.open(CACHE_VERSION); cache.put(request, network.clone()).catch(() => {}); } return network; } catch (_) { const cache = await caches.open(CACHE_VERSION); return (await cache.match(request)) || (await cache.match('/index.html')) || (await cache.match('/offline.html')) || Response.error(); } })());
     return;
