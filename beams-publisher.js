@@ -40,3 +40,5 @@ async function publishBeamsAnnouncement(data, firebaseAuth, adminEmail) {
     // Firebase remains the source of truth if push publishing fails.
   }
 }
+
+window.publishBeamsAnnouncement = publishBeamsAnnouncement;
