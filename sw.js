@@ -22,18 +22,24 @@ const APP_SHELL = [
   '/password.js', '/credit.html', '/timetable1.jpg', '/timetable2.jpg', '/quiz1.html',
   '/quiz.html', '/firebase-config.js', '/multiplayer.js', '/singleplay.js'
 ];
+const INSTALL_CORE = ['/', '/index.html', '/offline.html', '/app.js', '/manifest.json', '/logo.jpg', '/push-notifications.html', '/notification.html'];
 const isSameOrigin = request => new URL(request.url).origin === self.location.origin;
 const isGet = request => request.method === 'GET';
+async function cacheUrls(cache, urls) {
+  await Promise.all(urls.map(async url => {
+    try {
+      const response = await fetch(new Request(url, { cache: 'reload' }));
+      if (response.ok || response.type === 'opaque') await cache.put(url, response.clone());
+    } catch (_) {}
+  }));
+}
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_VERSION);
-    await Promise.all(APP_SHELL.map(async url => {
-      try {
-        const response = await fetch(new Request(url, { cache: 'reload' }));
-        if (response.ok || response.type === 'opaque') await cache.put(url, response.clone());
-      } catch (_) {}
-    }));
+    await cacheUrls(cache, INSTALL_CORE);
     await self.skipWaiting();
+    // Best-effort warm cache; runtime caching remains the fallback for anything not completed here.
+    cacheUrls(cache, APP_SHELL.filter(url => !INSTALL_CORE.includes(url))).catch(() => {});
   })());
 });
 self.addEventListener('activate', event => {
