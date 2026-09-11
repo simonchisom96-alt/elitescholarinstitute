@@ -1,0 +1,12 @@
+{
+  "name": "esi-beams-api",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Secure Render API for publishing Elite Scholar Institute Pusher Beams announcements",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
