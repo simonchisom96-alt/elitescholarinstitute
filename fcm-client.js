@@ -145,24 +145,34 @@
           if (typeof window.showToast === 'function') window.showToast('Firebase is not ready', '#dc2626');
           return;
         }
-        const ref = db.ref('notifications').push(data);
-        ref.then(async () => {
-          try {
-            await sendFcm(
-              titleFor(data),
-              previewFor(data).slice(0, 2000),
-              '/notification.html',
-              data
-            );
-            if (typeof window.showToast === 'function') window.showToast('Broadcast sent successfully ✓', '#2563eb');
-          } catch (error) {
-            console.warn('[ESI FCM] broadcast delivery failed', error);
-            if (typeof window.showToast === 'function') window.showToast('Push delivery failed: ' + error.message, '#dc2626');
+
+        // Generate the Firebase key synchronously so both the database write and
+        // FCM message can start immediately when the admin taps Launch.
+        const ref = db.ref('notifications').push();
+        const payload = { ...data, id: data?.id || ref.key };
+        const databaseWrite = ref.set(payload);
+        const pushDelivery = sendFcm(
+          titleFor(payload),
+          previewFor(payload).slice(0, 2000),
+          '/notification.html',
+          payload
+        );
+
+        Promise.allSettled([databaseWrite, pushDelivery]).then(results => {
+          const dbResult = results[0];
+          const pushResult = results[1];
+
+          if (dbResult.status === 'rejected') {
+            if (typeof window.showToast === 'function') window.showToast('Database save failed: ' + dbResult.reason?.message, '#dc2626');
+          } else if (pushResult.status === 'rejected') {
+            console.warn('[ESI FCM] broadcast delivery failed', pushResult.reason);
+            if (typeof window.showToast === 'function') window.showToast('Push delivery failed: ' + pushResult.reason?.message, '#dc2626');
+          } else if (typeof window.showToast === 'function') {
+            window.showToast('Broadcast sent successfully ✓', '#2563eb');
           }
+
           if (typeof window.closeCompose === 'function') window.closeCompose();
           if (typeof window.renderFeed === 'function') window.renderFeed();
-        }).catch(error => {
-          if (typeof window.showToast === 'function') window.showToast('Send failed: ' + error.message, '#dc2626');
         });
       };
     }
