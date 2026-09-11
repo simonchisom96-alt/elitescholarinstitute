@@ -31,32 +31,57 @@
   <script>
     const INSTANCE_ID = '194482e6-d06b-4102-bd18-c8c32ca77565';
     const INTEREST = 'esi-announcements';
-    const SW_URL = '/sw.js?v=36.2403';
+    const SW_URL = '/sw.js?v=36.2404';
     const button = document.getElementById('enable');
     const status = document.getElementById('status');
     const setStatus = text => status.textContent = text;
 
     async function enableNotifications(){
       button.disabled = true;
-      setStatus('Setting up ESI notifications…');
       try {
         if (!('Notification' in window) || !('serviceWorker' in navigator)) {
           throw new Error('This browser does not support web push notifications.');
         }
 
+        // Ask while the user gesture is still active. This makes the browser permission step explicit.
+        if (Notification.permission === 'default') {
+          setStatus('Requesting notification permission…');
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') {
+            setStatus(permission === 'denied'
+              ? 'Notifications are blocked for this site. Allow them in browser/site settings, then try again.'
+              : 'Notification permission was not granted. Tap the button to try again.');
+            return;
+          }
+        }
+        if (Notification.permission !== 'granted') {
+          setStatus('Notifications are blocked for this site. Allow them in browser/site settings, then try again.');
+          return;
+        }
+
+        setStatus('Connecting ESI notifications…');
         const registration = await navigator.serviceWorker.register(SW_URL, {
           scope: '/',
           updateViaCache: 'none'
         });
         await registration.update().catch(() => {});
-        const readyRegistration = await navigator.serviceWorker.ready;
+        const readyRegistration = registration.active
+          ? registration
+          : await Promise.race([
+              navigator.serviceWorker.ready,
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Service worker activation timed out.')), 20000))
+            ]);
 
+        setStatus('Registering this browser with ESI…');
         const beamsClient = new PusherPushNotifications.Client({
           instanceId: INSTANCE_ID,
           serviceWorkerRegistration: readyRegistration
         });
 
-        const state = await beamsClient.getRegistrationState();
+        const state = await Promise.race([
+          beamsClient.getRegistrationState(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Beams registration check timed out.')), 20000))
+        ]);
         const states = PusherPushNotifications.RegistrationState;
 
         if (state === states.PERMISSION_DENIED) {
@@ -65,15 +90,23 @@
         }
 
         if (state !== states.PERMISSION_GRANTED_REGISTERED_WITH_BEAMS) {
-          await beamsClient.start();
+          setStatus('Finishing ESI notification registration…');
+          await Promise.race([
+            beamsClient.start(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Beams start timed out.')), 20000))
+          ]);
         }
 
-        await beamsClient.addDeviceInterest(INTEREST);
+        await Promise.race([
+          beamsClient.addDeviceInterest(INTEREST),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Interest subscription timed out.')), 20000))
+        ]);
+
         setStatus('✓ ESI notifications are enabled on this browser.');
         button.textContent = 'NOTIFICATIONS ENABLED';
       } catch (error) {
         console.error('ESI Beams setup failed:', error);
-        setStatus('Could not enable notifications yet. Check the browser permission and try again.');
+        setStatus('Could not enable notifications: ' + (error && error.message ? error.message : 'setup failed') + ' Try again.');
       } finally {
         button.disabled = false;
       }
