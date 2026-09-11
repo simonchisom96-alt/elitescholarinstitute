@@ -29,16 +29,3 @@ window.FIREBASE_CONFIG = {
 // Firebase sign-in in password.js + firebase-rules.json (which checks
 // auth.token.email against this exact address) — not this string.
 window.ADMIN_EMAIL = "admin@elitescholarinstitute.app";
-
-// notification.html already loads this configuration before app.js.
-// Load the FCM bridge from here so the admin Launch action actually
-// reaches the Render/Firebase sender. The bridge waits for DOMContentLoaded
-// before installing its push override, so the existing page scripts finish
-// defining pushNotif first. No service-worker or cache code is changed here.
-if (!document.querySelector('script[data-esi-fcm-client]')) {
-  const esiFcmScript = document.createElement('script');
-  esiFcmScript.src = './fcm-client.js';
-  esiFcmScript.defer = true;
-  esiFcmScript.dataset.esiFcmClient = '1';
-  document.head.appendChild(esiFcmScript);
-}
