@@ -1,6 +1,6 @@
 /* Elite Scholar Institute service worker — offline shell + runtime cache + Pusher Beams */
 importScripts('https://js.pusher.com/beams/service-worker.js');
-const CACHE_VERSION = 'esi-cache-36.2403';
+const CACHE_VERSION = 'esi-cache-36.2404';
 const APP_SHELL = [
   '/', '/index.html', '/logo.jpg', '/advert.png', '/esi.jpg', '/founder.jpg',
   '/manifest.json', '/offline.html', '/app.js', '/downloader.js', '/push-notifications.html',
@@ -20,14 +20,19 @@ const APP_SHELL = [
   '/governmentp.html', '/economicsp.html', '/accountingp.html', '/oau.html',
   '/notification.html', '/abu.html', '/futa.html', '/unilorin.html', '/unizik.html',
   '/password.js', '/credit.html', '/timetable1.jpg', '/timetable2.jpg', '/quiz1.html',
-  '/quiz.html', '/video.mp4', '/firebase-config.js', '/multiplayer.js', '/singleplay.js'
+  '/quiz.html', '/firebase-config.js', '/multiplayer.js', '/singleplay.js'
 ];
 const isSameOrigin = request => new URL(request.url).origin === self.location.origin;
 const isGet = request => request.method === 'GET';
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_VERSION);
-    await Promise.all(APP_SHELL.map(async url => { try { const response = await fetch(new Request(url, { cache: 'reload' })); if (response.ok || response.type === 'opaque') await cache.put(url, response.clone()); } catch (_) {} }));
+    await Promise.all(APP_SHELL.map(async url => {
+      try {
+        const response = await fetch(new Request(url, { cache: 'reload' }));
+        if (response.ok || response.type === 'opaque') await cache.put(url, response.clone());
+      } catch (_) {}
+    }));
     await self.skipWaiting();
   })());
 });
