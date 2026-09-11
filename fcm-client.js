@@ -60,7 +60,14 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token })
     });
-    if (!response.ok) throw new Error('FCM registration returned HTTP ' + response.status);
+    if (!response.ok) {
+      let detail = '';
+      try {
+        const result = await response.json();
+        detail = result?.message || result?.errorCode || result?.error || '';
+      } catch (_) {}
+      throw new Error('FCM registration returned HTTP ' + response.status + (detail ? ': ' + detail : ''));
+    }
 
     localStorage.setItem('esi_fcm_web_registered', '1');
     return true;
@@ -83,26 +90,33 @@
       if (typeof window.showToast === 'function') window.showToast('Push notifications enabled ✓', '#2563eb');
     } catch (error) {
       console.warn('[ESI FCM] registration failed', error);
-      if (typeof window.showToast === 'function') window.showToast('Push setup could not be completed yet', '#dc2626');
+      if (typeof window.showToast === 'function') window.showToast('Push setup failed: ' + error.message, '#dc2626');
     }
   }
 
-  async function sendFcm(title, body, path) {
+  async function sendFcm(title, body, path, data) {
     const user = window.firebase?.auth?.()?.currentUser;
     if (!user || user.email !== 'admin@elitescholarinstitute.app') {
       throw new Error('Admin Firebase session is required');
     }
     const idToken = await user.getIdToken();
+
     const response = await fetch(FCM_SENDER_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + idToken
       },
-      body: JSON.stringify({ title, body, path })
+      body: JSON.stringify({ title, body, path, notification: data })
     });
-    if (!response.ok) throw new Error('FCM sender returned HTTP ' + response.status);
-    return response.json();
+
+    let result = null;
+    try { result = await response.json(); } catch (_) {}
+    if (!response.ok || !result?.ok) {
+      const detail = result?.message || result?.errorCode || result?.error || ('HTTP ' + response.status);
+      throw new Error('FCM sender failed: ' + detail);
+    }
+    return result;
   }
 
   function previewFor(data) {
@@ -134,11 +148,16 @@
         const ref = db.ref('notifications').push(data);
         ref.then(async () => {
           try {
-            await sendFcm(titleFor(data), previewFor(data).slice(0, 2000), '/notification.html');
+            await sendFcm(
+              titleFor(data),
+              previewFor(data).slice(0, 2000),
+              '/notification.html',
+              data
+            );
             if (typeof window.showToast === 'function') window.showToast('Broadcast sent successfully ✓', '#2563eb');
           } catch (error) {
             console.warn('[ESI FCM] broadcast delivery failed', error);
-            if (typeof window.showToast === 'function') window.showToast('Broadcast saved, but push delivery failed', '#dc2626');
+            if (typeof window.showToast === 'function') window.showToast('Push delivery failed: ' + error.message, '#dc2626');
           }
           if (typeof window.closeCompose === 'function') window.closeCompose();
           if (typeof window.renderFeed === 'function') window.renderFeed();
