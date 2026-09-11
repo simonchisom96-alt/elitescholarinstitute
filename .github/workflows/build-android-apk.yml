@@ -12,6 +12,8 @@ on:
       - 'manifest.json'
       - 'logo.jpg'
       - 'Textbooks.html'
+      - 'firebase-config.js'
+      - 'fcm-client.js'
       - '.github/workflows/build-android-apk.yml'
   workflow_dispatch:
 
@@ -39,9 +41,11 @@ jobs:
           grep -m1 "CACHE_VERSION" sw.js
           grep -m1 "CACHE_NAME" downloader.js
           grep -E "versionCode|versionName" android/app/build.gradle.kts
-          grep -q 'versionCode = 362416' android/app/build.gradle.kts
-          grep -q 'versionName = "4.16"' android/app/build.gradle.kts
+          grep -q 'versionCode = 362417' android/app/build.gradle.kts
+          grep -q 'versionName = "4.17"' android/app/build.gradle.kts
           test -f Englishtextbook.html
+          test -f firebase-config.js
+          test -f fcm-client.js
 
       - name: Bundle defined ESI offline shell
         shell: bash
@@ -135,6 +139,7 @@ jobs:
           quiz.html
           video.mp4
           firebase-config.js
+          fcm-client.js
           multiplayer.js
           singleplay.js
           EOF
@@ -164,8 +169,8 @@ jobs:
           grep -q 'allowFileAccess = true' "$TARGET"
           grep -q 'setDownloadListener' "$TARGET"
           grep -q 'downloadUrl' "$TARGET"
-          grep -q 'versionCode = 362416' android/app/build.gradle.kts
-          grep -q 'versionName = "4.16"' android/app/build.gradle.kts
+          grep -q 'versionCode = 362417' android/app/build.gradle.kts
+          grep -q 'versionName = "4.17"' android/app/build.gradle.kts
           echo "Android source passed the targeted pre-build checks."
 
       - name: Set up JDK 17
@@ -196,8 +201,8 @@ jobs:
           echo "$BADGING"
           EXPECTED_CODE=$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' android/app/build.gradle.kts | head -1)
           EXPECTED_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts | head -1)
-          test "$EXPECTED_CODE" = "362416"
-          test "$EXPECTED_NAME" = "4.16"
+          test "$EXPECTED_CODE" = "362417"
+          test "$EXPECTED_NAME" = "4.17"
           echo "$BADGING" | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
           echo "APK SHA-256: $(sha256sum release/ESI.apk | cut -d' ' -f1)"
           echo "APK bytes: $(wc -c < release/ESI.apk)"
@@ -205,7 +210,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ESI-APK-v4.16
+          name: ESI-APK-v4.17
           path: release/ESI.apk
           if-no-files-found: error
           retention-days: 30
@@ -216,8 +221,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="esi-v4.16-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          TAG="esi-v4.17-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
           gh release create "$TAG" release/ESI.apk \
-            --title "ESI Android APK v4.16" \
-            --notes "ESI Android APK v4.16. Built from commit ${GITHUB_SHA}." \
+            --title "ESI Android APK v4.17" \
+            --notes "ESI Android APK v4.17. Built from commit ${GITHUB_SHA}." \
             --latest
