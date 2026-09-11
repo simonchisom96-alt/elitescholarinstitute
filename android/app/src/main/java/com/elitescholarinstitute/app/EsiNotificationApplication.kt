@@ -3,6 +3,8 @@ package com.elitescholarinstitute.app
 import android.Manifest
 import android.app.Activity
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -19,10 +21,12 @@ class EsiNotificationApplication : Application() {
         private const val NOTIFICATION_PATH_EXTRA = "esi_notification_path"
         private const val NOTIFICATION_URL_PREFIX = "https://appassets.androidplatform.net/"
         private const val NOTIFICATION_PERMISSION_REQUEST = 47001
+        private const val CHANNEL_ID = "esi_fcm_notifications"
     }
 
     override fun onCreate() {
         super.onCreate()
+        createNotificationChannel()
         FirebaseMessaging.getInstance().subscribeToTopic("esi_all")
 
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
@@ -47,6 +51,20 @@ class EsiNotificationApplication : Application() {
             override fun onActivitySaveInstanceState(activity: Activity, outState: android.os.Bundle) = Unit
             override fun onActivityDestroyed(activity: Activity) = Unit
         })
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "ESI Notifications",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Elite Scholar Institute notifications"
+            setShowBadge(true)
+            enableVibration(true)
+        }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
     private fun requestNotificationPermission(activity: Activity) {
