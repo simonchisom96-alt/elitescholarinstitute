@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#04142f">
+  <title>ESI Notifications</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:#04142f;color:#fff;font-family:Poppins,system-ui,sans-serif;display:grid;place-items:center;padding:24px}
+    .card{width:min(100%,430px);background:#0b2148;border:1px solid rgba(255,215,0,.35);border-radius:22px;padding:26px;box-shadow:0 18px 50px rgba(0,0,0,.35);text-align:center}
+    img{width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:12px}
+    h1{font-size:22px;margin:4px 0 8px}
+    p{color:#cbd5e1;font-size:14px;line-height:1.6;margin:0 0 20px}
+    button{width:100%;border:0;border-radius:13px;padding:14px;background:#ffd700;color:#04142f;font-weight:800;font-size:14px;cursor:pointer}
+    button:disabled{opacity:.55;cursor:wait}
+    #status{margin-top:16px;font-size:13px;line-height:1.5;color:#93c5fd;min-height:20px}
+    .back{display:inline-block;margin-top:16px;color:#cbd5e1;text-decoration:none;font-size:13px}
+  </style>
+  <script src="https://js.pusher.com/beams/1.0/push-notifications-cdn.js"></script>
+</head>
+<body>
+  <main class="card">
+    <img src="/logo.jpg" alt="Elite Scholar Institute">
+    <h1>ESI Push Notifications</h1>
+    <p>Enable notifications to receive important Elite Scholar Institute announcements even when the website is not open.</p>
+    <button id="enable">ENABLE ESI NOTIFICATIONS</button>
+    <div id="status" role="status"></div>
+    <a class="back" href="/">← Back to ESI</a>
+  </main>
+  <script>
+    const INSTANCE_ID = '194482e6-d06b-4102-bd18-c8c32ca77565';
+    const INTEREST = 'esi-announcements';
+    const button = document.getElementById('enable');
+    const status = document.getElementById('status');
+    const setStatus = text => status.textContent = text;
+
+    async function enableNotifications(){
+      button.disabled = true;
+      setStatus('Setting up ESI notifications…');
+      try {
+        if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+          throw new Error('This browser does not support web push notifications.');
+        }
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          setStatus('Notification permission was not granted. You can enable it in your browser/site settings and try again.');
+          return;
+        }
+        const registration = await navigator.serviceWorker.register('/sw.js?v=36.2402', {scope:'/'});
+        await registration.update().catch(() => {});
+        const beamsClient = new PusherPushNotifications.Client({instanceId: INSTANCE_ID});
+        await beamsClient.start();
+        await beamsClient.addDeviceInterest(INTEREST);
+        setStatus('✓ ESI notifications are enabled on this browser.');
+        button.textContent = 'NOTIFICATIONS ENABLED';
+      } catch (error) {
+        console.error('ESI Beams setup failed:', error);
+        setStatus('Could not enable notifications yet. Check the browser permission and try again.');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    button.addEventListener('click', enableNotifications);
+  </script>
+</body>
+</html>
