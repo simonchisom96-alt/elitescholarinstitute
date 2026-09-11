@@ -7,6 +7,7 @@
   const VAPID_KEY = 'BJGp_RkyA76f90dCB3wu4egPaJFhVK2LmSIwvW_TIyt9SEyqqJT12NAxYnKikHrcFFa8Ie2YVFpR29PlETx4bwM';
   const MESSAGING_SDK = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js';
   let messagingReady = null;
+  let bridgeTimer = null;
 
   function loadMessagingSdk() {
     if (window.firebase?.messaging) return Promise.resolve();
@@ -119,6 +120,10 @@
     return result;
   }
 
+  // Expose the actual sender so the existing notification.html Launch function
+  // can use the same delivery path even if the bridge loads after password.js.
+  window.esiSendFcm = sendFcm;
+
   function previewFor(data) {
     if (data.type === 'poll' && data.poll) return '📊 New poll, vote now: ' + (data.poll.question || '');
     if (data.type === 'quiz' && data.quiz) return '💡 New quiz, answer now: ' + (data.quiz.question || '');
@@ -133,28 +138,33 @@
     return 'Elite Scholar Institute — New Announcement';
   }
 
+  function pathFor(data) {
+    return data.type === 'poll' || data.type === 'quiz' || data.type === 'image'
+      ? '/notification.html'
+      : '/index.html';
+  }
+
   function installPushBridge() {
     const originalRequestPush = window.requestPush;
     window.requestPush = requestPushAndRegister;
     window.esiRegisterFcmWeb = registerWebPush;
 
-    if (typeof window.pushNotif === 'function') {
-      window.pushNotif = function(data) {
+    if (typeof window.pushNotif === 'function' && !window.pushNotif.__esiFcmWrapped) {
+      const originalPushNotif = window.pushNotif;
+      const wrappedPushNotif = function(data) {
         const db = window.firebase?.database?.();
         if (!db) {
           if (typeof window.showToast === 'function') window.showToast('Firebase is not ready', '#dc2626');
           return;
         }
 
-        // Generate the Firebase key synchronously so both the database write and
-        // FCM message can start immediately when the admin taps Launch.
         const ref = db.ref('notifications').push();
         const payload = { ...data, id: data?.id || ref.key };
         const databaseWrite = ref.set(payload);
         const pushDelivery = sendFcm(
           titleFor(payload),
           previewFor(payload).slice(0, 2000),
-          '/notification.html',
+          pathFor(payload),
           payload
         );
 
@@ -175,6 +185,10 @@
           if (typeof window.renderFeed === 'function') window.renderFeed();
         });
       };
+      wrappedPushNotif.__esiFcmWrapped = true;
+      wrappedPushNotif.__esiOriginal = originalPushNotif;
+      window.pushNotif = wrappedPushNotif;
+      if (bridgeTimer) { clearInterval(bridgeTimer); bridgeTimer = null; }
     }
 
     if (originalRequestPush && typeof originalRequestPush === 'function') {
@@ -182,10 +196,24 @@
     }
   }
 
+  function keepLaunchBridgeAttached() {
+    installPushBridge();
+    if (bridgeTimer || typeof window.pushNotif === 'function') return;
+    let attempts = 0;
+    bridgeTimer = setInterval(() => {
+      installPushBridge();
+      attempts += 1;
+      if (typeof window.pushNotif === 'function' || attempts >= 120) {
+        clearInterval(bridgeTimer);
+        bridgeTimer = null;
+      }
+    }, 50);
+  }
+
   async function boot() {
     try {
       await loadMessagingSdk();
-      installPushBridge();
+      keepLaunchBridgeAttached();
       if (Notification.permission === 'granted') await registerWebPush().catch(() => {});
       const messaging = await getMessagingInstance();
       messaging.onMessage(payload => {
@@ -197,7 +225,7 @@
       });
     } catch (error) {
       console.warn('[ESI FCM] client initialization skipped', error);
-      installPushBridge();
+      keepLaunchBridgeAttached();
     }
   }
 
