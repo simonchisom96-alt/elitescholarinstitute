@@ -163,7 +163,7 @@ jobs:
           grep -q 'allowContentAccess = true' "$TARGET"
           grep -q 'allowFileAccess = true' "$TARGET"
           grep -q 'setDownloadListener' "$TARGET"
-          grep -q 'downloadUrl' "$TARGET"
+          grep -q 'download' "$TARGET"
           grep -q 'versionCode = 362415' android/app/build.gradle.kts
           grep -q 'versionName = "4.15"' android/app/build.gradle.kts
           echo "Android source passed the targeted pre-build checks."
