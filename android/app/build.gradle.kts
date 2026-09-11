@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.elitescholarinstitute.app"
-        minSdk = 23
+        minSdk = 24
         targetSdk = 35
         versionCode = 362415
         versionName = "4.15"
