@@ -7,6 +7,8 @@ app.use(express.json({ limit: '32kb' }));
 
 const port = Number(process.env.PORT) || 10000;
 const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://elitescholarinstitute.onrender.com';
+const TARGET_PROJECT_ID = 'elite-notification';
+const TOPIC = 'esi_all';
 
 app.use((req, res, next) => {
   const origin = req.get('origin');
@@ -33,8 +35,13 @@ function getFirebaseApp() {
     throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON');
   }
 
+  if (serviceAccount.project_id && serviceAccount.project_id !== TARGET_PROJECT_ID) {
+    throw new Error('Firebase service account belongs to project ' + serviceAccount.project_id + ', expected ' + TARGET_PROJECT_ID);
+  }
+
   return admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
+    projectId: TARGET_PROJECT_ID,
     databaseURL: 'https://elite-notification-default-rtdb.firebaseio.com'
   });
 }
@@ -50,20 +57,46 @@ async function requireAdmin(req) {
   return decoded;
 }
 
+function safeError(error) {
+  const code = String(error?.code || '').trim();
+  const message = String(error?.message || 'Unknown FCM error').trim();
+  return { code, message };
+}
+
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, service: 'esi-fcm', firebase: Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON) });
+  try {
+    const appInstance = getFirebaseApp();
+    const serviceAccount = appInstance.options.credential?.clientEmail || '';
+    res.json({
+      ok: true,
+      service: 'esi-fcm',
+      firebase: true,
+      projectId: TARGET_PROJECT_ID,
+      credentialConfigured: Boolean(serviceAccount)
+    });
+  } catch (error) {
+    const detail = safeError(error);
+    res.status(500).json({
+      ok: false,
+      service: 'esi-fcm',
+      firebase: false,
+      errorCode: detail.code || 'firebase-config-error',
+      message: detail.message
+    });
+  }
 });
 
 app.post('/register', async (req, res) => {
   const token = String(req.body?.token || '').trim();
-  if (!token || token.length < 20) return res.status(400).json({ ok: false, error: 'Invalid token' });
+  if (!token || token.length < 20) return res.status(400).json({ ok: false, errorCode: 'invalid-token', message: 'Invalid FCM registration token' });
 
   try {
-    await getFirebaseApp().messaging().subscribeToTopic([token], 'esi_all');
-    res.json({ ok: true });
+    const response = await getFirebaseApp().messaging().subscribeToTopic([token], TOPIC);
+    res.json({ ok: true, topic: TOPIC, successCount: response.successCount, failureCount: response.failureCount });
   } catch (error) {
-    console.error('FCM registration failed:', error && error.message);
-    res.status(500).json({ ok: false, error: 'FCM registration failed' });
+    const detail = safeError(error);
+    console.error('FCM registration failed:', detail);
+    res.status(500).json({ ok: false, errorCode: detail.code || 'registration-failed', message: detail.message });
   }
 });
 
@@ -76,19 +109,36 @@ app.post('/send', async (req, res) => {
     const messageBody = String(body.body || 'You have a new notification.').trim().slice(0, 2000);
     const path = String(body.path || '/notification.html').trim() || '/notification.html';
 
+    let notificationData = body.notification;
+    if (!notificationData || typeof notificationData !== 'object' || Array.isArray(notificationData)) {
+      notificationData = {};
+    }
+
+    const type = String(notificationData.type || 'announcement').slice(0, 32);
+    const notificationId = String(notificationData.id || notificationData.key || '').slice(0, 128);
+
+    const fcmData = {
+      title,
+      body: messageBody,
+      path,
+      type,
+      notificationId
+    };
+
     const messageId = await getFirebaseApp().messaging().send({
-      topic: 'esi_all',
+      topic: TOPIC,
       android: {
         priority: 'high',
-        data: { title, body: messageBody, path }
+        data: fcmData
       },
       webpush: {
+        data: fcmData,
         notification: {
           title,
           body: messageBody,
           icon: '/logo.jpg',
           badge: '/logo.jpg',
-          data: { path }
+          data: { path, type, notificationId }
         },
         fcmOptions: {
           link: 'https://elitescholarinstitute.onrender.com/notification.html'
@@ -96,11 +146,16 @@ app.post('/send', async (req, res) => {
       }
     });
 
-    res.json({ ok: true, messageId });
+    res.json({ ok: true, messageId, topic: TOPIC });
   } catch (error) {
-    console.error('FCM send failed:', error && error.message);
-    const forbidden = error && (error.message === 'Missing bearer token' || error.message === 'Admin account required');
-    res.status(forbidden ? 403 : 500).json({ ok: false, error: forbidden ? 'Forbidden' : 'FCM send failed' });
+    const detail = safeError(error);
+    console.error('FCM send failed:', detail);
+    const forbidden = detail.message === 'Missing bearer token' || detail.message === 'Admin account required';
+    res.status(forbidden ? 403 : 500).json({
+      ok: false,
+      errorCode: forbidden ? 'forbidden' : (detail.code || 'fcm-send-failed'),
+      message: forbidden ? 'Forbidden' : detail.message
+    });
   }
 });
 
