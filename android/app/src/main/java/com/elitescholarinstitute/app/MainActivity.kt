@@ -1,11 +1,13 @@
 package com.elitescholarinstitute.app
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
 import android.app.DownloadManager
 import android.content.ContentValues
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
@@ -32,6 +34,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.FileProvider
+import com.pusher.pushnotifications.PushNotifications
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileNotFoundException
@@ -49,6 +52,20 @@ class MainActivity : ComponentActivity() {
     private val diskCache by lazy { File(cacheDir, "esi-web-cache").apply { mkdirs() } }
     private val shareDir by lazy { File(cacheDir, "shared").apply { mkdirs() } }
     private val fileChooserRequestCode = 41001
+
+    private fun initializeBeams() {
+        try {
+            PushNotifications.start(applicationContext, "194482e6-d06b-4102-bd18-c8c32ca77565")
+            PushNotifications.addDeviceInterest("esi-announcements")
+        } catch (_: Exception) {
+            // Keep the existing ESI startup path alive if Beams cannot initialize.
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 41002)
+        }
+    }
 
     private fun mimeType(path: String): String {
         val ext = path.substringAfterLast('.', "").lowercase()
@@ -258,142 +275,69 @@ class MainActivity : ComponentActivity() {
             return Promise.resolve();
           };
           document.addEventListener('click', function(event){
-            const anchor = event.target && event.target.closest ? event.target.closest('a[download]') : null;
-            if(!anchor) return;
-            const href = anchor.href || anchor.getAttribute('href') || '';
-            if(!href) return;
-            event.preventDefault();
-            event.stopPropagation();
-            const name = anchor.getAttribute('download') || '';
-            const type = anchor.dataset.mime || '';
-            if(href.indexOf('blob:') === 0 || href.indexOf('data:') === 0){
-              fetch(href).then(r => r.blob()).then(blob => {
-                const reader = new FileReader();
-                reader.onload = function(){
-                  const result = String(reader.result || '');
-                  const comma = result.indexOf(',');
-                  const base64 = comma >= 0 ? result.slice(comma + 1) : result;
-                  const chunkSize = 180000;
-                  window.ESIAndroid.beginDownloadFile(name || 'download', blob.type || type || 'application/octet-stream');
-                  for(let i=0; i<base64.length; i+=chunkSize){
-                    window.ESIAndroid.appendDownloadChunk(base64.slice(i, i+chunkSize));
-                  }
-                  window.ESIAndroid.finishDownloadFile();
-                };
-                reader.readAsDataURL(blob);
-              }).catch(() => window.ESIAndroid.downloadUrl(href, name, type));
-            } else {
-              window.ESIAndroid.downloadUrl(href, name, type);
-            }
+            const a = event.target && event.target.closest ? event.target.closest('a[href]') : null;
+            if(!a) return;
+            const href = a.getAttribute('href') || '';
+            if(/^https?:\/\/[^/]*(?:wa\.me|api\.whatsapp\.com)/i.test(href)) return;
           }, true);
         })();
     """.trimIndent()
 
     private inner class AndroidBridge {
-        private var pendingFile: File? = null
-        private var pendingMime = "application/octet-stream"
-        private var pendingTitle = ""
-        private var pendingText = ""
-        private var pendingOutput: FileOutputStream? = null
-        private var pendingDownloadName = "download"
-        private var pendingDownloadMime = "application/octet-stream"
-        private var pendingDownloadOutput: FileOutputStream? = null
+        private var shareFile: File? = null
+        private var shareName: String = "shared_file"
+        private var shareMime: String = "application/octet-stream"
+        private var shareTitle: String = ""
+        private var shareText: String = ""
+        private var downloadFile: File? = null
+        private var downloadName: String = "download"
+        private var downloadMime: String = "application/octet-stream"
 
         @JavascriptInterface
         fun beginShareFile(name: String, mime: String, title: String, text: String) {
-            synchronized(this) {
-                pendingOutput?.close()
-                val safeName = name.substringAfterLast('/').ifBlank { "shared_file" }
-                pendingFile = File(shareDir, safeName)
-                pendingMime = mime.ifBlank { "application/octet-stream" }
-                pendingTitle = title
-                pendingText = text
-                pendingOutput = FileOutputStream(pendingFile!!, false)
-            }
+            shareName = sanitizeDownloadName(name, name, mime)
+            shareMime = mime.ifBlank { "application/octet-stream" }
+            shareTitle = title
+            shareText = text
+            shareFile = File(shareDir, shareName).apply { parentFile?.mkdirs(); delete(); createNewFile() }
         }
 
         @JavascriptInterface
-        fun appendShareChunk(chunk: String) {
-            synchronized(this) {
-                val out = pendingOutput ?: throw IllegalStateException("No share file is open")
-                out.write(Base64.decode(chunk, Base64.DEFAULT))
-            }
+        fun appendShareChunk(base64: String) {
+            val file = shareFile ?: return
+            try { FileOutputStream(file, true).use { it.write(Base64.decode(base64, Base64.DEFAULT)) } } catch (_: Exception) { }
         }
 
         @JavascriptInterface
         fun finishShareFile() {
-            val file: File
-            val mime: String
-            val title: String
-            val text: String
-            synchronized(this) {
-                pendingOutput?.flush()
-                pendingOutput?.close()
-                pendingOutput = null
-                file = pendingFile ?: throw IllegalStateException("No share file is open")
-                mime = pendingMime
-                title = pendingTitle
-                text = pendingText
-                pendingFile = null
-            }
-            runOnUiThread { shareLocalFile(file, mime, title, text) }
+            val file = shareFile ?: return
+            shareFile = null
+            runOnUiThread { shareLocalFile(file, shareMime, shareTitle, shareText) }
         }
 
         @JavascriptInterface
         fun beginDownloadFile(name: String, mime: String) {
-            synchronized(this) {
-                pendingDownloadOutput?.close()
-                pendingDownloadName = name.substringAfterLast('/').ifBlank { "download" }
-                pendingDownloadMime = mime.ifBlank { "application/octet-stream" }
-                pendingDownloadOutput = FileOutputStream(File(cacheDir, "esi-download-$${System.nanoTime()}.part"), false)
-            }
+            downloadName = sanitizeDownloadName(name, name, mime)
+            downloadMime = mime.ifBlank { "application/octet-stream" }
+            downloadFile = File(shareDir, downloadName).apply { parentFile?.mkdirs(); delete(); createNewFile() }
         }
 
         @JavascriptInterface
-        fun appendDownloadChunk(chunk: String) {
-            synchronized(this) {
-                val out = pendingDownloadOutput ?: throw IllegalStateException("No download is open")
-                out.write(Base64.decode(chunk, Base64.DEFAULT))
-            }
+        fun appendDownloadChunk(base64: String) {
+            val file = downloadFile ?: return
+            try { FileOutputStream(file, true).use { it.write(Base64.decode(base64, Base64.DEFAULT)) } } catch (_: Exception) { }
         }
 
         @JavascriptInterface
         fun finishDownloadFile() {
-            val temp: File
-            val name: String
-            val mime: String
-            synchronized(this) {
-                pendingDownloadOutput?.flush()
-                pendingDownloadOutput?.close()
-                pendingDownloadOutput = null
-                temp = File(cacheDir, "esi-download-temp-$${System.nanoTime()}.bin")
-                throwIfNoPendingDownload(temp)
-                name = pendingDownloadName
-                mime = pendingDownloadMime
+            val file = downloadFile ?: return
+            downloadFile = null
+            try {
+                saveLocalDownload(downloadName, downloadMime, file.readBytes())
+                file.delete()
+            } catch (_: Exception) {
+                runOnUiThread { Toast.makeText(this@MainActivity, "Download failed", Toast.LENGTH_SHORT).show() }
             }
-            Thread {
-                try {
-                    saveLocalDownload(name, mime, temp.readBytes())
-                } catch (_: Exception) {
-                    runOnUiThread { Toast.makeText(this@MainActivity, "Download failed", Toast.LENGTH_SHORT).show() }
-                } finally {
-                    temp.delete()
-                }
-            }.start()
-        }
-
-        private fun throwIfNoPendingDownload(target: File) {
-            val candidates = cacheDir.listFiles { file -> file.name.startsWith("esi-download-") && file.name.endsWith(".part") }
-            val source = candidates?.maxByOrNull { it.lastModified() } ?: throw IllegalStateException("No download is open")
-            if (!source.renameTo(target)) {
-                source.copyTo(target, overwrite = true)
-                source.delete()
-            }
-        }
-
-        @JavascriptInterface
-        fun downloadUrl(url: String, name: String, mime: String) {
-            runOnUiThread { startNativeDownload(url, name, mime) }
         }
 
         @JavascriptInterface
@@ -502,6 +446,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        initializeBeams()
         webView = WebView(this)
         webView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         setContentView(webView)
