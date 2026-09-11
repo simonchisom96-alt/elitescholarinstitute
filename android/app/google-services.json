@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "359910414254",
+    "firebase_url": "https://elite-notification-default-rtdb.firebaseio.com",
+    "project_id": "elite-notification",
+    "storage_bucket": "elite-notification.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:359910414254:android:109bc05a4d18ad9c975a3f",
+        "android_client_info": {
+          "package_name": "com.elitescholarinstitute.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWFnarBvzk_xga5t2g44kW3wkFFnfzVz8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
