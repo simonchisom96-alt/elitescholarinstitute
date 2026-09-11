@@ -1,0 +1,6 @@
+BACKUP MARKER — Beams web work
+Main before repair: 12ac56a2f0f82f893a84277fd50451be31577bc1
+Files being repaired: push-notifications.html, sw.js
+Original push-notifications.html blob: 0e29258a5b8591aed2a8eae5b142a84004e540a4
+Original sw.js blob: 16dea1684af4be828d574008d177c302e415c83b
+This marker is intentionally kept as a lightweight recovery reference.
