@@ -910,6 +910,7 @@ function fileToDataUrl(file, callback){
 function pushNotif(data){
   const ref = db.ref('notifications').push(data);
   ref.then(()=>{
+      if (window.publishBeamsAnnouncement) window.publishBeamsAnnouncement(data);
       closeCompose();
       toast('Broadcast sent successfully ✓', 'blue');
       cache[ref.key] = { ...data, id: ref.key, timestamp: Date.now() };
