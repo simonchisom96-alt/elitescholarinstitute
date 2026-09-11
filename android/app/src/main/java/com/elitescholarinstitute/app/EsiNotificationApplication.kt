@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.core.content.ContextCompat
+import com.google.firebase.messaging.FirebaseMessaging
 
 class EsiNotificationApplication : Application() {
 
@@ -22,6 +23,7 @@ class EsiNotificationApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        FirebaseMessaging.getInstance().subscribeToTopic("esi_all")
 
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityCreated(activity: Activity, savedInstanceState: android.os.Bundle?) {
