@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -36,4 +37,6 @@ dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.activity:activity:1.10.0")
     implementation("androidx.webkit:webkit:1.12.1")
+    implementation("com.google.firebase:firebase-messaging:22.0.0")
+    implementation("com.pusher:push-notifications-android:1.10.0")
 }
