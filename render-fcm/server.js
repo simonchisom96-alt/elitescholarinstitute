@@ -129,14 +129,12 @@ app.post('/send', async (req, res) => {
 
     const messageId = await getFirebaseApp().messaging().send({
       topic: TOPIC,
+      // Android intentionally receives a high-priority DATA-ONLY message.
+      // This guarantees EsiFirebaseMessagingService.onMessageReceived() owns
+      // notification rendering instead of letting FCM's background tray path
+      // bypass the ESI notification channel and tap-routing logic.
       android: {
         priority: 'high',
-        notification: {
-          title,
-          body: messageBody,
-          channelId: 'esi_fcm_notifications',
-          sound: 'default'
-        },
         data: fcmData
       },
       webpush: {
