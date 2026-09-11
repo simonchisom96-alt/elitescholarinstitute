@@ -88,7 +88,9 @@ app.get('/health', (_req, res) => {
 
 app.post('/register', async (req, res) => {
   const token = String(req.body?.token || '').trim();
-  if (!token || token.length < 20) return res.status(400).json({ ok: false, errorCode: 'invalid-token', message: 'Invalid FCM registration token' });
+  if (!token || token.length < 20) {
+    return res.status(400).json({ ok: false, errorCode: 'invalid-token', message: 'Invalid FCM registration token' });
+  }
 
   try {
     const response = await getFirebaseApp().messaging().subscribeToTopic([token], TOPIC);
@@ -129,6 +131,12 @@ app.post('/send', async (req, res) => {
       topic: TOPIC,
       android: {
         priority: 'high',
+        notification: {
+          title,
+          body: messageBody,
+          channelId: 'esi_fcm_notifications',
+          sound: 'default'
+        },
         data: fcmData
       },
       webpush: {
