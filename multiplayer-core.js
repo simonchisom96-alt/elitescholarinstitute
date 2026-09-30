@@ -2533,16 +2533,17 @@ global.ESITopics = {
       }
       let html = '';
       html += `<input class="esi-dd-search" type="search" placeholder="Search topics" value="${escapeAttr(panel.dataset.q||'')}" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border,#1e4080);background:var(--bg,#020818);color:var(--text,#e6eeff);font-size:12px;margin-bottom:8px">`;
-      html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+      html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap">
         <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;cursor:pointer"><input type="checkbox" class="esi-dd-all" ${selected.size>=all.length?'checked':''} style="width:16px;height:16px;accent-color:#ffd700"> Select All</label>
         <span style="font-size:11px;color:var(--accent,#ffd700);font-weight:700">${selected.size} / ${all.length}</span>
+        <button type="button" class="esi-dd-done" style="padding:7px 12px;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;background:#ffd700;border:0;color:#111">DONE(${selected.size})</button>
       </div>`;
       if(recent.length){
         html += `<div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 4px;font-size:11px;font-weight:800;color:var(--accent,#ffd700)">Recently Selected <button type="button" class="esi-dd-clear" style="border:0;background:transparent;color:#7ec8ff;font-size:10px;font-weight:800;cursor:pointer">Clear</button></div>`;
         selectedFirst(recent).filter(matches).forEach(t=>{ html += row(t); });
       }
       ['SS1','SS2','SS3'].forEach(band=>{
-        const items = selectedFirst(group[band]||[]).filter(t=>matches(t));
+        const items = (group[band]||[]).filter(t=>matches(t));
         if(!items.length) return;
         html += `<div style="margin:10px 0 4px;font-size:11px;font-weight:800;color:var(--accent,#ffd700)">${band}</div>`;
         items.forEach(t=>{ html += row(t); });
@@ -2587,7 +2588,7 @@ global.ESITopics = {
         panel.style.display = 'none';
         root.querySelector('.esi-topic-dd-arrow').textContent = '▾';
       };
-      panel.querySelector('.esi-dd-done').onclick = function(ev){
+      function commitDone(ev){
         ev.preventDefault(); ev.stopPropagation();
         let picked = (map[sub]||[]).slice();
         if(!picked.length) picked = all.slice();
@@ -2598,7 +2599,8 @@ global.ESITopics = {
         root.querySelector('.esi-topic-dd-arrow').textContent = '▾';
         const b = root.querySelector('.esi-topic-dd-btn b');
         if(b) b.textContent = picked.length>=all.length ? 'All topics' : (picked.length+' selected');
-      };
+      }
+      panel.querySelectorAll('.esi-dd-done').forEach(btn=>{ btn.onclick = commitDone; });
     }
 
     container.querySelectorAll('.esi-topic-dd').forEach(root=>{
@@ -2673,13 +2675,25 @@ global.ESITopics = {
 
     async function qbGetBank(subject, subMode, diff){
         let path = `elite_subject_database/${subject}/${subMode}/${diff}/question_bank`;
+        let merged = {};
         try{
             let snap = await qbDb.ref(path).get();
-            return snap.exists() ? (snap.val()||{}) : {};
+            if(snap.exists()) merged = snap.val()||{};
         }catch(e){
             console.warn('[QuestionBank] read failed for "'+path+'":', e && e.message);
-            return {};
         }
+        try{
+            const picks = mpTopicsFor(subject);
+            const custom = window.ESITopics && !ESITopics.isAllSelected(subject, picks);
+            if(custom){
+                for(const topic of picks.slice(0, 40)){
+                    let tPath = `elite_subject_database/${subject}/${subMode}/${diff}/topic/${ESITopics.sanitizeKey(topic)}/question_bank`;
+                    let ts = await qbDb.ref(tPath).get();
+                    if(ts.exists()) Object.assign(merged, ts.val()||{});
+                }
+            }
+        }catch(e){}
+        return merged;
     }
     function qbSaveQuestions(subject, subMode, diff, questions){
         if(!questions || !questions.length) return;
@@ -4170,8 +4184,9 @@ async function fetchViaPuterMP(subject, subMode, diff, count, excludeHashSet, on
         // Randomly assign ONE topic per question index off the rotation queue,
         // instead of handing Puter the entire topic bank to wander through.
         let chunkTopics = nextTopicsForSubject(subject, chunkCount);
+        let allowedTopics = mpTopicsFor(subject);
         let topicFocus = chunkTopics.length
-            ? `Assign EXACTLY one topic per question index, in order — ${chunkTopics.map((t,idx)=>`Q${idx+1}=${t}`).join(' | ')}. Each question must stay strictly inside its own assigned topic only, never drifting onto a different one.`
+            ? `USER-SELECTED TOPICS ONLY (do not invent or switch topics): ${(allowedTopics||[]).join(' || ')}. Assign EXACTLY one of those topics per question index, in order — ${chunkTopics.map((t,idx)=>`Q${idx+1}=${t}`).join(' | ')}. Each question must stay strictly inside its own assigned topic only, never drifting onto a different one.`
             : `FOCUS: Core ${subject} syllabus.`;
         if(!topicsUsedEver[subject]) topicsUsedEver[subject] = new Set();
         let repeatedTopics = chunkTopics.filter(t => topicsUsedEver[subject].has(t));
@@ -4248,7 +4263,15 @@ async function fetchQuestionsForMatch(settings, onStatus){
         for(let q of bankList){
             if(fromBank.length>=quota) break;
             if(!q||!q.q||!Array.isArray(q.options)) continue;
-            if(customTopics && q.topic && !allowedTopics.has(q.topic)) continue;
+            if(customTopics){
+                const qt=q.topic||'';
+                let ok=allowedTopics.has(qt);
+                if(!ok && window.ESITopics){
+                    const qk=ESITopics.sanitizeKey(qt);
+                    allowedTopics.forEach(t=>{ if(ESITopics.sanitizeKey(t)===qk) ok=true; });
+                }
+                if(!qt || !ok) continue;
+            }
             let h=hashQ(q.q);
             if(mpSessionSeen.has(h)||localTaken.has(h)) continue;
             localTaken.add(h);
@@ -6247,12 +6270,7 @@ async function buildMatchResultCanvas(){
     ctx.fillStyle=headColor; ctx.font='900 54px Poppins, sans-serif';
     ctx.fillText(d.headline.replace(/^[^\w]+/,'').trim(), W/2, cursor+50);
     ctx.fillStyle='#8ea0c8'; ctx.font='600 21px Poppins, sans-serif';
-    let shownT=(window.ESITopics && d.topics)?ESITopics.displayable(d.topics,5):[];
     ctx.fillText(`${(d.subjects||[]).map(s=>subjectIcon(s)+' '+s).join(', ').toUpperCase()} · ${(d.mode||'').toUpperCase()} MODE`, W/2, cursor+88);
-    if(shownT.length){
-        ctx.fillStyle='#c9b24a'; ctx.font='600 14px Poppins, sans-serif';
-        ctx.fillText(shownT.join(' · '), W/2, cursor+108);
-    }
     cursor+=headlineBlock;
     // ---- host + date/time ----
     ctx.fillStyle='#5d75ac'; ctx.font='600 17px Poppins, sans-serif';
@@ -6382,8 +6400,7 @@ async function buildTournamentResultCanvas(){
     ctx.fillStyle='#8ea0c8'; ctx.font='600 18px Poppins, sans-serif';
     let formatLabel = d.teamMode ? 'TEAM BATTLE' : (d.format==='round_robin'?'ROUND ROBIN LEAGUE':'SINGLE ELIMINATION')+(d.rounds?` · ${d.rounds} ROUND${d.rounds>1?'S':''}`:'');
     ctx.fillText(formatLabel, W/2, cursor+96);
-    let shownT=(window.ESITopics && d.topics)?ESITopics.displayable(d.topics,5):[];
-    let metaLine=[(d.subjects||[]).map(s=>subjectIcon(s)+' '+s).join(', ').toUpperCase(), shownT.length?shownT.join(' · '):'', d.mode?d.mode.toUpperCase()+' MODE':'', d.hostName?'HOST: '+d.hostName.toUpperCase():''].filter(Boolean).join(' · ');
+    let metaLine=[(d.subjects||[]).map(s=>subjectIcon(s)+' '+s).join(', ').toUpperCase(), d.mode?d.mode.toUpperCase()+' MODE':'', d.hostName?'HOST: '+d.hostName.toUpperCase():''].filter(Boolean).join(' · ');
     if(metaLine){ ctx.font='600 15px Poppins, sans-serif'; ctx.fillStyle='#5d75ac'; ctx.fillText(metaLine, W/2, cursor+122); }
     cursor+=titleBlock;
     if(d.teamMode){
