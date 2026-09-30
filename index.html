@@ -2659,6 +2659,92 @@ html.esi-loader-active body{
   display:none!important;
 }
 </style>
+
+<style id="esi-precise-final-fix">
+/* EXACT floating labels: short, centered and directly UNDER each icon. */
+.float-quiz{
+  bottom:205px!important;
+}
+.float-chat{
+  bottom:80px!important;
+}
+.float-quiz::before{
+  content:"CBT"!important;
+  top:calc(100% + 6px)!important;
+  bottom:auto!important;
+  left:50%!important;
+  right:auto!important;
+  transform:translateX(-50%)!important;
+  white-space:nowrap!important;
+  background:linear-gradient(135deg,#1e293b,#334155)!important;
+  color:#fff!important;
+  padding:7px 13px!important;
+  border-radius:18px!important;
+  font:700 13px/1 Arial,sans-serif!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.3)!important;
+  display:block!important;
+}
+.float-chat::before{
+  content:"Need Help"!important;
+  top:calc(100% + 6px)!important;
+  bottom:auto!important;
+  left:50%!important;
+  right:auto!important;
+  transform:translateX(-50%)!important;
+  white-space:nowrap!important;
+  background:linear-gradient(135deg,#1e293b,#334155)!important;
+  color:#fff!important;
+  padding:7px 13px!important;
+  border-radius:18px!important;
+  font:700 13px/1 Arial,sans-serif!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.3)!important;
+  display:block!important;
+}
+.float-quiz::after,.float-chat::after{
+  display:none!important;
+}
+
+/* Maximum practical About Us writing width. */
+.esi-about-panel{
+  width:100%!important;
+  max-width:none!important;
+}
+.esi-about-panel>.section{
+  width:100%!important;
+  max-width:none!important;
+  padding-left:0!important;
+  padding-right:0!important;
+}
+.esi-about-panel .about-box,
+.esi-about-panel .department-box,
+.esi-about-panel .why-box,
+.esi-about-panel .result-card,
+.esi-about-panel .transform-box,
+.esi-about-panel .review-box,
+.esi-about-panel .faq-box,
+.esi-about-panel .contact-box{
+  width:100%!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+}
+.esi-about-panel .about-box p,
+.esi-about-panel .department-box li,
+.esi-about-panel .why-box p{
+  width:100%!important;
+  max-width:none!important;
+  padding-left:2px!important;
+  padding-right:2px!important;
+}
+
+/* The words themselves are the timetable action. */
+.esi-about-panel [data-timetable-expand],
+.esi-about-panel .timetable-expand-trigger{
+  cursor:pointer!important;
+  user-select:none!important;
+  -webkit-tap-highlight-color:rgba(47,140,255,.25)!important;
+}
+</style>
+
 </head>
 
 
@@ -3389,7 +3475,7 @@ Science Timetable
     <div class="hero-image" style="width:100% !important; height:90% !important; max-height:240px !important; overflow:hidden !important; display:flex !important; justify-content:center !important; align-items:center !important; padding:0 !important; margin:0 !important; border-radius:10px !important;">
 <img src="timetable1.jpg" alt="Check your Internet connection to load images, images would show offline once this is done." onclick="openLightboxWithWatermark(this)" style="cursor:pointer !important; width:180% !important; max-width:180% !important; height:90% !important; min-height:90% !important; max-height:240px !important; display:block !important; margin:0 auto !important; margin-left:-40% !important; position:relative !important; left:20% !important; object-fit:cover !important; border-radius:8px !important;">
 </div>
-<span style="font-size:11px !important; font-weight:800 !important; letter-spacing:1.2px !important; margin-top:7px !important; margin-bottom:2px !important; opacity:0.85 !important; text-transform:uppercase !important;">CLICK IMAGE TO EXPAND</span>
+<span data-timetable-expand class="timetable-expand-trigger" onclick="openLightboxWithWatermark(this.parentElement.querySelector('img'))" style="font-size:11px !important; font-weight:800 !important; letter-spacing:1.2px !important; margin-top:7px !important; margin-bottom:2px !important; opacity:0.85 !important; text-transform:uppercase !important;">CLICK IMAGE TO EXPAND</span>
 </div>
 </div>
 </div>
@@ -4516,5 +4602,16 @@ function drawWatermark(imgElement, callback){
 })();
 </script>
 
+<script>
+document.addEventListener('click',function(e){
+  const trigger=e.target.closest('.timetable-expand-trigger');
+  if(!trigger) return;
+  const img=trigger.parentElement && trigger.parentElement.querySelector('img[src*="timetable1.jpg"]');
+  if(img && typeof window.openLightboxWithWatermark==='function'){
+    e.preventDefault();
+    window.openLightboxWithWatermark(img);
+  }
+},true);
+</script>
 </body>
 </html>
