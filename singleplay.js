@@ -2516,7 +2516,7 @@ global.ESITopics = {
       const panel = root.querySelector('.esi-topic-dd-panel');
       const all = ESITopics.flat(sub);
       const map = getMap();
-      if(!map[sub] || !map[sub].length) map[sub] = all.slice();
+      if(!Object.prototype.hasOwnProperty.call(map, sub) || map[sub]==null) map[sub] = all.slice();
       const selected = new Set(map[sub]);
       const group = ESITopics.grouped(sub);
       const recent = recentFor(sub).filter(t=>all.includes(t));
