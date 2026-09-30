@@ -2568,7 +2568,98 @@ html.esi-loader-active body{
 .esi-about-role{margin:4px 0!important;color:#ffd700!important;font-weight:900!important;letter-spacing:1.5px!important}
 .esi-about-subrole{color:#c5dcff!important;font-size:13px!important}
 .esi-about-panel .section{scroll-margin-top:15px!important}
-</style></head>
+</style>
+<style id="esi-last-layout-fix">
+/* Final hero framing: reveal more of the artwork below the face. */
+.esi-hero-card{
+  background-position:center 30%!important;
+}
+
+/* Give the About Us reading boxes the widest practical mobile text area. */
+.esi-about-panel{
+  width:min(1080px,calc(100vw - 12px))!important;
+}
+.esi-about-panel>.section{
+  width:100%!important;
+  max-width:none!important;
+  padding-left:2px!important;
+  padding-right:2px!important;
+}
+.esi-about-panel .about-box,
+.esi-about-panel .department-box,
+.esi-about-panel .why-box,
+.esi-about-panel .result-card,
+.esi-about-panel .transform-box,
+.esi-about-panel .review-box,
+.esi-about-panel .faq-box,
+.esi-about-panel .contact-box{
+  width:100%!important;
+  max-width:none!important;
+}
+.esi-about-panel .about-box{
+  padding-left:12px!important;
+  padding-right:12px!important;
+}
+.esi-about-panel .about-box p{
+  width:100%!important;
+  max-width:none!important;
+  margin-left:0!important;
+  margin-right:0!important;
+}
+@media(max-width:700px){
+  .esi-about-panel{
+    width:calc(100vw - 4px)!important;
+    padding-left:4px!important;
+    padding-right:4px!important;
+  }
+  .esi-about-panel>.section{
+    padding-left:0!important;
+    padding-right:0!important;
+  }
+  .esi-about-panel .about-box{
+    padding-left:10px!important;
+    padding-right:10px!important;
+  }
+}
+
+/* Keep the glowing quick actions and make their purpose visible on mobile. */
+.float-quiz::before{
+  content:"CBT Driller"!important;
+  display:block!important;
+  position:absolute!important;
+  right:66px!important;
+  bottom:50%!important;
+  transform:translateY(50%)!important;
+  white-space:nowrap!important;
+  background:#10264b!important;
+  color:#fff!important;
+  padding:8px 11px!important;
+  border-radius:14px!important;
+  font:800 12px/1.1 Arial,sans-serif!important;
+  box-shadow:0 5px 18px rgba(0,0,0,.35)!important;
+  pointer-events:none!important;
+}
+.float-chat::before{
+  content:"Need help with your mark?"!important;
+  display:block!important;
+  position:absolute!important;
+  right:66px!important;
+  bottom:50%!important;
+  transform:translateY(50%)!important;
+  white-space:nowrap!important;
+  background:#10264b!important;
+  color:#fff!important;
+  padding:8px 11px!important;
+  border-radius:14px!important;
+  font:800 12px/1.1 Arial,sans-serif!important;
+  box-shadow:0 5px 18px rgba(0,0,0,.35)!important;
+  pointer-events:none!important;
+}
+.float-quiz::after,.float-chat::after{
+  display:none!important;
+}
+</style>
+</head>
 
 
 <body>
