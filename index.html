@@ -2469,7 +2469,7 @@ html.esi-loader-active body{
 
 /* Hero artwork: show more of the upper part of advert.png so the face is visible. */
 .esi-hero-card{
-  background-position:center 15%!important;
+  background-position:center 10%!important;
 }
 
 /* Remove the accidental-looking greater-than arrow from the cards. */
@@ -2533,8 +2533,8 @@ html.esi-loader-active body{
 }
 
 /* Former floating actions: labels exactly as requested. */
-.float-quiz::before{content:"CBT Quiz"!important}
-.float-chat::before{content:"Need Help"!important}
+.float-quiz::before{content:"CBT Driller"!important}
+.float-chat::before{content:"Need help with your mark?"!important}
 
 /* Stronger, cleaner About blocks without narrowing the text. */
 .esi-about-panel .about-box,
@@ -2789,10 +2789,10 @@ onclick="closeMenu()">
 </div></div>
 </section>
 <nav class="esi-bottom-nav" aria-label="Main app navigation">
-<a class="active" href="index.html" data-nav="home"><span>⌂</span><b>Home</b></a>
-<a href="quiz.html" data-nav="quiz"><span>▤</span><b>Quiz</b></a>
-<a href="notification.html" data-nav="chat"><span>♧</span><b>Chat</b></a>
-<a href="Textbooks.html" data-nav="study"><span>▣</span><b>Study</b></a>
+<a class="active" href="index.html" data-nav="home"><span>⌂</span><b>HOME</b></a>
+<a href="quiz.html" data-nav="quiz"><span>▤</span><b>QUIZ</b></a>
+<a href="notification.html" data-nav="chat"><span>♧</span><b>CHAT</b></a>
+<a href="Textbooks.html" data-nav="study"><span>▣</span><b>STUDY</b></a>
 <a href="#sideMenu" onclick="openMenu();return false;" data-nav="more" aria-label="More"><span>⋮</span></a>
 </nav>
 
@@ -3841,36 +3841,6 @@ Email us on: elitescholarinstitute@gmail.com
 
 </section>
 
-<!-- Suggestion -->
-<button id="openSuggestionBtn" class="suggest-btn"> Make suggestions</button>
-
-<!-- Suggestion Modal -->
-<div id="suggestionModal" class="modal-overlay">
-  <div class="modal-box">
-    <button id="closeModalBtn" class="close-btn">&times;</button>
-    <h2>Make Suggestions</h2>
-    <p class="subtext">Help us improve Elite Scholar Institute.</p>
-
-    <form id="suggestionForm">
-      <label for="category">Category</label>
-      <select id="category" required>
-        <option value="" disabled selected>Select category</option>
-        <option value="Design/UI">Design/UI</option>
-        <option value="Speed/Performance">Speed/Performance</option>
-        <option value="Content/Idea">Content/Idea</option>
-        <option value="Bug/Issue">Bug/Issue</option>
-        <option value="Ratings and reviews">Rate and review us</option>
-        <option value="Other">Others</option>
-      </select>
-
-      <label for="message">Your Suggestion</label>
-      <textarea id="message" placeholder="Tell us how we can grow..." rows="4" required></textarea>
-
-      <button type="submit" class="send-btn">Send suggestion.</button>
-    </form>
-  </div>
-</div>
-
 </template>
 <div id="esi-about"></div>
 <script type="module">
@@ -4065,6 +4035,38 @@ rel="noopener"
 aria-label="Chat with Elite Scholar Institute Education Consultant">
 💬
 </a>
+<!-- Suggestion -->
+<button id="openSuggestionBtn" class="suggest-btn"> Make suggestions</button>
+
+<!-- Suggestion Modal -->
+<div id="suggestionModal" class="modal-overlay">
+  <div class="modal-box">
+    <button id="closeModalBtn" class="close-btn">&times;</button>
+    <h2>Make Suggestions</h2>
+    <p class="subtext">Help us improve Elite Scholar Institute.</p>
+
+    <form id="suggestionForm">
+      <label for="category">Category</label>
+      <select id="category" required>
+        <option value="" disabled selected>Select category</option>
+        <option value="Design/UI">Design/UI</option>
+        <option value="Speed/Performance">Speed/Performance</option>
+        <option value="Content/Idea">Content/Idea</option>
+        <option value="Bug/Issue">Bug/Issue</option>
+        <option value="Ratings and reviews">Rate and review us</option>
+        <option value="Other">Others</option>
+      </select>
+
+      <label for="message">Your Suggestion</label>
+      <textarea id="message" placeholder="Tell us how we can grow..." rows="4" required></textarea>
+
+      <button type="submit" class="send-btn">Send suggestion.</button>
+    </form>
+  </div>
+</div>
+
+
+
 <script>
 // ===== SITE NAVIGATION =====
 function openMenu(){
