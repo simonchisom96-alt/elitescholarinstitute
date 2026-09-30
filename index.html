@@ -2469,7 +2469,7 @@ html.esi-loader-active body{
 
 /* Hero artwork: show more of the upper part of advert.png so the face is visible. */
 .esi-hero-card{
-  background-position:center 10%!important;
+  background-position:center 24%!important;
 }
 
 /* Remove the accidental-looking greater-than arrow from the cards. */
@@ -3999,6 +3999,47 @@ body {
 /* Base box modeling for child elements */
 body * {
   box-sizing: border-box;
+}
+
+
+/* Final framing + expanded About Us writing area. */
+.esi-hero-card{
+  background-position:center 24%!important;
+}
+.esi-about-panel{
+  width:min(880px,100%)!important;
+}
+.esi-about-panel>.section{
+  width:100%!important;
+  max-width:none!important;
+}
+.esi-about-panel .about-box,
+.esi-about-panel .department-box,
+.esi-about-panel .why-box,
+.esi-about-panel .result-card,
+.esi-about-panel .transform-box,
+.esi-about-panel .review-box,
+.esi-about-panel .faq-box,
+.esi-about-panel .contact-box{
+  width:100%!important;
+  max-width:none!important;
+}
+.esi-about-panel .about-box p,
+.esi-about-panel .department-box li,
+.esi-about-panel .why-box p{
+  width:100%!important;
+  max-width:none!important;
+}
+@media(max-width:700px){
+  .esi-about-panel{
+    width:calc(100% - 12px)!important;
+    padding-left:8px!important;
+    padding-right:8px!important;
+  }
+  .esi-about-panel>.section{
+    padding-left:2px!important;
+    padding-right:2px!important;
+  }
 }
 </style>
 
