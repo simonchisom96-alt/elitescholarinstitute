@@ -2745,6 +2745,76 @@ html.esi-loader-active body{
 }
 </style>
 
+
+<style id="esi-exact-final-fix">
+/* EXACT requested floating labels. */
+.float-quiz::before{
+  content:"CBT QUIZ"!important;
+}
+.float-chat::before{
+  content:"NEED HELP?"!important;
+}
+
+/* Put the timetable lightbox ABOVE the React About modal.
+   The About modal is z-index:100000, so the previous 99999 was underneath it. */
+.lightbox{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100vh!important;
+  z-index:200000!important;
+}
+.lightbox-arrow{
+  z-index:200001!important;
+}
+
+/* Give the About Us text the maximum usable line width on mobile. */
+.esi-about-panel{
+  width:calc(100vw - 2px)!important;
+  max-width:none!important;
+}
+.esi-about-panel>.section{
+  width:100%!important;
+  max-width:none!important;
+  padding-left:0!important;
+  padding-right:0!important;
+}
+.esi-about-panel .about-box,
+.esi-about-panel .department-box,
+.esi-about-panel .why-box,
+.esi-about-panel .result-card,
+.esi-about-panel .transform-box,
+.esi-about-panel .review-box,
+.esi-about-panel .faq-box,
+.esi-about-panel .contact-box{
+  width:100%!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+}
+.esi-about-panel .about-box{
+  padding-left:7px!important;
+  padding-right:7px!important;
+}
+.esi-about-panel .about-box h3,
+.esi-about-panel .about-box p,
+.esi-about-panel .department-box li,
+.esi-about-panel .why-box p{
+  width:100%!important;
+  max-width:none!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  padding-left:0!important;
+  padding-right:0!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+}
+
+/* Move the advert framing toward the user's right-hand side by ~20%. */
+.esi-hero-card{
+  background-position:55% 30%!important;
+}
+</style>
+
 </head>
 
 
