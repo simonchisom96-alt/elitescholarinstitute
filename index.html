@@ -4328,7 +4328,7 @@ allImages.forEach((img, index) => {
   });
 });
 
-function openLightboxWithWatermark(imgElement){
+window.openLightboxWithWatermark = function(imgElement){
   if(loading) return;
   loading = true;
   document.body.style.overflow = 'hidden'; 
@@ -4458,5 +4458,63 @@ function drawWatermark(imgElement, callback){
 </script>
 
 <script src="/app.js"></script>
+
+<style id="esi-last-float-timetable-fix">
+/* Timetable: React injects this image after the original image scan, so use
+   delegated handling and expose the lightbox function globally. */
+.float-quiz::before,
+.float-chat::before{
+  top:70px!important;
+  bottom:auto!important;
+  right:50%!important;
+  transform:translateX(50%)!important;
+  white-space:nowrap!important;
+}
+.float-quiz::after,
+.float-chat::after{
+  top:65px!important;
+  bottom:auto!important;
+  right:50%!important;
+  transform:translateX(50%)!important;
+}
+
+@media(max-width:700px){
+  .float-quiz::before,
+  .float-chat::before{
+    top:69px!important;
+    bottom:auto!important;
+    right:50%!important;
+    transform:translateX(50%)!important;
+    font-size:11px!important;
+    padding:7px 9px!important;
+  }
+  .float-quiz::after,
+  .float-chat::after{
+    top:64px!important;
+    bottom:auto!important;
+  }
+}
+</style>
+<script>
+(function(){
+  function bindTimetableLightbox(){
+    document.addEventListener('click', function(ev){
+      const img = ev.target.closest('img[src*="timetable1.jpg"]');
+      if(!img) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      if(typeof window.openLightboxWithWatermark === 'function'){
+        window.openLightboxWithWatermark(img);
+      }
+    }, true);
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', bindTimetableLightbox, {once:true});
+  }else{
+    bindTimetableLightbox();
+  }
+})();
+</script>
+
 </body>
 </html>
