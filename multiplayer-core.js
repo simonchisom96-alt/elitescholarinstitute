@@ -2281,13 +2281,13 @@ global.ESITopics = {
     if($('esiTopicSheet')) return;
     const style = document.createElement('style');
     style.textContent = `
-      #esiTopicSheet{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;z-index:5000;align-items:flex-end;justify-content:center}
+      #esiTopicSheet{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;z-index:8000;align-items:flex-end;justify-content:center}
       #esiTopicSheet.show{display:flex}
-      .esi-topic-card{width:100%;max-width:520px;max-height:88vh;background:var(--card2,#0f172a);border:1px solid var(--border,#1e4080);border-radius:16px 16px 0 0;padding:12px 12px 16px;display:flex;flex-direction:column;color:var(--text,#e6eeff)}
+      .esi-topic-card{width:100%;max-width:520px;max-height:88vh;background:#07111f;border:1px solid #1e4080;border-radius:16px 16px 0 0;padding:12px 12px 16px;display:flex;flex-direction:column;color:#e6eeff}
       .esi-topic-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-      .esi-topic-head h3{margin:0;font-size:14px;font-weight:800;letter-spacing:.02em}
-      .esi-topic-head .esi-x{border:0;background:transparent;color:var(--flag,#ff4757);font-size:20px;cursor:pointer;line-height:1}
-      .esi-topic-search{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--border,#1e4080);background:var(--card,#0b1220);color:inherit;font-size:13px;outline:none;margin-bottom:8px}
+      .esi-topic-head h3{margin:0;font-size:14px;font-weight:800;letter-spacing:.02em;color:#ffd700}
+      .esi-topic-head .esi-x{border:0;background:transparent;color:#ff4757;font-size:20px;cursor:pointer;line-height:1}
+      .esi-topic-search{width:100%;padding:11px 12px;border-radius:10px;border:1px solid #1e4080;background:#0b1220;color:#e6eeff;font-size:13px;outline:none;margin-bottom:8px}
       .esi-topic-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
       .esi-selectall{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;cursor:pointer}
       .esi-selectall input{width:16px;height:16px}
@@ -2295,16 +2295,17 @@ global.ESITopics = {
       .esi-topic-hint{font-size:10px;color:var(--muted,#8ea0c8);margin:0 0 8px;line-height:1.35}
       .esi-reset-all{border:0;background:transparent;color:var(--info,#00bfff);font-size:11px;font-weight:800;cursor:pointer;padding:0}
       .esi-topic-scroll{overflow:auto;flex:1;min-height:180px;padding-right:2px}
-      .esi-sec{margin:10px 0 6px;font-size:11px;font-weight:800;color:var(--accent,#ffd700);letter-spacing:.04em;text-transform:uppercase}
-      .esi-row{display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border2,#1a2a4a);font-size:12.5px;cursor:pointer}
+      .esi-sec{margin:10px 0 6px;font-size:11px;font-weight:800;color:#ffd700;letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
+      .esi-row{display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid #1a2a4a;font-size:12.5px;cursor:pointer;color:#e6eeff}
       .esi-row input{width:16px;height:16px;flex-shrink:0}
-      .esi-row.on{background:rgba(255,215,0,.06)}
+      .esi-row.on{background:rgba(255,215,0,.12)}
       .esi-recent-wrap{margin-bottom:6px}
       .esi-actions{display:flex;gap:8px;margin-top:10px}
       .esi-actions button{flex:1;padding:11px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer}
-      .esi-btn-cancel{background:transparent;border:1px solid var(--border,#1e4080);color:inherit}
+      .esi-btn-cancel{background:transparent;border:1px solid #1e4080;color:#e6eeff}
       .esi-btn-done{background:#ffd700;border:0;color:#111}
-      .esi-topic-btn{width:100%;margin-top:6px;padding:9px 10px;border-radius:10px;border:1px solid var(--border,#1e4080);background:var(--card2,#0f172a);color:var(--text,#e6eeff);display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;font-size:11.5px}
+      .esi-clear-recent{border:0;background:transparent;color:#7ec8ff;font-size:10px;font-weight:800;cursor:pointer}
+      .esi-topic-btn{width:100%;margin-top:6px;padding:9px 10px;border-radius:10px;border:1px solid #1e4080;background:#0f172a;color:#e6eeff;display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;font-size:11.5px}
       .esi-topic-btn b{color:var(--accent,#ffd700);font-size:10.5px}
       .esi-topic-stack{display:flex;flex-direction:column;gap:4px;margin-top:6px}
     `;
@@ -2389,7 +2390,7 @@ global.ESITopics = {
     if(recent.length && !bandHint){
       const recShow = selectedFirst(recent).filter(t=>matchesQuery(t,q));
       if(recShow.length){
-        html += `<div class="esi-sec">Recently Selected</div><div class="esi-recent-wrap">`;
+        html += `<div class="esi-sec">Recently Selected <button type="button" class="esi-clear-recent" id="esiClearRecent">Clear</button></div><div class="esi-recent-wrap">`;
         recShow.forEach(t=>{
           html += rowHtml(t);
         });
@@ -2413,6 +2414,17 @@ global.ESITopics = {
         renderList();
       };
     });
+    const clearBtn = $('esiClearRecent');
+    if(clearBtn){
+      clearBtn.onclick = function(ev){
+        ev.stopPropagation();
+        if(!confirm('Clear recently selected topics for this subject?')) return;
+        const rec = loadRecent();
+        delete rec[state.subject];
+        saveRecent(rec);
+        renderList();
+      };
+    }
     const n = selectedNames().length;
     const tot = Object.keys(state.working).length;
     $('esiTopicCount').textContent = n+' / '+tot+' topics';
@@ -2874,7 +2886,7 @@ function renderMpTopicButtons(setKey, wrapId){
         wrap=document.createElement('div');
         wrap.id=wrapId;
         wrap.className='esi-topic-stack';
-        host.parentNode.insertBefore(wrap, host.nextSibling);
+        host.parentNode.insertBefore(wrap, host);
     }
     ESITopicPicker.renderButtons(wrap, [...selSubjects[setKey]], ()=>selTopicsMp[setKey], function(sub){
         if(!selTopicsMp[setKey][sub]) selTopicsMp[setKey][sub] = window.ESITopics ? ESITopics.flat(sub) : (TOPICS[sub]||[]).slice();
