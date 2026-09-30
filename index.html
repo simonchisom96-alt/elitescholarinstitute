@@ -2572,7 +2572,7 @@ html.esi-loader-active body{
 <style id="esi-last-layout-fix">
 /* Final hero framing: reveal more of the artwork below the face. */
 .esi-hero-card{
-  background-position:center 30%!important;
+  background-position:35% 30%!important;
 }
 
 /* Give the About Us reading boxes the widest practical mobile text area. */
@@ -2669,7 +2669,7 @@ html.esi-loader-active body{
   bottom:80px!important;
 }
 .float-quiz::before{
-  content:"CBT"!important;
+  content:"CBT Quiz?"!important;
   top:calc(100% + 6px)!important;
   bottom:auto!important;
   left:50%!important;
@@ -2685,7 +2685,7 @@ html.esi-loader-active body{
   display:block!important;
 }
 .float-chat::before{
-  content:"Need Help"!important;
+  content:"Need Help?"!important;
   top:calc(100% + 6px)!important;
   bottom:auto!important;
   left:50%!important;
@@ -4415,6 +4415,7 @@ allImages.forEach((img, index) => {
 });
 
 window.openLightboxWithWatermark = function(imgElement){
+  if(loading && !lightbox.classList.contains('active')) loading = false;
   if(loading) return;
   loading = true;
   document.body.style.overflow = 'hidden'; 
@@ -4462,6 +4463,7 @@ function closeLightbox(){
   lightbox.classList.remove('active');
   document.body.style.overflow = ''; 
   lightboxImg.src = '';
+  loading = false;
 }
 
 closeLightboxBtn.addEventListener('click', closeLightbox);
@@ -4606,10 +4608,18 @@ function drawWatermark(imgElement, callback){
 document.addEventListener('click',function(e){
   const trigger=e.target.closest('.timetable-expand-trigger');
   if(!trigger) return;
-  const img=trigger.parentElement && trigger.parentElement.querySelector('img[src*="timetable1.jpg"]');
-  if(img && typeof window.openLightboxWithWatermark==='function'){
+  const img=trigger.closest('.book-image')?.querySelector('img[src*="timetable1.jpg"]') ||
+            trigger.parentElement?.querySelector('img[src*="timetable1.jpg"]');
+  if(img){
     e.preventDefault();
-    window.openLightboxWithWatermark(img);
+    e.stopPropagation();
+    if(typeof window.openLightboxWithWatermark==='function'){
+      window.openLightboxWithWatermark(img);
+    }else{
+      setTimeout(function(){
+        if(typeof window.openLightboxWithWatermark==='function') window.openLightboxWithWatermark(img);
+      },50);
+    }
   }
 },true);
 </script>
