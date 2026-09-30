@@ -2324,7 +2324,7 @@ global.ESITopics = {
         <div class="esi-topic-scroll" id="esiTopicList"></div>
         <div class="esi-actions">
           <button type="button" class="esi-btn-cancel" id="esiTopicCancel">Cancel</button>
-          <button type="button" class="esi-btn-done" id="esiTopicDone">Done</button>
+          <button type="button" class="esi-btn-done" id="esiTopicDone">DONE(0)</button>
         </div>
       </div>`;
     wrap.addEventListener('click', (e)=>{ if(e.target===wrap) cancel(); });
@@ -2409,6 +2409,8 @@ global.ESITopics = {
     const tot = Object.keys(state.working).length;
     $('esiTopicCount').textContent = n+' / '+tot+' topics';
     $('esiTopicSelectAll').checked = allOn();
+    const doneBtn = $('esiTopicDone');
+    if(doneBtn) doneBtn.textContent = 'DONE('+n+')';
   }
 
   function rowHtml(t){
@@ -2857,7 +2859,15 @@ function packTopicsForKey(setKey){
 function renderMpTopicButtons(setKey, wrapId){
     if(!window.ESITopicPicker) return;
     let wrap=document.getElementById(wrapId);
-    if(!wrap) return;
+    if(!wrap){
+        const hostMap={qm:'qmSubjectMini',cr:'crSubjectMini',ch:'chSubjectMini',ct:'ctSubjectMini'};
+        const host=document.getElementById(hostMap[setKey]||'');
+        if(!host || !host.parentNode) return;
+        wrap=document.createElement('div');
+        wrap.id=wrapId;
+        wrap.className='esi-topic-stack';
+        host.parentNode.insertBefore(wrap, host.nextSibling);
+    }
     ESITopicPicker.renderButtons(wrap, [...selSubjects[setKey]], ()=>selTopicsMp[setKey], function(sub){
         if(!selTopicsMp[setKey][sub]) selTopicsMp[setKey][sub] = window.ESITopics ? ESITopics.flat(sub) : (TOPICS[sub]||[]).slice();
         ESITopicPicker.open({
