@@ -3876,6 +3876,38 @@ createRoot(document.getElementById("esi-about")).render(e(AboutESI));
 })();
 </script>
 
+<!-- Suggestion -->
+<button id="openSuggestionBtn" class="suggest-btn"> Make suggestions</button>
+
+<!-- Suggestion Modal -->
+<div id="suggestionModal" class="modal-overlay">
+  <div class="modal-box">
+    <button id="closeModalBtn" class="close-btn">&times;</button>
+    <h2>Make Suggestions</h2>
+    <p class="subtext">Help us improve Elite Scholar Institute.</p>
+
+    <form id="suggestionForm">
+      <label for="category">Category</label>
+      <select id="category" required>
+        <option value="" disabled selected>Select category</option>
+        <option value="Design/UI">Design/UI</option>
+        <option value="Speed/Performance">Speed/Performance</option>
+        <option value="Content/Idea">Content/Idea</option>
+        <option value="Bug/Issue">Bug/Issue</option>
+        <option value="Ratings and reviews">Rate and review us</option>
+        <option value="Other">Others</option>
+      </select>
+
+      <label for="message">Your Suggestion</label>
+      <textarea id="message" placeholder="Tell us how we can grow..." rows="4" required></textarea>
+
+      <button type="submit" class="send-btn">Send suggestion.</button>
+    </form>
+  </div>
+</div>
+
+
+
 <!-- FOOTER -->
 
 <footer>
@@ -4035,36 +4067,6 @@ rel="noopener"
 aria-label="Chat with Elite Scholar Institute Education Consultant">
 💬
 </a>
-<!-- Suggestion -->
-<button id="openSuggestionBtn" class="suggest-btn"> Make suggestions</button>
-
-<!-- Suggestion Modal -->
-<div id="suggestionModal" class="modal-overlay">
-  <div class="modal-box">
-    <button id="closeModalBtn" class="close-btn">&times;</button>
-    <h2>Make Suggestions</h2>
-    <p class="subtext">Help us improve Elite Scholar Institute.</p>
-
-    <form id="suggestionForm">
-      <label for="category">Category</label>
-      <select id="category" required>
-        <option value="" disabled selected>Select category</option>
-        <option value="Design/UI">Design/UI</option>
-        <option value="Speed/Performance">Speed/Performance</option>
-        <option value="Content/Idea">Content/Idea</option>
-        <option value="Bug/Issue">Bug/Issue</option>
-        <option value="Ratings and reviews">Rate and review us</option>
-        <option value="Other">Others</option>
-      </select>
-
-      <label for="message">Your Suggestion</label>
-      <textarea id="message" placeholder="Tell us how we can grow..." rows="4" required></textarea>
-
-      <button type="submit" class="send-btn">Send suggestion.</button>
-    </form>
-  </div>
-</div>
-
 
 
 <script>
