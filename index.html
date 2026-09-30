@@ -1287,7 +1287,7 @@ animation:pulseBlue 2s infinite;
 100%{box-shadow:0 0 0 0 rgba(0,191,255,0);}
 }
 .float-quiz::before{
-content:"AI Quiz";
+content:"CBT Quiz";
 position:absolute;
 bottom:75px;
 right:50%;
@@ -2430,7 +2430,112 @@ html.esi-loader-active body{
   document.addEventListener("DOMContentLoaded",syncESINav);
   window.addEventListener("pageshow",syncESINav);
 })();
-</script><style id="esi-about-v3">
+</script><style id="esi-final-polish-v3">
+/* Notification bell: keep the actual bell silhouette, make it unmistakably gold. */
+.esi-notification-btn svg{
+  width:40px!important;height:40px!important;
+  fill:#ffd700!important;
+  stroke:#ffd700!important;
+  color:#ffd700!important;
+  filter:drop-shadow(0 2px 5px rgba(255,215,0,.35))!important;
+}
+.esi-notification-btn{
+  background:rgba(7,38,83,.78)!important;
+  border:1px solid rgba(255,215,0,.5)!important;
+}
+
+/* Hero artwork: show more of the upper part of advert.png so the face is visible. */
+.esi-hero-card{
+  background-position:center 28%!important;
+}
+
+/* Remove the accidental-looking greater-than arrow from the cards. */
+.esi-resource-card:after{
+  content:none!important;
+  display:none!important;
+}
+
+/* Mobile cards: keep every icon/title/description inside its own card. */
+@media(max-width:700px){
+  .esi-card-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:12px!important;
+  }
+  .esi-resource-card{
+    grid-template-columns:46px minmax(0,1fr)!important;
+    gap:8px!important;
+    min-height:178px!important;
+    padding:12px 10px!important;
+    overflow:hidden!important;
+  }
+  .esi-icon{
+    width:46px!important;height:46px!important;min-width:46px!important;
+  }
+  .esi-icon svg{width:27px!important;height:27px!important}
+  .esi-resource-card h3{
+    font-size:12.5px!important;
+    line-height:1.18!important;
+    margin:0 0 7px!important;
+    overflow-wrap:anywhere!important;
+  }
+  .esi-resource-card p{
+    font-size:9.8px!important;
+    line-height:1.35!important;
+    overflow-wrap:anywhere!important;
+  }
+}
+
+/* Bottom navigation: blue is the current/selected destination. */
+.esi-bottom-nav a{
+  color:#c8d9f7!important;
+  transition:color .18s ease,transform .18s ease,filter .18s ease!important;
+}
+.esi-bottom-nav a.active,
+.esi-bottom-nav a.active span,
+.esi-bottom-nav a.active b{
+  color:#2f8cff!important;
+  filter:drop-shadow(0 0 7px rgba(47,140,255,.65))!important;
+}
+.esi-bottom-nav a span{
+  display:block!important;
+  font-size:27px!important;
+  line-height:1!important;
+  margin-bottom:5px!important;
+}
+.esi-bottom-nav a b{
+  display:block!important;
+  font-size:13px!important;
+  font-weight:800!important;
+  line-height:1.1!important;
+}
+
+/* Former floating actions: labels exactly as requested. */
+.float-quiz::before{content:"CBT Quiz"!important}
+.float-chat::before{content:"Need Help"!important}
+
+/* Stronger, cleaner About blocks without narrowing the text. */
+.esi-about-panel .about-box,
+.esi-about-panel .department-box,
+.esi-about-panel .why-box{
+  border-radius:26px!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.22)!important;
+  overflow:hidden!important;
+}
+.esi-about-panel .about-image{
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  border-radius:20px!important;
+  border:2px solid rgba(255,215,0,.35)!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.24)!important;
+}
+.esi-about-panel .title{
+  letter-spacing:.3px!important;
+  font-weight:900!important;
+}
+</style>
+<style id="esi-about-v3">
 .esi-about-modal{position:fixed!important;inset:0!important;z-index:100000!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:12px!important;background:rgba(0,7,22,.88)!important;backdrop-filter:blur(10px)!important}
 .esi-about-panel{width:min(920px,100%)!important;max-height:94vh!important;overflow:auto!important;padding:16px!important;border-radius:26px!important;background:linear-gradient(180deg,rgba(4,22,55,.98),rgba(2,12,32,.99)),url("advert.png") center/cover!important;border:1px solid rgba(255,215,0,.3)!important}
 .esi-about-close{position:sticky!important;top:0!important;float:right!important;z-index:5!important;width:44px!important;height:44px!important;border-radius:50%!important;background:#061a3c!important;color:#ffd700!important;border:1px solid rgba(255,215,0,.4)!important;font-size:30px!important}
@@ -2662,11 +2767,11 @@ ELITE SCHOLAR INSTITUT
 </div></div>
 </section>
 <nav class="esi-bottom-nav" aria-label="Main app navigation">
-<a class="active" href="index.html"><span>⌂</span>Home</a>
-<a href="#esi-dashboard"><span>▣</span>Study</a>
-<a href="quiz.html"><span>▤</span>Quiz</a>
-<a href="notification.html"><span>♧</span>Notifications</a>
-<a href="#sideMenu" onclick="openMenu();return false;"><span>⋮</span>More</a>
+<a class="active" href="index.html" data-nav="home"><span>⌂</span><b>Home</b></a>
+<a href="quiz.html" data-nav="quiz"><span>▤</span><b>Quiz</b></a>
+<a href="notification.html" data-nav="chat"><span>♧</span><b>Chat</b></a>
+<a href="Textbooks.html" data-nav="study"><span>▣</span><b>Study</b></a>
+<a href="#sideMenu" onclick="openMenu();return false;" data-nav="more"><span>⋮</span><b>More</b></a>
 </nav>>
 
 <!-- ABOUT US CONTENT IS STORED HERE AND OPENED THROUGH THE REACT ABOUT VIEW -->
@@ -3764,6 +3869,19 @@ function AboutESI(){
   )
  )}
 createRoot(document.getElementById("esi-about")).render(e(AboutESI));
+</script>
+
+<script>
+(function(){
+  const nav=document.querySelector('.esi-bottom-nav');
+  if(!nav)return;
+  nav.addEventListener('click',function(ev){
+    const a=ev.target.closest('a[data-nav]');
+    if(!a)return;
+    nav.querySelectorAll('a[data-nav]').forEach(x=>x.classList.remove('active'));
+    a.classList.add('active');
+  });
+})();
 </script>
 
 <!-- FOOTER -->
