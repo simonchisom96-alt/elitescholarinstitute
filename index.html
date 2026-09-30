@@ -5126,4 +5126,47 @@ document.addEventListener('click',function(e){
   }
 }
 </style>
+
+<style id="esi-final-two-small-fixes">
+/* ONLY THESE TWO FINAL HOME-SCREEN FIXES. */
+/* 1) Move the EXISTING advert artwork inside the hero banner to the right.
+   The dark gradient and banner itself are unchanged. */
+.esi-hero-card{
+  background-position:100% 30%!important;
+}
+
+/* 2) Mobile floating actions: keep them beside the bottom-nav, not over
+   the More (three-dot) control. Labels sit directly underneath each button. */
+@media(max-width:700px){
+  .float-quiz,
+  .float-chat{
+    right:90px!important;
+    width:65px!important;
+    height:65px!important;
+  }
+  .float-quiz{bottom:265px!important;}
+  .float-chat{bottom:150px!important;}
+  .float-quiz::before,
+  .float-chat::before{
+    top:72px!important;
+    bottom:auto!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    padding:7px 12px!important;
+    border-radius:17px!important;
+    white-space:nowrap!important;
+    font:800 12px/1 Arial,sans-serif!important;
+    display:block!important;
+    pointer-events:none!important;
+  }
+  .float-quiz::before{content:"CBT QUIZ"!important;}
+  .float-chat::before{content:"NEED HELP?"!important;}
+  .float-quiz::after,
+  .float-chat::after{
+    display:none!important;
+    content:none!important;
+  }
+}
+</style>
 </html>
