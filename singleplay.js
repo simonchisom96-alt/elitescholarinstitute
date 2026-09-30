@@ -3707,8 +3707,7 @@ async function buildSoloResultCanvas(){
     cursor+=headlineBlock;
     let subjLine=(d.subjects||[]).join(', ').toUpperCase()||'PRACTICE';
     let metaLine=`${subjLine} · ${(DIFF_LABELS[d.diff]||d.diff||'').toUpperCase()} · ${(MODE_LABELS[d.mode]||d.mode||'').toUpperCase()}`;
-    let shownTopics = (window.ESITopics && d.topics) ? ESITopics.displayable(d.topics, 5) : [];
-    let topicLine = shownTopics.length ? shownTopics.join(' · ') : '';
+    let topicLine = '';
     ctx.fillStyle='#8ea0c8'; ctx.font='600 16px Poppins, sans-serif';
     ctx.fillText(metaLine, W/2, cursor+18);
     if(topicLine){
