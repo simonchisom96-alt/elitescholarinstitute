@@ -4890,109 +4890,143 @@ document.addEventListener('click',function(e){
 </script>
 </body>
 
-<style id="esi-authoritative-floating-actions">
-/* AUTHORITATIVE FLOATING ACTIONS — use this block as the final source of truth. */
+
+<style id="esi-deployment-verified-final-fix">
+/* === ADVERT: use the existing previous-deployment hero CSS, changing ONLY
+   the horizontal framing so the advert artwork sits at the RIGHT edge. === */
+.esi-hero-card{
+  background-position:100% 24%!important;
+}
+
+/* === FLOATING ACTIONS: restore the behavior from deployment e6f4aa1 === */
 .float-quiz{
-position:fixed!important;
-right:18px!important;
-bottom:115px!important;
-width:65px!important;
-height:65px!important;
-border-radius:50%!important;
-background:linear-gradient(135deg,#00bfff,#0066ff)!important;
-display:flex!important;
-justify-content:center!important;
-align-items:center!important;
-font-size:26px!important;
-text-decoration:none!important;
-z-index:9998!important;
-cursor:pointer!important;
+  position:fixed!important;
+  right:18px!important;
+  bottom:115px!important;
+  width:65px!important;
+  height:65px!important;
+  border-radius:50%!important;
+  background:linear-gradient(135deg,#00bfff,#0066ff)!important;
+  display:flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+  font-size:26px!important;
+  text-decoration:none!important;
+  z-index:9998!important;
+  box-shadow:0 0 0 0 rgba(0,191,255,0.7)!important;
+  transition:0.3s cubic-bezier(0.4,0,0.2,1)!important;
+  cursor:pointer!important;
+  animation:pulseBlue 2s infinite!important;
 }
 .float-quiz::before{
-content:"CBT QUIZ"!important;
-position:absolute!important;
-bottom:75px!important;
-top:auto!important;
-right:50%!important;
-transform:translateX(50%)!important;
-background:linear-gradient(135deg,#1e293b,#334155)!important;
-color:white!important;
-padding:10px 16px!important;
-border-radius:20px!important;
-font-size:13px!important;
-font-weight:700!important;
-font-family:Arial,sans-serif!important;
-white-space:nowrap!important;
-pointer-events:none!important;
-box-shadow:0 8px 20px rgba(0,0,0,.3),0 0 15px rgba(0,191,255,.2)!important;
-display:block!important;
+  content:"CBT QUIZ"!important;
+  position:absolute!important;
+  bottom:75px!important;
+  top:auto!important;
+  right:50%!important;
+  transform:translateX(50%) translateY(10px)!important;
+  background:linear-gradient(135deg,#1e293b,#334155)!important;
+  color:white!important;
+  padding:10px 16px!important;
+  border-radius:20px!important;
+  font-size:13px!important;
+  font-weight:700!important;
+  font-family:Arial,sans-serif!important;
+  white-space:nowrap!important;
+  transition:0.4s!important;
+  pointer-events:none!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.3),0 0 15px rgba(0,191,255,.2)!important;
+  display:block!important;
 }
 .float-quiz::after{
-content:""!important;
-position:absolute!important;
-bottom:70px!important;
-top:auto!important;
-right:50%!important;
-transform:translateX(50%)!important;
-width:24px!important;
-height:12px!important;
-background:#1e293b!important;
-border-radius:0 0 12px 12px!important;
-pointer-events:none!important;
-display:block!important;
+  content:""!important;
+  position:absolute!important;
+  bottom:70px!important;
+  top:auto!important;
+  right:50%!important;
+  transform:translateX(50%)!important;
+  width:24px!important;
+  height:12px!important;
+  background:#1e293b!important;
+  border-radius:0 0 12px 12px!important;
+  transition:0.4s!important;
+  pointer-events:none!important;
 }
 .float-chat{
-position:fixed!important;
-right:18px!important;
-bottom:20px!important;
-width:65px!important;
-height:65px!important;
-border-radius:50%!important;
-background:linear-gradient(135deg,#00c853,#00ff88)!important;
-display:flex!important;
-justify-content:center!important;
-align-items:center!important;
-font-size:30px!important;
-text-decoration:none!important;
-z-index:9999!important;
-cursor:pointer!important;
+  position:fixed!important;
+  right:18px!important;
+  bottom:20px!important;
+  width:65px!important;
+  height:65px!important;
+  border-radius:50%!important;
+  background:linear-gradient(135deg,#00c853,#00ff88)!important;
+  display:flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+  font-size:30px!important;
+  text-decoration:none!important;
+  z-index:9999!important;
+  box-shadow:0 0 0 0 rgba(0,255,120,0.7)!important;
+  transition:0.3s cubic-bezier(0.4,0,0.2,1)!important;
+  cursor:pointer!important;
+  animation:pulse 2s infinite!important;
 }
 .float-chat::before{
-content:"NEED HELP?"!important;
-position:absolute!important;
-bottom:75px!important;
-top:auto!important;
-right:50%!important;
-transform:translateX(50%)!important;
-background:linear-gradient(135deg,#1e293b,#334155)!important;
-color:white!important;
-padding:10px 16px!important;
-border-radius:20px!important;
-font-size:13px!important;
-font-weight:700!important;
-font-family:Arial,sans-serif!important;
-white-space:nowrap!important;
-pointer-events:none!important;
-box-shadow:0 8px 20px rgba(0,0,0,.3),0 0 15px rgba(0,255,120,.2)!important;
-display:block!important;
+  content:"Need help?"!important;
+  position:absolute!important;
+  bottom:75px!important;
+  top:auto!important;
+  right:50%!important;
+  transform:translateX(50%) translateY(10px)!important;
+  background:linear-gradient(135deg,#1e293b,#334155)!important;
+  color:white!important;
+  padding:10px 16px!important;
+  border-radius:20px!important;
+  font-size:13px!important;
+  font-weight:700!important;
+  font-family:Arial,sans-serif!important;
+  white-space:nowrap!important;
+  transition:0.4s!important;
+  pointer-events:none!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.3),0 0 15px rgba(0,255,120,.2)!important;
+  display:block!important;
 }
 .float-chat::after{
-content:""!important;
-position:absolute!important;
-bottom:70px!important;
-top:auto!important;
-right:50%!important;
-transform:translateX(50%)!important;
-width:24px!important;
-height:12px!important;
-background:#1e293b!important;
-border-radius:0 0 12px 12px!important;
-pointer-events:none!important;
-display:block!important;
+  content:""!important;
+  position:absolute!important;
+  bottom:70px!important;
+  top:auto!important;
+  right:50%!important;
+  transform:translateX(50%)!important;
+  width:24px!important;
+  height:12px!important;
+  background:#1e293b!important;
+  border-radius:0 0 12px 12px!important;
+  transition:0.4s!important;
+  pointer-events:none!important;
 }
-@media(max-width:700px){
-  .float-quiz,.float-chat{display:flex!important}
-  .float-quiz::before,.float-chat::before{font-size:11px!important;padding:7px 9px!important}
+@media (min-width:768px){
+  .float-quiz::before,.float-quiz::after,
+  .float-chat::before,.float-chat::after{
+    opacity:0!important;
+    transform:translateX(50%) translateY(20px)!important;
+  }
+  .float-quiz:hover::before,.float-quiz:hover::after,
+  .float-chat:hover::before,.float-chat:hover::after{
+    opacity:1!important;
+    transform:translateX(50%) translateY(0)!important;
+  }
 }
+.float-quiz:hover{
+  transform:scale(1.12)!important;
+  animation:none!important;
+  box-shadow:0 12px 35px rgba(0,191,255,.5)!important;
+}
+.float-chat:hover{
+  transform:scale(1.12)!important;
+  animation:none!important;
+  box-shadow:0 12px 35px rgba(0,255,120,.6)!important;
+}
+.float-quiz:active,.float-chat:active{transform:scale(.92)!important;}
 </style>
 </html>
