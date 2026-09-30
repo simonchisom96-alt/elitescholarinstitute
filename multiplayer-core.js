@@ -1,3 +1,2489 @@
+/* ===== MERGED TOPIC BANK + SELECT TOPIC PICKER ===== */
+/* Elite Scholar Institute — SS1–SS3 topic bank (clean names only). */
+(function(global){
+"use strict";
+const TOPIC_BANK = {
+  "Mathematics": {
+    "SS1": [
+      "Probability & Permutation/Combination",
+      "Logarithms, Surds & Indices",
+      "Circle Theorem & Geometry",
+      "Trigonometry Sine/Cosine Rule",
+      "Sequence & Series AP/GP",
+      "Inequalities & Linear Programming",
+      "Polynomials & Remainder Theorem",
+      "Mensuration Cones/Spheres",
+      "Word Problems Commercial Maths",
+      "Modulus & Absolute Value",
+      "Number Bases & Logarithms",
+      "Algebraic Fractions & Variation",
+      "Simultaneous Equations & Quadratics",
+      "Sets Venn Diagrams & Logic",
+      "Statistics Mean Median Mode",
+      "Graphs of Linear & Quadratic Functions",
+      "Coordinate Geometry Straight Lines",
+      "Rates of Change & Motion",
+      "Standard Deviation & Probability Distributions",
+      "Mathematical Modeling & Real Life Problems",
+      "Identity Elements & Binary Operations",
+      "Surd Rationalization & Applications",
+      "Set Theory Cardinality",
+      "Ratio Proportion & Rates",
+      "Rational Functions Asymptotes",
+      "Number Bases",
+      "Modular Arithmetic",
+      "Standard Form",
+      "Approximation",
+      "Logarithms",
+      "Sets",
+      "Simple Equations",
+      "Linear Inequalities",
+      "Quadratic Equations",
+      "Variation",
+      "Logical Reasoning",
+      "Construction",
+      "Bearings",
+      "Mensuration of Plane Shapes"
+    ],
+    "SS2": [
+      "Bearings & Trigonometric Applications",
+      "Linear & Quadratic Programming",
+      "Probability Tree Diagrams",
+      "Arithmetic & Geometric Mean",
+      "Approximation & Significant Figures",
+      "Construction & Loci",
+      "Transformation Geometry",
+      "Compound Interest & Annuities",
+      "Functions Domain Range Inverse",
+      "Trigonometric Identities & Equations",
+      "Differentiation Chain Product Quotient",
+      "Kinematics Motion",
+      "Statics & Dynamics",
+      "Work Energy Power",
+      "Impulse Momentum",
+      "Quadratic Roots Discriminant",
+      "Exponential Equations",
+      "Vectors Dot Cross Product",
+      "Sequence and Series",
+      "Circle Geometry",
+      "Trigonometry",
+      "Sine and Cosine Rules",
+      "Latitude and Longitude",
+      "Statistics",
+      "Probability",
+      "Coordinate Geometry",
+      "Polygons",
+      "Geometrical Transformation"
+    ],
+    "SS3": [
+      "Calculus - Differentiation & Integration",
+      "Vectors & Matrices",
+      "Complex Numbers",
+      "Binomial Expansion",
+      "Application of Calculus Maxima/Minima",
+      "Integration Area & Volume",
+      "Differential Equations",
+      "Matrices Determinants & Inverse",
+      "Partial Fractions",
+      "Integration Substitution & Parts",
+      "Simple Harmonic Motion",
+      "Conditional Probability Bayes",
+      "Circular Permutation",
+      "Binomial Distribution",
+      "Normal Distribution",
+      "Correlation Regression",
+      "Hypothesis Testing",
+      "Truth Tables Logic",
+      "Number Theory Modulo",
+      "Parametric Equations",
+      "Loci Complex Plane",
+      "Summation Series",
+      "Financial Maths Depreciation",
+      "Longitude Latitude",
+      "Conic Sections",
+      "Game Theory",
+      "Surds Conjugates",
+      "Polynomial Graphs",
+      "Vector Geometry",
+      "Probability Distributions",
+      "Integration Applications",
+      "Mechanics Friction",
+      "Elastic Collisions",
+      "Matrix Transformation",
+      "Venn Diagram Probability",
+      "Limits Continuity",
+      "Curve Sketching",
+      "Differentiation",
+      "Integration",
+      "Vectors",
+      "Matrices",
+      "Surds",
+      "Commercial Arithmetic",
+      "Loci"
+    ]
+  },
+  "English": {
+    "SS1": [
+      "Concord & Subject-Verb Agreement",
+      "Idioms & Phrasal Verbs",
+      "Figures of Speech",
+      "Comprehension Inference",
+      "vowel and consonant sound very hard",
+      "commonly misspelt hard words",
+      "Synonyms & Antonyms Confusable",
+      "Oral Stress & Intonation very hard",
+      "Clauses & Phrases",
+      "Question Tags & Inversion",
+      "Vocabulary Sentence Interpretation",
+      "Subjunctive Mood & Conditionals",
+      "Punctuation & Capitalization Traps",
+      "Tricky spelling of Double Letters",
+      "Summary Topic Sentence",
+      "Near Synonyms",
+      "Parts of Speech Identification",
+      "Tenses & Aspect Sequence",
+      "Active & Passive Voice",
+      "Direct & Indirect Speech",
+      "Prepositions & Appropriate Usage",
+      "Articles & Determiners",
+      "Word Classes & Functions",
+      "Sentence Types Simple/Compound/Complex",
+      "Antonyms in Context",
+      "Collocations & Fixed Expressions",
+      "Oral Consonant Clusters",
+      "Oral Vowel Contrasts",
+      "Plural Forms & Irregular Nouns",
+      "Letter Writing Formats",
+      "Parts of Speech",
+      "Nouns and Pronouns",
+      "Verbs and Tenses",
+      "Agreement",
+      "Comprehension",
+      "Letter Writing",
+      "Narrative Essay",
+      "Vocabulary Development"
+    ],
+    "SS2": [
+      "Emphatic Stress & Schwa Sounds",
+      "Comprehension Central Idea",
+      "Comprehension Lexical Items",
+      "Lexis in Context Difficult Words",
+      "Comparatives & Superlatives",
+      "Degrees of Comparison",
+      "Tag Questions & Short Answers",
+      "Modal Auxiliaries & Usage",
+      "Gerund & Infinitive Usage",
+      "Conjunctions & Connectives",
+      "Verb Forms & Concord Traps",
+      "Word Formation Prefix/Suffix",
+      "Contextual Antonyms in Passage",
+      "Report Writing Formal/Informal",
+      "Essay Structure & Coherence",
+      "Debate & Argumentative Writing",
+      "News Report Analysis",
+      "Editing & Proofreading Skills",
+      "Homophones & Homonyms",
+      "Loan Words & Borrowed Terms",
+      "Speech Writing Techniques",
+      "Ellipsis & Substitution",
+      "Cleft Sentences & Inversion",
+      "Nominalization & Transformation",
+      "Dangling Modifiers & Ambiguity",
+      "Parallelism & Faulty Construction",
+      "Phrasal Verbs",
+      "Idioms",
+      "Summary Writing",
+      "Descriptive Essay",
+      "Speech Work",
+      "Registers",
+      "Punctuation",
+      "Clauses and Phrases"
+    ],
+    "SS3": [
+      "Registers Legal/Medical/Tech",
+      "Formal vs Informal Register",
+      "Discourse Markers & Cohesion",
+      "Pragmatics Implicature & Inference",
+      "Stylistics & Literary Devices",
+      "Cohesive Devices & Linking",
+      "Reference & Anaphora",
+      "Lexical Relations Hyponymy Meronymy",
+      "Semantic Change & Polysemy",
+      "Phonetics IPA Transcription",
+      "Diphthongs & Triphthongs",
+      "Syllable Stress Patterns",
+      "Sentence Stress & Rhythm",
+      "Intonation Functions",
+      "Contractions & Weak Forms",
+      "Minimal Pairs & Confusable Sounds",
+      "Dictation & Listening Traps",
+      "Vocabulary Spelling Traps",
+      "Word Stress Shift",
+      "Sentence Completion",
+      "Cloze Test Advanced",
+      "Paraphrasing & Synonym Replacement",
+      "Logical Connectors",
+      "Proverbs & Idiomatic Meanings",
+      "Register Conversion Formality",
+      "Jargon & Specialized Vocabulary",
+      "Euphemism & Dysphemism",
+      "Tautology & Redundancy",
+      "Pleonasm & Circumlocution",
+      "Oxymoron Paradox & Irony",
+      "Argumentative Essay",
+      "Article Writing",
+      "Oral English",
+      "Stress and Intonation",
+      "Lexis and Structure",
+      "Figure of Speech"
+    ]
+  },
+  "Physics": {
+    "SS1": [
+      "Vectors & Equilibrium",
+      "Electric Field & Capacitors",
+      "Heat Gas Laws & Thermodynamics",
+      "Current Electricity Bridge Circuits",
+      "Electromagnetism & Magnetic Field",
+      "Gravitation & Escape Velocity",
+      "Momentum Collisions",
+      "Optics Lenses & Mirrors",
+      "Fluids Pressure & Viscosity",
+      "Modern Physics Photoelectric",
+      "Dimensions & Units",
+      "Projectiles & Circular Motion",
+      "Waves Sound & Light",
+      "Work Energy & Power",
+      "Friction & Inclined Planes",
+      "Newton's Laws & Applications",
+      "Rotational Motion & Torque",
+      "Elasticity & Hooke's Law",
+      "Electrostatics Coulomb's Law",
+      "Kirchhoff's Laws & Networks",
+      "EMF & Internal Resistance",
+      "AC Circuits & Resonance",
+      "Transformers & Induction",
+      "Magnetic Flux & Faraday's Law",
+      "Wave Properties & Interference",
+      "Diffraction & Polarization",
+      "Atomic Spectra & Energy Levels",
+      "Measurement Errors & Experiments",
+      "Physical Quantities",
+      "Motion",
+      "Forces",
+      "Work Energy Power",
+      "Heat Energy",
+      "Temperature",
+      "Wave Motion",
+      "Sound",
+      "Light",
+      "Mirrors and Lenses",
+      "Electric Current"
+    ],
+    "SS2": [
+      "Binding Energy & Mass Defect",
+      "Satellites & Orbital Motion",
+      "Mechanical Advantage Machines",
+      "Surface Tension & Capillarity",
+      "Thermal Expansion & Calorimetry",
+      "Kinetic Theory of Gases",
+      "Doppler Effect & Resonance",
+      "Total Internal Reflection",
+      "Density & Relative Density",
+      "Simple Machines & Efficiency",
+      "Rectilinear Motion & Graphs",
+      "Reflection & Refraction at Plane Surfaces",
+      "Electric Field Lines & Equipotential",
+      "Bernoulli's Principle",
+      "Van der Graaff Generator",
+      "Cathode Ray Oscilloscope",
+      "Photocells & Photodiodes",
+      "Logic Gates in Physics",
+      "Simple Pendulum Experiments",
+      "Young's Modulus & Stress-Strain",
+      "Interference of Sound Waves",
+      "Communication Systems & Signals",
+      "Lagrangian Mechanics Conceptual",
+      "Relativistic Velocity & Mass Variation",
+      "Lenz's Law & Eddy Currents",
+      "Wheatstone Bridge Unbalanced Hard",
+      "Scalars and Vectors",
+      "Projectiles",
+      "Equilibrium of Forces",
+      "Gas Laws",
+      "Linear Momentum",
+      "Simple Harmonic Motion",
+      "Electrostatics",
+      "Capacitors",
+      "Magnetic Field"
+    ],
+    "SS3": [
+      "Radioactivity & Nuclear Physics",
+      "SHM Simple Harmonic Motion",
+      "Nuclear Fission & Fusion",
+      "Semiconductors & Diodes",
+      "Nuclear Reactors & Safety",
+      "Quantum Tunneling",
+      "Metre Bridge & Potentiometer Traps",
+      "Combined Lens System Power",
+      "Prism Minimum Deviation",
+      "Heat capacity, specific heat capacity,heat and specific heat capacity of vaporization/combustion/neutralization/ionization calculation and differences",
+      "Apparent Depth & Real Depth Traps",
+      "Critical Damping & Resonance Curve",
+      "Moment of Inertia Parallel Perpendicular Axis",
+      "Escape Velocity vs Orbital Velocity Problems",
+      "Gravitational Potential Hard Integrals",
+      "Equilibrium of Three Coplanar Forces Hard",
+      "Collision Oblique & Coefficient Restitution",
+      "Ballistic Pendulum",
+      "Viscosity Terminal Velocity Stokes",
+      "Thermodynamics Carnot Cycle Efficiency Hard",
+      "Entropy & Second Law",
+      "Van der Waals Equation Real Gas",
+      "Waves Stationary Beats Hard",
+      "Doppler Effect Moving Observer Source",
+      "Photoelectric Stopping Potential Graphs",
+      "De Broglie Wavelength & Uncertainty",
+      "Nuclear Binding Energy Curve Traps",
+      "Semiconductor Zener Diode Regulation",
+      "Transistor Amplifier",
+      "Logic Gates NAND NOR Universal Hard",
+      "AC Power Factor Wattless Current",
+      "Mutual Inductance Coupled Coils",
+      "Hysteresis Loop",
+      "X-Rays Moseley's Law Hard",
+      "Compton Scattering Derivation Trap",
+      "Electromagnetic Induction",
+      "Alternating Current",
+      "Atomic Physics",
+      "Radioactivity",
+      "Electronics",
+      "Wave-Particle Duality",
+      "Gravitational Field"
+    ]
+  },
+  "Chemistry": {
+    "SS1": [
+      "Organic chemistry",
+      "True and false solutions",
+      "Examples, characterics and definition of crystalloids, colloids, suspension",
+      "Emperical and molecular formula",
+      "Percentage composition of elements in a molecule",
+      "Calculations on relative abundance and relative atomic mass",
+      "Types of salts",
+      "Examples of efflorescent, deliquescent, hydroscopic salts",
+      "separation techniques",
+      "Metals and their extraction",
+      "Allotropes,isotopes,isotones and isobars of elements and examples",
+      "Periodic table and periodic trends",
+      "Equilibrium Kp/Kc Le Chatelier",
+      "Thermodynamics Hess Law/heat of reaction",
+      "Organic Isomerism & IUPAC",
+      "Redox reactions",
+      "Hybridization of orbitals and elements",
+      "Alloys of common metals and their percentage composition",
+      "Formation, physical and chemical properties of non metals",
+      "Transition elements",
+      "chemical bonding/bond pair and lone pair/bond angle",
+      "Rate of Reaction Kinetics",
+      "Acid Base pH & Buffers",
+      "Redox Balancing",
+      "Mole Concept",
+      "Periodic Table Anomalies",
+      "Hybridization & Molecular Shapes",
+      "Alkanols/Alkanoates Reactions",
+      "Qualitative Analysis Salts",
+      "Solubility Product Ksp",
+      "Volumetric Analysis Titrations",
+      "Buffer Solutions Preparation",
+      "Mole Concept Back Titration Hard",
+      "Nature of Matter",
+      "Particulate Nature of Matter",
+      "Atomic Structure",
+      "Periodic Table",
+      "Chemical Combination",
+      "Air",
+      "Water",
+      "Acids Bases Salts",
+      "Carbon and its Compounds"
+    ],
+    "SS2": [
+      "Enthalpy & Entropy",
+      "octane rating",
+      "knocking of hydrocarbon fuel",
+      "Stoichiometry & Gas Laws",
+      "Electrolysis & Faraday's Laws",
+      "Colligative Properties",
+      "Chemical Equilibrium",
+      "Benzene & Aromatic Compounds",
+      "Carboxylic Acids & Derivatives",
+      "Alkanes Alkenes Alkynes Reactions",
+      "Petroleum & Fractional Distillation",
+      "Water Hardness & Treatment",
+      "Corrosion & Prevention",
+      "Environmental Chemistry Pollution",
+      "Fats Oils Soaps Detergents",
+      "Standard Enthalpies Formation Combustion",
+      "Electrochemical Cells & Batteries",
+      "Catalysis & Catalysts",
+      "Chromatography Techniques",
+      "Nomenclature IUPAC Rules",
+      "Gas Laws Real vs Ideal",
+      "Water of Crystallization",
+      "Flame Tests & Ion Identification",
+      "Fertilizers NPK Composition",
+      "Green Chemistry & Sustainability",
+      "IUPAC Hardest Bicyclic Spiro",
+      "Conformational Isomerism Newman Fischer",
+      "Chemical Kinetics",
+      "Energy Changes",
+      "Electrolysis",
+      "Solubility",
+      "Rate of Reaction",
+      "Organic Chemistry Introduction",
+      "Hydrocarbons",
+      "Alkanols"
+    ],
+    "SS3": [
+      "Atomic Structure Quantum Numbers",
+      "Organic Polymers & Plastics",
+      "Radioactivity & Half Life",
+      "Aromaticity Huckel Rule",
+      "Carbocation Carbanion Stability Order",
+      "Named Reactions Cannizzaro Aldol Claisen",
+      "Acidity Basicity Organic",
+      "Stereoisomerism R/S E/Z",
+      "Reaction Mechanism SN1 SN2 E1 E2",
+      "Ksp Common Ion Effect",
+      "pH of Salt Hydrolysis",
+      "Kp Kc Relation Delta n Hard",
+      "Born Haber Cycle",
+      "Faraday's Second Law Mixed Electrolysis",
+      "Volumetric Double Indicator Traps",
+      "Transition Metal Complex Nomenclature",
+      "Crystal Field Theory CFSE Calculation",
+      "Enthalpy Entropy Gibbs Free Energy Trap",
+      "Rate Law Experimental Determination Hard",
+      "Zero First Second Order Graphs",
+      "Ostwald Dilution Law",
+      "Osmotic Pressure Van't Hoff Factor",
+      "Electrochemical Series Nernst Equation Hard",
+      "Isotopes Mass Spectrometer Calculation",
+      "Allotropy Sulphur Phosphorus Complex",
+      "Extraction Metallurgy Ellingham Diagram",
+      "Qualitative Cation Anion Confusing Pairs",
+      "Solubility Curves Hardest Problems",
+      "Polymers Teflon Nylon Perspex Structure",
+      "Detergent Micelle Action",
+      "Environmental Ozone Depletion Mechanism",
+      "Nuclear Chemistry Binding Energy Per Nucleon",
+      "Metals and Compounds",
+      "Transition Metals",
+      "Quantitative Analysis",
+      "Qualitative Analysis",
+      "Nuclear Chemistry",
+      "Fats and Oils",
+      "Soaps and Detergents",
+      "Polymers"
+    ]
+  },
+  "Biology": {
+    "SS1": [
+      "sexual and asexual reproduction in plants",
+      "Ecology Energy & Cycles",
+      "Physiology Kidney & Homeostasis",
+      "Nervous System Brain & Reflex",
+      "Cell Division Meiosis and mitosis Stages",
+      "Endocrine Hormones Functions",
+      "Plant Physiology Photosynthesis",
+      "Circulatory Blood Groups & ECG",
+      "Microbiology Viruses & Bacteria",
+      "Reproduction in flowering plants/formation of plants ,seeds, fruits",
+      "Placentation,types and examples",
+      "Cell theories",
+      "Mode of nutrition in animals and plants",
+      "Chemical test for classes of food nutrients",
+      "Respiration, excretion, supporting tissue in plants and animals",
+      "Hormonal and nervous coordination",
+      "Definition/characteristics/examples of Ephemeral, annual, biennials and perennial corps",
+      "Definition/characteristics/examples of monocots and dicots",
+      "Tropical biomes, savanna and locations of tropic regions",
+      "Reproduction Embryology, stages in pregnancy",
+      "fruits and seed dispersal",
+      "Classification Phyla Characteristics",
+      "Adaptation Xerophytes/Hydrophytes/halophytes/heliophytes/sciocophytes/mesophytes",
+      "Level of organization in plants and animals",
+      "Population Studies & Variation",
+      "stages of photosynthesis",
+      "Respiration & Gaseous Exchange",
+      "DNA & RNA Structure",
+      "Sex Determination & Sex Linked Traits",
+      "Soil Types & Nutrients",
+      "Living Things",
+      "Cell Structure",
+      "Cell Physiology",
+      "Tissues and Organs",
+      "Nutrition",
+      "Photosynthesis",
+      "Transport System",
+      "Respiration",
+      "Excretion"
+    ],
+    "SS2": [
+      "Ecosystem & Food Webs",
+      "Nitrogen Cycle & Carbon Cycle",
+      "Ecological Succession",
+      "Pollution & Environmental Conservation",
+      "Digestive System & Enzymes",
+      "Skeletal System & Joints",
+      "Excretion in Plants",
+      "Growth & Development Germination",
+      "Plant Growth Hormones Auxins",
+      "Animal Behavior & Tropisms",
+      "Parasitism & Symbiosis",
+      "Conservation & Wildlife Management",
+      "Human Reproductive System",
+      "Blood Clotting Mechanism",
+      "Photoperiodism in Plants",
+      "Osmoregulation in Organisms",
+      "Taxonomy & Binomial Nomenclature",
+      "Enzyme Inhibition Types",
+      "Biodiversity & Conservation Strategies",
+      "Epistasis Complementary Supplementary",
+      "Hardy Weinberg Chi Square Problems",
+      "Blood Group Bombay Phenotype",
+      "Karyotype Aneuploidy Euploidy",
+      "Meiosis Nondisjunction Consequences",
+      "Reproduction",
+      "Growth",
+      "Support and Movement",
+      "Nervous Coordination",
+      "Sense Organs",
+      "Ecology",
+      "Soil",
+      "Food Tests"
+    ],
+    "SS3": [
+      "Genetics Dihybrid & Linkage",
+      "Evolution Lamarck/Darwin Theories",
+      "evolution of plants and animals",
+      "Mendelian Genetics Monohybrid",
+      "Mutation & Genetic Disorders",
+      "Immunity & Antibodies",
+      "Biotechnology & Genetic Engineering",
+      "Vestigial Organs & Evolution",
+      "Genetic Engineering Applications",
+      "Vaccination & Immunization",
+      "Genetics Linkage Mapping Recombination Frequency",
+      "Kidney Nephron Counter Current",
+      "Hormonal Feedback Positive Negative",
+      "Cranial Nerves 12 Functions Traps",
+      "ECG Cardiac Cycle",
+      "Photosynthesis Light Reaction Z Scheme",
+      "Calvin Cycle C3 C4 CAM Enzymes",
+      "Nitrogen Fixation Nitrification Denitrification Bacteria",
+      "Ecological Pyramids Energy Biomass Numbers",
+      "Population Survivorship Curves Type I II III",
+      "DNA Replication Okazaki Fragments Enzymes",
+      "Protein Synthesis Transcription Translation",
+      "Operon Lac Trp Regulation",
+      "Immunity Innate Adaptive",
+      "Agglutination Blood Transfusion Reactions",
+      "Enzyme Kinetics Competitive Noncompetitive",
+      "Osmoregulation ADH Aldosterone",
+      "Plant Anatomy Vascular Cambium",
+      "Invertebrate vs Vertebrate Phyla Traps",
+      "Ecological Succession Primary Secondary",
+      "Auxin Phototropism Geotropism Experiments",
+      "Synapse Neurotransmitters IPSP EPSP",
+      "Evidence of Evolution Atavism Analogy",
+      "Speciation Isolation Mechanisms",
+      "IUCN Categories Extinct Endangered",
+      "PCR Primer Design",
+      "Menstrual Cycle FSH LH Oestrogen Progesterone Graph",
+      "Placenta Types Diffuse Cotyledonary",
+      "Fruit Types Dehiscent Indehiscent",
+      "Seed Dormancy Breaking Mechanisms",
+      "Pollination Adaptations Anemophily Entomophily",
+      "Soil Horizons Profile",
+      "Nutrient Deficiency Symptoms NPK",
+      "Genetics",
+      "Variation",
+      "Evolution",
+      "Disease and Health",
+      "Conservation",
+      "Pest and Parasites",
+      "Reproduction in Humans"
+    ]
+  },
+  "Economics": {
+    "SS1": [
+      "National Income GDP/GNP",
+      "Balance of Payments & Exchange Rates",
+      "Elasticity",
+      "Money Inflation Quantity Theory",
+      "Market Structures Monopoly/Oligopoly",
+      "Production Returns to Scale",
+      "Demand & Supply Exceptional Cases",
+      "International Trade Comparative Advantage",
+      "Population & Labour Market",
+      "Economic Growth & Development",
+      "Budget Fiscal Policy",
+      "Petroleum Economics Nigeria",
+      "Unemployment Multiplier",
+      "Scarcity & Opportunity Cost",
+      "Law of Diminishing Returns",
+      "Cost Curves & Revenue",
+      "Utility Theory & Consumer Behavior",
+      "Indifference Curves & Budget Line",
+      "Perfect Competition & Pricing",
+      "Factors of Production",
+      "Business Organizations & Finance",
+      "Agricultural Economics",
+      "Industrialization & Industrial Policies",
+      "Transportation & Communication",
+      "Economic Systems Capitalism/Socialism",
+      "Wage Determination & Trade Unions",
+      "Price Control & Rationing",
+      "Distribution of Income & Poverty",
+      "Law of Variable Proportions Stage Analysis",
+      "Capital Output Ratio ICOR Problems",
+      "Informal Sector Measurement Issues",
+      "Meaning of Economics",
+      "Basic Concepts",
+      "Theory of Demand",
+      "Theory of Supply",
+      "Theory of Production",
+      "Scale of Production",
+      "Business Organizations"
+    ],
+    "SS2": [
+      "Economic Planning & Development Plans",
+      "Central Bank & Commercial Banks",
+      "Credit Instruments & Financial Institutions",
+      "International Trade Barriers Tariffs",
+      "Foreign Aid & Foreign Investment",
+      "Development Problems in Nigeria",
+      "Resource Allocation & Economics Problems",
+      "Statistics & Graphs in Economics",
+      "Consumer Protection & Government Regulation",
+      "Savings Investment & Capital Formation",
+      "Entrepreneurship & Factors of Production",
+      "Circular Flow of Income",
+      "Multiplier & Accelerator Effect",
+      "Privatization vs Nationalization",
+      "Informal Sector Economy",
+      "Cost Benefit Analysis",
+      "Economic Indicators GDP/GNP/HDI",
+      "Subsidy & Price Support",
+      "Regional Trade Blocs",
+      "Human Capital Development",
+      "Sustainable Development Goals",
+      "GDP GNP NNP Real Nominal Deflator",
+      "National Income Triple Approach Problems",
+      "Balance of Payments Disequilibrium Correction",
+      "Exchange Rate Devaluation J Curve",
+      "Elasticity Midpoint Arc Calculation Traps",
+      "Inflation Demand Pull Cost Push Stagflation",
+      "Quantity Theory MV=PT Fisher",
+      "Population",
+      "Labour Market",
+      "Price Determination",
+      "Money",
+      "Financial Institutions",
+      "Public Finance",
+      "National Income"
+    ],
+    "SS3": [
+      "Public Finance Taxation",
+      "Money Market Capital Market",
+      "Economic Integration ECOWAS/EU",
+      "Tax Incidence Progressive Regressive Calculation",
+      "Monopoly Price Discrimination Degrees",
+      "Oligopoly Kinked Demand Game Theory",
+      "Perfect vs Monopolistic Competition Graphs",
+      "Production Isoquant Isocost Equilibrium",
+      "Demand Giffen Veblen Inferior Goods",
+      "Trade Comparative Absolute Gains Calculation",
+      "Population Malthusian Optimum Theory",
+      "Phillips Curve Unemployment Inflation",
+      "Fiscal Policy Crowding Out Effect",
+      "Monetary Policy CRR SLR Repo",
+      "Petroleum OPEC Quota Economics",
+      "Multiplier Leakage Tax MPC",
+      "Opportunity Cost PPC Bowed",
+      "Utility Marginal Cardinal Ordinal",
+      "Budget Line Shift Rotation",
+      "Cost Curves MC AC AVC ATC Relations",
+      "Trade Union Collective Bargaining",
+      "Price Floor Ceiling Surplus Shortage",
+      "Lorenz Curve Gini Coefficient",
+      "Development Plans Nigeria 1962-2020",
+      "Bank Money Creation Multiplier",
+      "International Finance IMF World Bank",
+      "Tariff Quota Effective Rate Protection",
+      "FDI Portfolio Crowding",
+      "ECOWAS CET Problems",
+      "International Trade",
+      "Balance of Payments",
+      "Economic Development",
+      "Economic Systems",
+      "Privatization",
+      "Inflation and Unemployment"
+    ]
+  },
+  "Government": {
+    "SS1": [
+      "Constitutions 1999/1963/1979",
+      "Federalism & Resource Control",
+      "Political Parties Ideologies",
+      "Pressure Groups Public Opinion",
+      "Electoral Systems FPTP/PR",
+      "Arms of Government Checks & Balances",
+      "Public Administration Bureaucracy",
+      "UN OAU/AU Organs Functions",
+      "Military Rule Transitions",
+      "Citizenship Rights & Duties",
+      "Local Government Reforms",
+      "Separation of Powers",
+      "Rule of Law Judiciary",
+      "Political Concepts State/Nation/Government",
+      "Sovereignty & Political Power",
+      "Political Socialization & Participation",
+      "Political Culture & Ideologies",
+      "Democracy Types & Features",
+      "Authoritarianism & Totalitarianism",
+      "Political Development & Modernization",
+      "Colonial Administration Indirect/Assimilations",
+      "Post-Independence Constitutions",
+      "Executive Powers President/Governor",
+      "Judicial Review & Precedent",
+      "Fundamental Human Rights",
+      "Electoral Commission INEC Functions",
+      "Political Processes Election/Rigging",
+      "Civil Service & Public Corporations",
+      "Electoral System Mixed Member Proportional",
+      "Doctrine of Separation Montesquieu",
+      "Local Government 1976 Reform",
+      "Public Corporation Commercialization Privatization",
+      "Meaning of Government",
+      "Basic Concepts",
+      "Organs of Government",
+      "Types of Government",
+      "Constitution",
+      "Citizenship"
+    ],
+    "SS2": [
+      "Revenue Allocation & Fiscal Federalism",
+      "Inter-Governmental Relations",
+      "Traditional Rulers & Chieftaincy",
+      "Civil Society & NGOs",
+      "International Organizations ECOWAS/UN",
+      "Diplomacy & Treaties",
+      "Political Problems Corruption/Census",
+      "Public Opinion & Mass Media",
+      "Constitutionalism & Supremacy of Constitution",
+      "Political Obedience & Legitimacy",
+      "Government Revenue Sources",
+      "Impeachment Process",
+      "One-Party vs Multi-Party Systems",
+      "Referendum & Plebiscite",
+      "Public Opinion Polls",
+      "Political Apathy Causes",
+      "State of Emergency Powers",
+      "Regionalism in Nigerian Politics",
+      "Constitutional Amendment Entrenched Clause",
+      "Federalism Fiscal Unitary Confederal Differences",
+      "Resource Control Derivation Principle History",
+      "Party System Institutionalization",
+      "Pressure Group Anomic Associational",
+      "Bureaucracy Weberian Characteristics Dysfunctions",
+      "UN Security Council Veto Power Reform",
+      "Electoral Process",
+      "Political Parties",
+      "Public Opinion",
+      "Federalism",
+      "Local Government",
+      "Public Administration"
+    ],
+    "SS3": [
+      "Nigerian Foreign Policy",
+      "Legislature Types & Functions",
+      "Nationalism & Independence Movements",
+      "Devolution of Powers",
+      "Bicameral vs Unicameral Legislature",
+      "Diplomatic Immunity",
+      "Nigerian Foreign Policy Afrocentric",
+      "AU Agenda 2063 Organs",
+      "Military Disengagement Models",
+      "Citizenship Jus Soli Jus Sanguinis",
+      "Rule of Law Dicey Principles",
+      "Judicial Independence Removal of Judges",
+      "Legislative Oversight Functions",
+      "Sovereignty De Jure De Facto Internal External",
+      "Political Participation Milbrath Model",
+      "Political Culture Almond Verba",
+      "Democracy Liberal Illiberal",
+      "Totalitarianism Features Orwellian",
+      "Lucian Pye Modernization Theory",
+      "Colonial Policy French Portuguese British Comparison",
+      "Nationalism Pan Africanism Negritude",
+      "Republican Constitution 1963 vs Presidential 1979",
+      "Executive Veto Pocket Veto Types",
+      "Judicial Activism Restraint",
+      "Enforcement of Fundamental Rights Procedure",
+      "INEC Electoral Act 2022",
+      "Electoral Malpractice Vote Buying",
+      "Revenue Allocation Formulas Aboyade Okigbo",
+      "Intergovernmental Fiscal Relations",
+      "Chieftaincy Obas Emirs Classification",
+      "NGO Registration CAC Part C",
+      "ECOWAS Protocol Free Movement",
+      "Diplomacy Shuttle Track One Two",
+      "Corruption Transparency International Index",
+      "Media Agenda Setting Theory",
+      "Constitutional Supremacy vs Parliamentary",
+      "Colonial Administration",
+      "Nationalism",
+      "Military Rule",
+      "Nigeria Foreign Policy",
+      "International Organizations"
+    ]
+  },
+  "Literature": {
+    "SS1": [
+      "African Poetry Analysis",
+      "Unseen Prose & Poetry",
+      "Drama Tragic Hero & Foils",
+      "Literary Terms Bathos/Epiphany",
+      "Novels Themes & Characterization",
+      "Shakespeare Tempest/Macbeth",
+      "Meter Rhythm Iambic Pentameter",
+      "Satire Irony Types",
+      "Narrative Techniques Flashback",
+      "African Prose Achebe/Ngugi",
+      "Oral Literature Folktales",
+      "Tone Mood & Atmosphere",
+      "Drama Techniques Aside/Soliloquy",
+      "Literary Appreciation",
+      "Prose Fiction Elements Plot",
+      "Poetry Sound Devices Alliteration",
+      "Characterization Direct/Indirect",
+      "Setting Time & Place",
+      "Point of View Narrator",
+      "Symbolism Allegory Motif",
+      "Theme Universal/Moral Lesson",
+      "Genre Classification Drama/Prose/Poetry",
+      "African Drama Wole Soyinka",
+      "Modern African Novels",
+      "Conflict Types Man/Man",
+      "Diction & Syntax",
+      "Irony Dramatic/Situational",
+      "Comic Relief",
+      "Foreshadowing Suspense",
+      "Genres of Literature",
+      "Figures of Speech",
+      "Poetry Appreciation",
+      "Drama Elements",
+      "Prose Elements"
+    ],
+    "SS2": [
+      "Epic Heroic Poetry",
+      "Sonnet Structure Types",
+      "Literary Criticism Schools",
+      "Post-Colonial Literature",
+      "Gender in Literature",
+      "Literary Devices Juxtaposition",
+      "Bildungsroman Novel",
+      "Tragedy vs Comedy",
+      "Ballad & Elegy",
+      "Prose Style Techniques",
+      "Postmodernism in Literature",
+      "Existentialism in Drama",
+      "Magic Realism",
+      "Stream of Consciousness",
+      "Anti-Hero Characterization",
+      "Chorus & Greek Tragedy",
+      "Metafiction Techniques",
+      "Historical Fiction Elements",
+      "Children's Literature Themes",
+      "Anagnorisis Peripeteia Catharsis",
+      "Hamartia Hubris Nemesis Tragic Flaw",
+      "Freytag Pyramid Climax Denouement",
+      "Unreliable Narrator Hardest Traps",
+      "Dramatic Structure Three Unities",
+      "Poetry Enjambment Caesura Elision",
+      "Synecdoche Metonymy Litotes Distinction",
+      "Paradox Oxymoron Antithesis",
+      "Bathos Anticlimax",
+      "Pathetic Fallacy Atmospheric",
+      "African Poetry",
+      "Non-African Poetry",
+      "African Drama",
+      "Non-African Drama"
+    ],
+    "SS3": [
+      "Figures of Speech Advanced",
+      "Feminist Literary Theory",
+      "Chiasmus Anaphora Epistrophe",
+      "Euphemism Dysphemism Cacophony",
+      "Tetrameter Trimeter Scansion Problems",
+      "Blank Verse Free Verse Difference",
+      "Sestina Villanelle Pantoum Structure",
+      "Satire Horatian Juvenalian Menippean",
+      "Irony Socratic Verbal Understatement",
+      "African Oral Epic Griot Praise Song",
+      "Negritude Literature Senghor CESAIRE",
+      "Protest Literature South Africa",
+      "Feminist Womanism Stiwanism",
+      "Existentialist Angst Absurd Camus Sartre",
+      "Postcolonial Othering Hybridity Mimicry",
+      "Marxist Literary Base Superstructure",
+      "Psychoanalytic Id Ego Superego Criticism",
+      "Structuralist Binary Opposition",
+      "Deconstruction Differance Aporia",
+      "Ecocriticism Pastoral",
+      "Queer Theory Literature",
+      "Magical Realism Alejo Carpentier Features",
+      "Theatre of Absurd Beckett Pinter",
+      "Epic Theatre Brecht Alienation",
+      "Naturalism vs Realism Zola",
+      "Gothic Literature Sublime Terror",
+      "Picaresque Anti Hero Journey",
+      "Allegory Pilgrim's Progress Second Meaning",
+      "Motif Leitmotif Archetype",
+      "Intertextuality Allusion Parody Pastiche",
+      "Defamiliarization Shklovsky",
+      "Foregrounding Deviation",
+      "African Prose",
+      "Non-African Prose",
+      "Unseen Poetry",
+      "Literary Devices in Context"
+    ]
+  },
+  "Commerce": {
+    "SS1": [
+      "Insurance Indemnity Subrogation",
+      "Stock Exchange Bull/Bear",
+      "Bills of Exchange Cheques",
+      "Business Law Agency Contract",
+      "Partnership Dissolution",
+      "International Trade Incoterms",
+      "Transportation Documents",
+      "Advertising Media Types",
+      "Banking Monetary Policy",
+      "Trade Associations Functions",
+      "Privatization Commercialization",
+      "E-Commerce Digital Payment",
+      "Cooperative Societies Types",
+      "Capital Profit Types",
+      "Business Organizations Sole/Company",
+      "Communication Business",
+      "Tourism & Hospitality",
+      "Retailing Wholesaling",
+      "Consumer Protection",
+      "Business Ethics CSR",
+      "Import Export Procedures",
+      "Cargo Insurance",
+      "Entrepreneurship SMEs",
+      "Business Finance Sources",
+      "Production Process",
+      "Market Research",
+      "Branding Trademarks",
+      "Risk Management",
+      "Taxation VAT Customs",
+      "Multinational Corporations",
+      "Contract Offer Acceptance Consideration",
+      "Meaning of Commerce",
+      "Occupation",
+      "Production",
+      "Trade",
+      "Home Trade",
+      "Foreign Trade",
+      "Retail Trade",
+      "Wholesale Trade"
+    ],
+    "SS2": [
+      "Balance of Trade",
+      "Tariffs Quotas",
+      "Currency Exchange",
+      "Marketing Mix",
+      "Business Cycles",
+      "Credit Instruments",
+      "Warehousing Types",
+      "Legal Aspects Company Law",
+      "Aids to Trade",
+      "Franchising Business Model",
+      "Mergers & Acquisitions",
+      "Consumer Credit & Hire Purchase",
+      "Trade Fairs & Exhibitions",
+      "Business Documents Invoice/Receipt",
+      "Chambers of Commerce",
+      "Free Trade Zones",
+      "Business Communication Channels",
+      "Outsourcing & Offshoring",
+      "Insurance Principles Utmost Good Faith Proximate Cause",
+      "Double Insurance Contribution",
+      "Reinsurance Treaty Facultative",
+      "Stock Exchange Speculation Stag Jobber",
+      "Bulls Bears Lame Duck Hardest Terms",
+      "Bills of Exchange Parties Acceptor Drawer",
+      "Cheques Crossing Special General",
+      "Partnership Garner vs Murray Rule",
+      "Incoterms 2020 FOB CIF EXW DDP",
+      "Bill of Lading Charter Party Types",
+      "Warehousing Bonded Private Public",
+      "Business Units",
+      "Partnership",
+      "Companies",
+      "Marketing",
+      "Advertising",
+      "Transportation",
+      "Communication",
+      "Warehousing"
+    ],
+    "SS3": [
+      "Warehousing Logistics",
+      "Company Registration CAC",
+      "Advertising DAGMAR AIDA Models",
+      "Banking CRR SLR Monetary Tools",
+      "Trade Union Employers Association",
+      "Privatization Decree 1988 Methods",
+      "E-Commerce B2B B2C C2C",
+      "Cooperative Rochdale Principles",
+      "Capital Authorized Issued Working",
+      "Memorandum Articles Ultra Vires",
+      "Communication Formal Informal Grapevine",
+      "Tourism Multiplier Effect",
+      "Retailing Supermarket Hypermarket",
+      "Consumer Rights Redress",
+      "CSR Triple Bottom Line",
+      "Import Bill Entry Procedure",
+      "Cargo Marine Insurance Institute Clauses",
+      "SME Survival Challenges",
+      "CAC Registration Steps Pre Incorporation",
+      "Finance Equity Debt Gearing",
+      "Production EOQ Batch Job Flow",
+      "Market Research Primary Secondary",
+      "Branding Brand Equity Pyramid",
+      "Risk Pure Speculative Insurable",
+      "Taxation Incidence Progressive Degressive",
+      "BOT BOP Current Capital Account",
+      "Tariff Ad Valorem Specific",
+      "Exchange Rate Spot Forward",
+      "Marketing 4Ps 7Ps Extended",
+      "Business Cycle Phases Leading Indicators",
+      "Credit Letter Credit Types",
+      "Warehouse Warrant Lien",
+      "Company Law Piercing Veil Doctrine",
+      "Finance and Banking",
+      "Insurance",
+      "Stock Exchange",
+      "Privatization and Commerce"
+    ]
+  },
+  "Accounting": {
+    "SS1": [
+      "Partnership Accounts Goodwill",
+      "Branch Accounts Accounting",
+      "Depreciation Reducing Balance",
+      "Bank Reconciliation Hard",
+      "Final Accounts Adjustments",
+      "Ratio Analysis Interpretation",
+      "Consignment Joint Venture",
+      "Manufacturing Accounts",
+      "Error Correction Suspense Account",
+      "Contract Accounts",
+      "Non-Profit Organizations",
+      "Income Tax PAYE",
+      "Budgeting Variance Analysis",
+      "Costing Marginal/Absorption",
+      "Double Entry Bookkeeping",
+      "Cash Book Bank Reconciliation",
+      "Ledger Posting Principles",
+      "Trial Balance Errors",
+      "Financial Statements IFRS",
+      "Inventory Valuation FIFO/LIFO",
+      "Auditing Principles",
+      "Capital & Revenue Expenditure",
+      "Working Capital Management",
+      "Cash Flow Statement",
+      "Company Liquidation",
+      "Single Entry Records",
+      "Cost Center Profit Center",
+      "Budgetary Control",
+      "Standard Costing",
+      "Accounting Concepts Conventions",
+      "Computerized Accounting",
+      "Banking Accounting",
+      "Cash Budgets Preparation",
+      "Admission Revaluation Sacrifice Ratio",
+      "Ratio Gearing Acid Test Interest Cover",
+      "Marginal Contribution Breakeven C/S Ratio",
+      "Amalgamation Purchase Consideration Goodwill",
+      "Journal Narration Opening Entry",
+      "Introduction to Bookkeeping",
+      "Source Documents",
+      "Journals",
+      "Ledger",
+      "Trial Balance",
+      "Cash Book",
+      "Bank Reconciliation"
+    ],
+    "SS2": [
+      "Insurance Accounting",
+      "Not-for-Profit Clubs",
+      "Royalty Accounts",
+      "Hire Purchase",
+      "Departmental Accounts",
+      "Control Accounts",
+      "Amalgamation of Businesses",
+      "Provision for Bad Debts",
+      "Accruals & Prepayments",
+      "Journal Entries & Ledgers",
+      "Suspense Account Errors",
+      "Manufacturing Overheads",
+      "Sinking Fund Accounts",
+      "Partnership Admission & Retirement",
+      "IFRS vs GAAP Standards",
+      "Partnership Goodwill Valuation Methods Average Super Profit",
+      "Retirement Garner vs Murray Capital Adjustment",
+      "Company Forfeiture Reissue Discount Premium",
+      "Bonus Issue Right Issue",
+      "Branch Debtors System Stock Adjustment",
+      "Depreciation Change Method IAS 8",
+      "Bank Unpresented Presented Adjusted Balance Trap",
+      "Final Accounts Provision Contingent Liability",
+      "Consignment Del Credere Overriding Commission",
+      "Joint Venture Memorandum Method",
+      "Manufacturing Apportionment Blending",
+      "Suspense Trial Balance Difference",
+      "Contract Escalation Retention Notional Profit",
+      "Non Profit Subscription Arrears Advance Life Member",
+      "PAYE Tax Relief Allowance Calculation",
+      "Variance Material Labour Sales Mix Yield",
+      "Depreciation",
+      "Incomplete Records",
+      "Partnership Accounts"
+    ],
+    "SS3": [
+      "Company Accounts Share Issues",
+      "Public Sector Accounting",
+      "Double Entry Discount Cash Trade",
+      "Three Column Cash Book Contra",
+      "Ledger Control Account Reconciliation",
+      "Trial Balance Transposition Error",
+      "IFRS 15 Revenue IFRS 16 Lease",
+      "FIFO LIFO Average Inflation Effect",
+      "Auditing Vouching Verification",
+      "Capital Revenue Deferred Revenue",
+      "Working Capital Operating Cycle",
+      "Cash Flow IAS 7 Indirect Method",
+      "Liquidation Statement of Affairs Deficiency",
+      "Single Entry Conversion Gross Profit",
+      "Cost Centre Allocation Apportionment",
+      "Budgetary Zero Base Rolling",
+      "Standard Labour Material Variance Analysis",
+      "Concept Accrual Matching Prudence",
+      "Computerized ERP Advantage",
+      "Public Sector Fund Accounting",
+      "Banking Non Performing Loan Provision",
+      "Insurance Unearned Premium",
+      "Club Bar Trading Profit",
+      "Royalty Minimum Rent Shortworkings",
+      "Hire Purchase Repossession Calculation",
+      "Departmental Inter Department Transfer Pricing",
+      "Control Reconciliation Total Debtors Creditors",
+      "Doubtful Debt Provision Aging Method",
+      "Accrual Prepaid Income Receivable",
+      "Suspense Fraud Error Correction",
+      "Overhead Under Over Absorption",
+      "Sinking Fund Debenture Redemption",
+      "Cash Budget Receipt Payment Forecast",
+      "Company Accounts",
+      "Public Sector Accounts",
+      "Interpretation of Accounts"
+    ]
+  },
+  "Geography": {
+    "SS1": [
+      "Map Reading Bearings Gradients",
+      "Population Census Migration",
+      "Economic Activities Location Theory",
+      "Soils Laterization Profile",
+      "Oceanography Currents Tides",
+      "Environmental Hazards Pollution",
+      "Transport Trade Routes",
+      "Settlement Conurbation",
+      "Weather Synoptic Charts",
+      "Agriculture Systems Problems",
+      "Nigeria Drainage Vegetation",
+      "Rocks Weathering Types",
+      "Latitude Longitude Time",
+      "Earth Structure Layers",
+      "Atmospheric Pressure Winds",
+      "Climate Change Global Warming",
+      "Erosion Types Prevention",
+      "Biomes Distribution",
+      "Natural Resources Minerals",
+      "Urbanization Problems",
+      "Rural Development",
+      "Tourism Geography",
+      "Regional Geography West Africa",
+      "World Trade Patterns",
+      "Cartography Map Projections",
+      "Field Work Methods",
+      "Environmental Conservation",
+      "Energy Resources",
+      "Industrial Location Factors",
+      "Migration Push Pull Factors",
+      "Mineral Exploration Methods",
+      "Industrial Agglomeration Deglomeration",
+      "Population Momentum Dependency Ratio",
+      "Migration Ravenstein Laws",
+      "The Earth",
+      "Map Reading",
+      "Rocks",
+      "Landforms",
+      "Weather and Climate",
+      "Elements of Climate"
+    ],
+    "SS2": [
+      "Population Structure Pyramid",
+      "Geomorphology Landforms",
+      "Hydrology Water Cycle",
+      "Statistics in Geography",
+      "Sustainable Development",
+      "Natural Vegetation Types",
+      "Desertification Causes & Control",
+      "River Basin Development",
+      "Mining & Quarrying Impact",
+      "Coastal Landforms",
+      "Karst Topography",
+      "Wind Patterns & Circulation",
+      "Agricultural Land Use Patterns",
+      "Urban Planning & Zoning",
+      "Renewable Energy Geography",
+      "Satellite Imagery Applications",
+      "Bearings Back Bearing Grid Magnetic",
+      "Contours Intervisibility Cross Section",
+      "Plate Boundaries Wadati Benioff Zone",
+      "Volcanism Intrusive Extrusive Features",
+      "Koppen A B C D E Subtypes",
+      "Air Mass Tropical Continental Fronts",
+      "Census De Facto De Jure Errors",
+      "Weber Location Least Cost Theory",
+      "Laterization Podzolization Calcification",
+      "Ocean Salinity Thermocline Pycnocline",
+      "Current El Nino La Nina Effect",
+      "Hazard Risk Vulnerability Model",
+      "Nigeria Physical Setting",
+      "Population Geography",
+      "Settlement",
+      "Agriculture in Nigeria",
+      "Transportation in Nigeria"
+    ],
+    "SS3": [
+      "GIS Remote Sensing",
+      "Plate Tectonics Volcanism",
+      "Climatology Koppen Air Masses",
+      "Remote Sensing Applications",
+      "GIS Buffer Overlay Georeferencing",
+      "Trade Bilateral Multilateral Imbalance",
+      "Conurbation Megalopolis Primate City",
+      "Synoptic Isobar ITCZ Interpretation",
+      "Agriculture Von Thunen Model Intensive",
+      "Nigeria Niger Benue Tributaries",
+      "Weathering Exfoliation Carbonation",
+      "Great Circle Local Time Calculation",
+      "Mohorovicic Gutenberg Discontinuity",
+      "Pressure Gradient Coriolis Geostrophic Wind",
+      "Greenhouse Gases Kyoto Protocol",
+      "Gully Sheet Rill Erosion Control",
+      "Biome Ecotone Succession",
+      "Urban Slum Gentrification",
+      "Rural Depopulation Push",
+      "Tourism Butler Model",
+      "ECOWAS Trade CFA Zone",
+      "World WTO GATT Patterns",
+      "Projection Mercator Peters Conical Choice",
+      "Field Sampling Systematic Random",
+      "Conservation In Situ Ex Situ",
+      "Energy HEP Geothermal",
+      "Karst Limestone Cycle Sinking",
+      "Coriolis Ferrel Hadley Cells",
+      "Land Use Bid Rent Theory",
+      "Zoning Setback Density Control",
+      "Renewable Energy Potential Mapping",
+      "Satellite Resolution Spectral Spatial Temporal",
+      "ECOWAS",
+      "Environmental Problems",
+      "GIS Basics",
+      "World Population",
+      "Economic Geography"
+    ]
+  },
+  "CRS": {
+    "SS1": [
+      "Prophets Isaiah/Jeremiah",
+      "Parables Interpretation",
+      "Miracles Significance",
+      "Old Testament Covenant Law",
+      "Life of Jesus Temptation-Ascension",
+      "Apostolic Age Jerusalem Council",
+      "Wisdom Literature Job",
+      "Kingship Saul/David/Solomon",
+      "Major Minor Prophets Comparison",
+      "Synoptic Problem Gospels",
+      "Sermon on Mount Teachings",
+      "Faith Justification Works",
+      "Holy Spirit Pentecost",
+      "Christian Ethics & Morality",
+      "Creation Fall Salvation",
+      "Church Sacraments Baptism",
+      "Beatitudes Kingdom of God",
+      "Apostles Peter/Paul",
+      "Early Church Persecution",
+      "Prayer Worship Liturgy",
+      "Christian Family Marriage",
+      "Social Justice Issues",
+      "Biblical Archaeology",
+      "Christian Denominations",
+      "Evangelism Missions",
+      "Christian Festivals Easter",
+      "Ten Commandments",
+      "Psalms Worship",
+      "Proverbs Teachings",
+      "Gospel of John Themes",
+      "Acts of Apostles",
+      "Christian Leadership",
+      "The Creation",
+      "The Sovereignty of God",
+      "Leadership in the Bible",
+      "Disobedience",
+      "Call to Service"
+    ],
+    "SS2": [
+      "Forgiveness Reconciliation",
+      "Stewardship Resources",
+      "Christian Witness",
+      "Discipleship Cost",
+      "Christian Unity Ecumenism",
+      "Bible Canon Authority",
+      "Job's Suffering & Faith",
+      "Genesis Creation Accounts",
+      "Exodus & Deliverance Theme",
+      "Ruth & Loyalty Theme",
+      "Christian Marriage Principles",
+      "Tithing & Stewardship",
+      "Church History Reformation",
+      "Missionary Journeys of Paul",
+      "Servanthood & Humility",
+      "Christian View on Suffering",
+      "Isaiah Servant Songs Suffering Messiah",
+      "Jeremiah Temple Sermon New Covenant",
+      "Parable Sower Prodigal Mustard Hardest Interpretation",
+      "Miracle Nature Healing Eschatological Significance",
+      "Romans Justification Sanctification Predestination",
+      "Covenant Abrahamic Mosaic Davidic",
+      "Temptation Wilderness Synoptic Significance",
+      "Jerusalem Council Circumcision Debate Acts 15",
+      "Job Theodicy Retribution Friends Speeches",
+      "Saul Rejection David Covenant Solomon Apostasy",
+      "Prophetic Oracles Judgment Salvation Form",
+      "Synoptic Q Source Markan Priority",
+      "Sermon Antitheses You Have Heard",
+      "Faith James 2 vs Romans 4 Reconciliation",
+      "Pentecost Tongues Charismata Cessation",
+      "Christian Ethics Situation Absolutist",
+      "Creation Imago Dei Fall Original Sin",
+      "Sacraments Ordinance Transubstantiation",
+      "Parables",
+      "Miracles",
+      "Sermon on the Mount",
+      "The Early Church",
+      "Pauline Epistles"
+    ],
+    "SS3": [
+      "Pauline Epistles Romans",
+      "Revelation Eschatology",
+      "Beatitudes Makarios Kingdom Reversal",
+      "Peter Petrine Paul Pauline Conflict Galatians 2",
+      "Persecution Nero Domitian Edict Milan",
+      "Liturgy Eucharistic Anamnesis Epiclesis",
+      "Christian Family Household Codes Col Eph",
+      "Social Justice Amos 5 Prophetic Critique",
+      "Archaeology Dead Sea Scrolls Nag Hammadi",
+      "Revelation Apocalyptic Symbol 666 144000",
+      "Denomination Catholic Orthodox Protestant Distinction",
+      "Mission Missio Dei Evangelism Proselytism",
+      "Easter Paschal Controversy Date",
+      "Decalogue Covenant Code Holiness",
+      "Psalms Imprecatory Messianic Classification",
+      "Proverbs Wisdom Folly Woman",
+      "John Logos I Am Signs",
+      "Acts Speeches Kerygma",
+      "Leadership Servant Diakonia",
+      "Reconciliation Atonement Theories",
+      "Stewardship Parable Talents Oikonomia",
+      "Witness Martyria Koinonia",
+      "Discipleship Luke Cost Calculation",
+      "Ecumenism WCC Vatican II",
+      "Canon Muratorian Athanasius Criteria",
+      "Job Elihu Speeches Whirlwind",
+      "Creation Priestly Yahwist Contradiction",
+      "Exodus Plagues Hardening Pharaoh",
+      "Ruth Levirate Kinsman Redeemer Goel",
+      "Marriage Divorce Malachi 2 Matthew 19",
+      "Tithe Malachi 3 Deut 14",
+      "Reformation 95 Theses Indulgence",
+      "Paul Journey Shipwreck Chronology",
+      "Kenosis Philippians 2 Humility",
+      "Suffering 1 Peter Theology Persecution",
+      "Faith and Works",
+      "Christian Living",
+      "Dignity of Labour",
+      "Christian Family",
+      "Social Justice"
+    ]
+  },
+  "History": {
+    "SS1": [
+      "Nigerian Civil War Causes",
+      "Colonial Indirect Rule",
+      "Pre-Colonial Oyo/Benin Empire",
+      "Military Coups Nigeria",
+      "Amalgamation 1914 Effects",
+      "Constitutional Developments 1922-1999",
+      "Slave Trade Abolition",
+      "Islamic Jihad Dan Fodio",
+      "Missionary Activities Impact",
+      "Independence Movements Africa",
+      "Apartheid South Africa",
+      "World Wars Effects Nigeria",
+      "Trade Trans-Saharan/Atlantic",
+      "Political Systems Benin/Oyo",
+      "Ancient Civilizations Egypt/Greece",
+      "Decolonization Asia/Africa",
+      "UN Formation Functions",
+      "League of Nations",
+      "Renaissance Reformation",
+      "Imperialism Scramble Africa",
+      "Nigeria First Republic",
+      "Second Republic Politics",
+      "Third Republic June 12",
+      "Fourth Republic Democracy",
+      "Ahmadu Bello/Awolowo/Zik",
+      "Political Parties History",
+      "Civil Society Role",
+      "Human Rights Movements",
+      "Economic History Nigeria",
+      "Education History",
+      "Sokoto Caliphate Administration",
+      "Historiography",
+      "Nok Culture",
+      "Igbo Ukwu",
+      "Benin Kingdom",
+      "Hausa States",
+      "Kanem-Borno",
+      "Yoruba States"
+    ],
+    "SS2": [
+      "Pan-Africanism",
+      "Cultural History",
+      "Women in Politics",
+      "Youth Movements",
+      "Berlin Conference 1884",
+      "Aba Women's Riot 1929",
+      "Nigerian Press History",
+      "Trade Unionism in Nigeria",
+      "Biafra & Reconciliation",
+      "ECOWAS Formation & Role",
+      "African Union Objectives",
+      "Nigerian Constitutional Conferences",
+      "Civil War Aburi Accord Gowon Ojukwu",
+      "Indirect Rule Lugard Dual Mandate Critique",
+      "Herbert Macaulay NNDP 1923",
+      "Oyo Mesi Alaafin Ogboni Checks",
+      "Military Coup 1966 Major Kaduna Nzeogwu",
+      "Amalgamation Fiscal Railway Motive",
+      "Clifford 1922 Richards 1946 Macpherson 1951",
+      "Slave Trade Triangular Abolition 1807 Wilberforce",
+      "Dan Fodio Hijra Sokoto Fulani Hegemony",
+      "Mission CMS Education Fourah Bay",
+      "Independence Nkrumah Kenyatta Senghor Comparison",
+      "Apartheid Sharpeville Soweto Mandela Release",
+      "World War II Herbert Macaulay KIA Resources",
+      "Trans Saharan Gold Salt Mansa Musa",
+      "Egypt Pyramids Hieroglyph Papyrus",
+      "Trans-Saharan Trade",
+      "Atlantic Slave Trade",
+      "Jihads",
+      "Colonial Conquest",
+      "Indirect Rule"
+    ],
+    "SS3": [
+      "Nationalism Herbert Macaulay",
+      "Cold War Politics",
+      "French Revolution",
+      "Industrial Revolution",
+      "Foreign Policy Nigeria",
+      "International Relations",
+      "Cold War Proxy Conflicts Africa",
+      "Benin Ogiso Obas Guilds",
+      "Cold War Non Aligned Bandung 1955",
+      "Decolonization India Ghana Method",
+      "UN Trusteeship Decolonization",
+      "League Failure Manchuria Abyssinia",
+      "Renaissance Humanism Reformation Indulgence",
+      "French Estates Tennis Court Napoleon Code",
+      "Industrial Enclosure Capital Accumulation",
+      "Scramble Berlin King Leopold Congo",
+      "First Republic Action Group Crisis 1962",
+      "Second Republic NPN UPN Shagari Austerity",
+      "June 12 Abiola Annulment IBB",
+      "Fourth Republic Obasanjo PDP Rotation",
+      "Bello Sardauna Ahmadu Awolowo Federalism Zik Nationalism",
+      "Parties AG NCNC NPC Ideology",
+      "Civil Society NADECO Pro Democracy",
+      "Human Rights UDHR 1948 Vienna",
+      "Economic SAP 1986 Structural Adjustment Effect",
+      "Education 6-3-3-4 UPE",
+      "Foreign Policy Murtala Muhammed Angola",
+      "IR Realism Liberalism Dependency Theory",
+      "Pan African Du Bois Garvey Nkrumah",
+      "Cultural NOK Ife Bronze",
+      "Women Funmilayo Ransome Kuti Politics",
+      "Youth NYM Zikist Movement",
+      "Berlin Artificial Borders Effect",
+      "Caliphate Emirate Tributary System",
+      "Aba Women's Taxation Warrant Chiefs",
+      "Press Lagos Weekly Record Azikiwe West African Pilot",
+      "Trade Union Enugu Coal 1949",
+      "Biafra Starvation Blockade 3Rs",
+      "ECOWAS Lome Treaty CET",
+      "AU Constitutive Act Peer Review",
+      "Proxy Angola Mozambique Cold War",
+      "Conference Lancaster House Constitutional",
+      "Nationalist Movements",
+      "Independence",
+      "Military Intervention",
+      "Nigeria Civil War",
+      "Foreign Policy of Nigeria"
+    ]
+  },
+  "Civic Education": {
+    "SS1": [
+      "Constitution Rule of Law",
+      "Human Rights UDHR",
+      "Citizenship Dual Naturalization",
+      "Drug Abuse Trafficking",
+      "Governance Democracy Dictatorship",
+      "Values National Unity",
+      "Youth Restiveness Cultism",
+      "EFCC/ICPC Anti-Corruption",
+      "Civil Society NGOs",
+      "Popular Participation",
+      "International Organizations UN",
+      "Leadership Followership",
+      "Voters Apathy",
+      "Traffic Rules Road Safety",
+      "Inter-communal Conflicts Resolution",
+      "Political Apathy",
+      "Responsible Parenthood",
+      "Family Life HIV/AIDS",
+      "Social Issues Poverty",
+      "National Identity",
+      "Patriotism Loyalty",
+      "Constitutional Rights",
+      "Law & Order",
+      "Community Service",
+      "Environmental Protection",
+      "Peace Building",
+      "Inter-Ethnic Relations",
+      "Gender Equality",
+      "Consumer Protection",
+      "Financial Literacy",
+      "Entrepreneurship Skills",
+      "ICT in Governance",
+      "Public Property Protection",
+      "National Symbols",
+      "UDHR Generations Covenant 1966 Enforcement",
+      "Citizenship",
+      "National Values",
+      "Human Rights",
+      "Law and Order",
+      "The Constitution"
+    ],
+    "SS2": [
+      "Civic Duties Obligations",
+      "Emergency Services",
+      "Conflict Management",
+      "Tolerance Accommodation",
+      "Social Justice",
+      "Democratic Values",
+      "Whistleblowing & Accountability",
+      "Cybercrime & Online Safety",
+      "National Values & Ethics",
+      "Human Trafficking Awareness",
+      "Child Rights & Protection",
+      "Disaster Preparedness",
+      "Federal Character Principle",
+      "Public Complaints Commission",
+      "Election Observer Groups",
+      "National Orientation Agency Role",
+      "Constitution Supremacy Entrenchment Judicial Review",
+      "Rule of Law Dicey Exceptions",
+      "Citizenship Jus Sanguinis Jus Soli Loss Deprivation",
+      "Drug NDLEA Classification Schedule Punishment",
+      "Governance Good Indicators World Bank",
+      "Cultism Fraternity Origin Pyrates Confraternity",
+      "EFCC Establishment Act 2004 ICPC 2000 Difference",
+      "Civil Society Pressure Group Distinction NGO CBO",
+      "Popular Participation Factors Apathy",
+      "UN Specialized WHO UNESCO FAO",
+      "Leadership Transformational Transactional Traits",
+      "Voter Apathy Causes Solution INEC",
+      "Road FRSC Highway Code Speed Limit",
+      "Intercommunal Jos Tiv Jukun War Resolution ADR",
+      "Political Apathy Youth Factor",
+      "Parenting Styles Authoritative Effect HIV",
+      "Democracy",
+      "Rule of Law",
+      "Civil Society"
+    ],
+    "SS3": [
+      "National Unity Integration Baguio Model",
+      "Family Functions Reproductive Regulation",
+      "Poverty Absolute Relative Indicators",
+      "Identity Primordial Constructivist",
+      "Patriotism Chauvinism Differences",
+      "Rights Derogation Non Derogable",
+      "Law Order Maintenance Agencies",
+      "Community Self Help Projects",
+      "Pollution NESREA Environmental Law",
+      "Peace Galtung Negative Positive",
+      "Ethnic Pluralism Assimilation",
+      "Gender CEDAW Affirmative Action Beijing",
+      "Consumer CPC Rights Responsibilities",
+      "Financial Money Management Saving",
+      "Entrepreneurship MSME Challenges",
+      "E Government Types G2C G2B",
+      "Public Property Vandalization",
+      "Symbols Motto Anthem Pledge Respect",
+      "Duties Civic Legal",
+      "Emergency NEMA Fire Service Response",
+      "Conflict Thomas Kilmann Model",
+      "Tolerance Social Cohesion",
+      "Justice Distributive Retributive",
+      "Democratic Consensus Dialogue",
+      "Whistleblower Protection Policy 2016 Reward",
+      "Cybercrime EFCC Act 2015 Types Yahoo",
+      "Ethics Values Societal Decay",
+      "Trafficking NAPTIP Protocol Palermo",
+      "Child CRA 2003 Rights Best Interest",
+      "Disaster Mitigation Preparedness NEMA",
+      "Federal Character Quota Derivation",
+      "Ombudsman Public Complaints Functions",
+      "Observer AU ECOWAS EU Role",
+      "NOA Value Reorientation Campaign",
+      "Drug Abuse",
+      "Human Trafficking",
+      "Youth Empowerment",
+      "Public Service",
+      "Nigeria and World Peace"
+    ]
+  },
+  "Further Maths": {
+    "SS1": [
+      "Conic Sections Parabola/Ellipse",
+      "Probability Binomial/Poisson",
+      "Vectors Triple Products",
+      "Statics Moments Couples",
+      "Kinematics Projectiles",
+      "Polynomials Roots Relations",
+      "Trigonometry R-Formula",
+      "Inequalities Graphical",
+      "Logic Sets Proofs",
+      "Linear Algebra Eigenvalues",
+      "Group Theory",
+      "Number Theory Modulo",
+      "Numerical Methods Interpolation",
+      "Statistics Regression",
+      "Hypothesis Testing",
+      "Fourier Series",
+      "Partial Derivatives",
+      "Multiple Integrals",
+      "Mechanics Energy Work",
+      "Friction Problems",
+      "Circular Motion",
+      "Probability Distributions",
+      "Sampling Techniques",
+      "Correlation Regression",
+      "Sets and Binary Operations",
+      "Mappings",
+      "Surds",
+      "Polynomials",
+      "Logical Reasoning",
+      "Coordinate Geometry I"
+    ],
+    "SS2": [
+      "Linear Programming",
+      "Graph Theory",
+      "Boolean Algebra",
+      "Mathematical Proofs",
+      "Real Analysis Basics",
+      "Hyperbolic Functions",
+      "Taylor & Maclaurin Series",
+      "Iterative Methods Newton-Raphson",
+      "Mechanics Impulse & Momentum",
+      "Probability Generating Functions",
+      "Recurrence Relations",
+      "Optimization Lagrange Multipliers",
+      "Difference Equations",
+      "Continued Fractions",
+      "Implicit Differentiation Second Order",
+      "Parametric Differentiation Tangents Normals",
+      "Transformation Enlargement Shear",
+      "Parabola Ellipse Hyperbola Eccentricity",
+      "De Moivre Roots Unity",
+      "Binomial Mean Variance Poisson Approx",
+      "Triple Product Volume Coplanar",
+      "ODE Second Order Complementary Particular",
+      "Moments Varignon Couple Equilibrium",
+      "Projectile Range Time Maximum Height",
+      "Polynomial Symmetric Sums Alpha Beta Cubed",
+      "Binomial Fractional Negative Expansion Validity",
+      "R Formula Harmonic Addition Max Min",
+      "Inequality Region Feasible Shading",
+      "Logic Tautology Contradiction Proof",
+      "Eigenvalues Characteristic Polynomial 2x2 3x3",
+      "Differentiation",
+      "Integration",
+      "Sequence and Series",
+      "Trigonometric Functions",
+      "Statistics II",
+      "Probability II"
+    ],
+    "SS3": [
+      "Calculus Implicit Parametric",
+      "Matrices Inverse Transformation",
+      "Complex Numbers De Moivre",
+      "Differential Equations",
+      "Series Binomial Expansion",
+      "Integration Reduction Formula",
+      "Laplace Transforms",
+      "Vector Calculus Gradient",
+      "Simple Harmonic Motion",
+      "Matrices Eigenvectors",
+      "Differential Equations ODE",
+      "Matrix Transformations 3D",
+      "Matrix Inverse 3x3 Adjoint Method",
+      "Reduction Integration Sin^n Cos^n",
+      "Group Subgroup Cyclic Order",
+      "Modulo Fermat Euler Theorem",
+      "Newton Forward Backward Interpolation",
+      "Regression Lines Correlation Coefficient",
+      "Hypothesis Z T Test Type I II Error",
+      "Laplace Unit Step Dirac Delta",
+      "Fourier Half Range Even Odd",
+      "Gradient Divergence Curl Laplacian",
+      "Partial Chain Rule Total Differential",
+      "Double Triple Integral Polar",
+      "Work Energy Power Conservation",
+      "Friction Ladder Rough Inclined Plane",
+      "Circular Conical Pendulum Banking",
+      "SHM Damping Forced Resonance",
+      "Eigenvector Diagonalization",
+      "Distribution Normal Poisson Chi Square",
+      "Sampling Stratified Cluster",
+      "Correlation Rank Spearman",
+      "ODE Exact Integrating Factor",
+      "LP Simplex Graphical Slack",
+      "Graph Euler Hamiltonian",
+      "Boolean Karnaugh Simplification",
+      "Proof Induction Contradiction",
+      "Real Supremum Infimum Limit",
+      "Hyperbolic Identity Osborn Rule",
+      "Taylor Remainder Lagrange Error",
+      "Newton Raphson Convergence Failure",
+      "Impulse Conservation Linear Angular",
+      "PGF MGF Moment Extraction",
+      "Recurrence Homogeneous Particular",
+      "Lagrange Constraint Optimization",
+      "Difference Homogeneous",
+      "3D Rotation Reflection",
+      "Continued Fraction Convergents",
+      "Vectors in Three Dimensions",
+      "Mechanics",
+      "Correlation and Regression",
+      "Complex Numbers"
+    ]
+  },
+  "Agric Science": {
+    "SS1": [
+      "Soil Science CEC pH",
+      "Animal Nutrition Ration Formulation",
+      "Crop Pathology Diseases",
+      "Farm Mechanization Tillage",
+      "Agric Economics Demand/Supply",
+      "Fisheries Aquaculture",
+      "Forestry Deforestation",
+      "Extension Services Methods",
+      "Weed Science Herbicides",
+      "Irrigation Drainage Systems",
+      "Animal Physiology Digestion",
+      "Farm Records Accounting",
+      "Biotechnology Agric",
+      "Crop Production Cereals/Legumes",
+      "Animal Production Poultry",
+      "Farm Management Planning",
+      "Agric Marketing",
+      "Soil Fertility Fertilizers",
+      "Pest Control Methods",
+      "Plant Breeding",
+      "Animal Breeding",
+      "Agric Engineering",
+      "Storage Preservation",
+      "Pasture Management",
+      "Livestock Diseases",
+      "Agric Policy Nigeria",
+      "Horticulture Vegetables",
+      "Ornamental Plants",
+      "Bee Keeping",
+      "Piggery Production",
+      "Dairy Farming",
+      "Pond Management",
+      "CEC Base Saturation Liming pH Buffer",
+      "Pearson Square Ration Balancing Crude Protein",
+      "Rural Migration Factors Extension",
+      "Meaning of Agriculture",
+      "Agricultural Ecology",
+      "Soils",
+      "Farm Tools",
+      "Crop Production",
+      "Animal Production"
+    ],
+    "SS2": [
+      "Feed Formulation",
+      "Seed Production",
+      "Agric Cooperatives",
+      "Rural Sociology",
+      "Environmental Impact",
+      "Agric Research Institutes",
+      "Integrated Pest Management",
+      "Agroforestry Systems",
+      "Precision Agriculture Technology",
+      "Farm Structures & Fencing",
+      "Livestock Housing Design",
+      "Post-Harvest Losses Reduction",
+      "Agricultural Insurance",
+      "Sustainable Land Management",
+      "Cash Crops vs Food Crops",
+      "Rural Infrastructure Development",
+      "Pathology Fungal Bacterial Viral Control",
+      "Mechanization Tractor Power Hp Drawbar",
+      "Demand Elasticity Cobweb Model",
+      "Aquaculture Recirculating DO Ammonia",
+      "Forestry Taungya Afforestation Silviculture",
+      "Extension Diffusion Adoption Laggard",
+      "Weed Parasitic Striga Herbicide Selectivity",
+      "Irrigation Sprinkler Drip Efficiency Leaching",
+      "Ruminant Digestion VFA Bloat",
+      "Farm Record Profit Loss Balance",
+      "Climate Koppen Effect Agriculture Nigeria",
+      "Biotech GMO Bt Cotton Biosafety",
+      "Cereal Maize Rice Legume Cowpea Fixation",
+      "Poultry Brooding Battery Deep Litter",
+      "Agricultural Engineering",
+      "Farm Mechanization",
+      "Pests and Diseases",
+      "Forest Resources",
+      "Fishery"
+    ],
+    "SS3": [
+      "Genetics Cross Breeding",
+      "Climatology Agriculture Effect",
+      "Genetics Mendel Dihybrid Test Cross Chi Square",
+      "Farm Budget Gross Margin Net",
+      "Marketing Channel Middlemen Cooperative",
+      "Fertilizer NPK Placement Method",
+      "Pest Economic Threshold Injury Level",
+      "Breeding Heterosis Mass Selection",
+      "Animal Progeny Selection Inbreeding",
+      "Engineering Soil Water Conservation",
+      "Storage Silo Cribs Pest Fungi",
+      "Pasture Legume Grass Mixture Establishment",
+      "Disease Anthrax FMD Trypanosomiasis",
+      "Policy Land Use Act 1978 SAP Effect",
+      "Vegetable Nursery Transplanting Spacing",
+      "Ornamental Pruning Lawn Management",
+      "Apiculture Hive Langstroth Harvesting",
+      "Piggery Farrowing Management",
+      "Dairy Lactation Colostrum Milking",
+      "Pond Liming Fertilization pH Dissolved Oxygen",
+      "Feed Energy TDN Digestibility",
+      "Seed Viability Dormancy Certification",
+      "Cooperative Rochdale Principles Problems",
+      "EIA Agriculture Deforestation",
+      "Research IITA CRIN NISER Mandate",
+      "IPM Biological Cultural Chemical Integration",
+      "Agroforestry Alley Alley Hedgerow",
+      "Precision GPS GIS Variable Rate",
+      "Structure Types Building Materials",
+      "Housing Ventilation Orientation",
+      "Loss Aflatoxin Moisture Control",
+      "Insurance NAIC Indemnity Perils",
+      "Land Terracing Contour Bund",
+      "Cash Food Comparative Advantage",
+      "Infrastructure Road Storage Cold Chain",
+      "Agricultural Economics",
+      "Agricultural Extension",
+      "Animal Nutrition",
+      "Crop Improvement",
+      "Farm Records"
+    ]
+  },
+  "Computer Studies": {
+    "SS1": [
+      "Logic Gates Boolean Algebra",
+      "Number Bases Conversion Arithmetic",
+      "Algorithms Flowcharts Pseudo",
+      "Programming Arrays Loops",
+      "Networking OSI TCP/IP",
+      "Binary Two's Complement",
+      "Computer Architecture CPU",
+      "Data Structures Stack/Queue",
+      "Internet Protocols Security",
+      "System Analysis SDLC",
+      "OS Deadlock Scheduling",
+      "HTML/CSS/JS Basics",
+      "File Management Systems",
+      "Cyber Security Cryptography",
+      "Programming Languages",
+      "Software Types",
+      "Hardware Components",
+      "Input Output Devices",
+      "Memory Management",
+      "Operating System Functions",
+      "Cloud Computing",
+      "Artificial Intelligence",
+      "Data Mining",
+      "Computer Ethics",
+      "Social Media Impact",
+      "E-Government",
+      "E-Banking",
+      "Mobile Computing",
+      "Multimedia Applications",
+      "Graphics Design",
+      "Web Development",
+      "Spreadsheet Functions",
+      "Presentation Software",
+      "Software Engineering",
+      "Agile Software Development",
+      "Software System Application Utility Firmware",
+      "Hardware Motherboard Bus Architecture",
+      "History of Computers",
+      "Hardware",
+      "Software",
+      "Input Devices",
+      "Output Devices",
+      "Number Systems in Computing"
+    ],
+    "SS2": [
+      "Graphics File Formats",
+      "Computer Viruses",
+      "Firewall VPN",
+      "Database Management System",
+      "Programming Paradigms",
+      "Cloud Storage Services",
+      "Artificial Intelligence Ethics",
+      "Version Control Systems Git",
+      "Mobile App Development",
+      "Blockchain Technology",
+      "IoT Internet of Things",
+      "Data Privacy Regulations",
+      "Logic NAND NOR XOR XNOR Truth Table",
+      "Boolean Karnaugh De Morgan Simplification",
+      "Base Binary Octal Hex Addition Subtraction",
+      "Algorithm Big O Complexity Sorting",
+      "Array 2D Traversal Bubble Sort Trace",
+      "Normalization 1NF 2NF 3NF BCNF Dependency",
+      "OSI Layers Encapsulation TCP 3 Way Handshake",
+      "Two Complement Subtraction Overflow",
+      "CPU Fetch Decode Execute Pipeline Cache",
+      "Stack LIFO Queue FIFO Implementation",
+      "Protocol HTTP HTTPS FTP SSL TLS",
+      "SDLC Waterfall Agile Spiral Comparison",
+      "Deadlock Banker Coffman Conditions Prevention",
+      "HTML Semantic Tags CSS Box Model Flex Grid JS DOM",
+      "File FAT NTFS Access Methods Sequential",
+      "Crypto Symmetric Asymmetric RSA Hash",
+      "Language Compiler Interpreter Paradigm High Low",
+      "Programming Basics",
+      "BASIC Programming",
+      "Internet",
+      "Networking",
+      "Database"
+    ],
+    "SS3": [
+      "Database Normalization SQL",
+      "API Integration Basics",
+      "Machine Learning Basics",
+      "I/O Interrupt DMA Polling",
+      "Memory Virtual Paging Segmentation Thrashing",
+      "OS Process Thread Scheduling FCFS SJF Round Robin",
+      "Cloud IaaS PaaS SaaS Deployment",
+      "AI Search BFS DFS Expert System",
+      "Mining Classification Clustering Association",
+      "Ethics Intellectual Property Piracy Plagiarism",
+      "Social Media Algorithm Filter Bubble Digital Footprint",
+      "E Government G2C G2B Benefits",
+      "E Banking Encryption OTP Fraud",
+      "Mobile 3G 4G 5G Architecture",
+      "Multimedia Codec Compression Lossy Lossless",
+      "Graphics Vector Raster DPI",
+      "Web Frontend Backend Full Stack API",
+      "Spreadsheet VLOOKUP IF Pivot Absolute Relative",
+      "Presentation Animation Transition Master Slide",
+      "Format JPEG PNG GIF TIFF SVG Comparison",
+      "Virus Trojan Worm Ransomware Rootkit",
+      "Firewall Stateful Packet Filtering VPN Tunneling",
+      "DBMS ACID Transaction Concurrency",
+      "Paradigm OOP Functional Procedural Declarative",
+      "Engineering Requirement SRS Testing Types",
+      "Cloud AWS Drive Dropbox Synchronization",
+      "AI Ethics Bias Explainability Trolley Problem",
+      "Git Commit Branch Merge Conflict Rebase",
+      "App Native Hybrid Cross Platform Flutter",
+      "API REST SOAP JSON Endpoint Authentication",
+      "ML Supervised Unsupervised Overfitting",
+      "Blockchain Hash Block Consensus PoW PoS",
+      "IoT Sensors Actuator MQTT Architecture",
+      "Privacy GDPR NDPA Nigeria Consent",
+      "Agile Scrum Sprint Kanban Standup Retrospective",
+      "System Development",
+      "Booting",
+      "Data Security",
+      "Emerging Technologies"
+    ]
+  },
+  "Marketing": {
+    "SS1": [
+      "Marketing Mix 7Ps",
+      "Market Segmentation Targeting",
+      "Consumer Behaviour",
+      "Product Life Cycle",
+      "Pricing Strategies",
+      "Promotion Advertising",
+      "Distribution Channels",
+      "Marketing Research",
+      "Branding Packaging",
+      "Sales Management",
+      "Digital Marketing",
+      "International Marketing",
+      "Consumerism & Rights",
+      "Entrepreneurship Marketing Plan",
+      "Public Relations",
+      "Services Marketing",
+      "Retail Marketing",
+      "B2B Marketing",
+      "Direct Marketing",
+      "Event Marketing",
+      "Social Media Marketing",
+      "Content Marketing",
+      "Customer Relationship Management",
+      "Market Entry Strategies",
+      "Product Development",
+      "Pricing Psychology",
+      "Sales Promotion",
+      "Personal Selling",
+      "Marketing Ethics",
+      "Green Marketing",
+      "Rural Marketing",
+      "Political Marketing",
+      "Non-Profit Marketing",
+      "Pricing Skimming Penetration Going Rate Cost Plus",
+      "Meaning of Marketing",
+      "Marketing Concepts",
+      "Product",
+      "Price"
+    ],
+    "SS2": [
+      "Sports Marketing",
+      "Affiliate Marketing",
+      "Mobile Marketing",
+      "Email Marketing",
+      "Marketing Metrics KPI",
+      "E-Marketing",
+      "Neuromarketing Techniques",
+      "Influencer Marketing",
+      "Customer Journey Mapping",
+      "Loyalty Programs Design",
+      "Guerrilla Marketing Tactics",
+      "Omnichannel Marketing",
+      "Product Positioning Strategy",
+      "Competitive Analysis SWOT",
+      "Marketing Automation Tools",
+      "Mix 7Ps People Process Physical Evidence Extended",
+      "Segmentation VALS Geodemographic Behavioral Psychographic",
+      "Behaviour Maslow Freud Black Box Model Decision",
+      "PLC Extension Strategies BCG Link",
+      "Promotion DAGMAR AIDA Hierarchy",
+      "Channel Intensive Selective Exclusive Vertical Conflict",
+      "Research Experimental Survey Validity Reliability",
+      "Branding Brand Architecture Family vs Individual Packaging Label",
+      "Sales Territory Quota Forecasting",
+      "Digital SEO SEM PPC ROAS Attribution",
+      "International EPRG Standardization Adaptation Tariff",
+      "Consumerism Ralph Naderism Rights Responsibilities",
+      "Plan Executive Summary SWOT 4Ps Financial Forecast",
+      "PR Crisis Management Press Release",
+      "Services Gap Model SERVQUAL Intangibility Heterogeneity",
+      "Retail Wheel Atmospheric Private Label",
+      "Promotion",
+      "Place and Distribution",
+      "Advertising",
+      "Salesmanship",
+      "Branding"
+    ],
+    "SS3": [
+      "Brand Equity",
+      "Marketing Analytics & Big Data",
+      "B2B Buygrid Derby Webster Wind Buying Center",
+      "Direct Response Database RFM",
+      "Event 5Cs Sponsorship Activation",
+      "Social Algorithm Engagement Reach CTR",
+      "Content Funnel TOFU MOFU BOFU SEO",
+      "Equity Keller Aaker Brand Resonance Pyramid",
+      "CRM CLV Churn Cohort Analysis",
+      "Entry Joint Venture Licensing Franchising Export",
+      "Development Stage Gate Design Thinking",
+      "Psychology Charm Price Decoy Anchoring",
+      "Promotion Push Pull Coupon Rebate",
+      "Selling SPIN FAB FABV Objection Handling",
+      "Ethics Deceptive Greenwashing Subliminal",
+      "Green Sustainability Triple Bottom Line LCA",
+      "Rural Haat Mandi Challenges 4As",
+      "Political 7Ps Voter Segmentation Negative Marketing",
+      "Non Profit Donor Motivation Social Marketing",
+      "Sports Ambush Endorsement Sponsorship ROI",
+      "Affiliate Commission Cookie Attribution",
+      "Mobile SMS USSD App Push Notification",
+      "Email Open Rate A/B Subject Deliverability",
+      "Metrics CAC LTV ROMI NPS Conversion",
+      "E Marketing Payment Gateway Logistics",
+      "Neuromarketing Eye Tracking EEG fMRI",
+      "Influencer Nano Micro Macro Authenticity Disclosure",
+      "Journey Touchpoint Pain Empathy Map Moment Truth",
+      "Analytics Predictive Descriptive Google Data Studio",
+      "Loyalty Tier Points Gamification Redemption",
+      "Guerrilla Buzz Ambient Viral Low Budget",
+      "Omnichannel Phygital Consistency Inventory Integration",
+      "Positioning Perceptual Map Repositioning Differentiation",
+      "Analysis Porter Five Forces SWOT TOWS",
+      "Automation HubSpot Mailchimp Drip Workflow Lead Scoring",
+      "Marketing Planning"
+    ]
+  }
+};
+
+function flat(subject){
+  const g = TOPIC_BANK[subject];
+  if(!g) return [];
+  return [].concat(g.SS1||[], g.SS2||[], g.SS3||[]);
+}
+function grouped(subject){
+  const g = TOPIC_BANK[subject];
+  return g ? {SS1:g.SS1.slice(), SS2:g.SS2.slice(), SS3:g.SS3.slice()} : {SS1:[],SS2:[],SS3:[]};
+}
+function allSubjects(){ return Object.keys(TOPIC_BANK); }
+function sanitizeKey(name){
+  return String(name||'').replace(/[.#$\[\]\/]/g,'_').slice(0,90);
+}
+function isAllSelected(subject, selectedArr){
+  const all = flat(subject);
+  if(!all.length) return true;
+  if(!selectedArr || !selectedArr.length) return true;
+  if(selectedArr.length >= all.length) return true;
+  return false;
+}
+function normalizeList(subject, selectedArr){
+  const all = flat(subject);
+  if(!selectedArr || !selectedArr.length) return all.slice();
+  const allow = new Set(selectedArr.map(s=>String(s)));
+  const picked = all.filter(t=>allow.has(t));
+  return picked.length ? picked : all.slice();
+}
+function packMap(mapOfSets){
+  const out = {};
+  Object.keys(mapOfSets||{}).forEach(sub=>{
+    const arr = mapOfSets[sub];
+    const list = Array.isArray(arr) ? arr : Array.from(arr||[]);
+    out[sub] = normalizeList(sub, list);
+  });
+  return out;
+}
+function fingerprint(subjects, topicsMap){
+  const subs = (subjects||[]).slice().sort();
+  const parts = [];
+  for(const s of subs){
+    if(isAllSelected(s, topicsMap && topicsMap[s])) parts.push(s+':*');
+    else parts.push(s+':'+(topicsMap[s]||[]).slice().sort().join('|'));
+  }
+  return parts.join('||');
+}
+function displayable(topicsMap, max){
+  max = max==null ? 5 : max;
+  const names = [];
+  Object.keys(topicsMap||{}).forEach(sub=>{
+    (topicsMap[sub]||[]).forEach(t=>names.push(t));
+  });
+  if(!names.length || names.length>max) return [];
+  return names;
+}
+global.ESITopics = {
+  BANK: TOPIC_BANK,
+  flat, grouped, allSubjects, sanitizeKey,
+  isAllSelected, normalizeList, packMap, fingerprint, displayable
+};
+})(window);
+
+/* Elite Scholar Institute — shared Select Topic sheet
+   Used by quiz1.html (single player) and quiz.html (every multiplayer mode).
+*/
+(function(global){
+  'use strict';
+  const RECENT_KEY = 'esi_recent_topics_v1';
+  const MAX_RECENT = 12;
+
+  function $(id){ return document.getElementById(id); }
+  function loadRecent(){
+    try{ return JSON.parse(localStorage.getItem(RECENT_KEY)||'{}')||{}; }
+    catch(e){ return {}; }
+  }
+  function saveRecent(map){
+    try{ localStorage.setItem(RECENT_KEY, JSON.stringify(map)); }catch(e){}
+  }
+  function remember(subject, topics){
+    if(!subject || !topics || !topics.length) return;
+    const all = ESITopics.flat(subject);
+    if(topics.length >= all.length) return; // default-all is not a "recent pick"
+    const rec = loadRecent();
+    const prev = rec[subject]||[];
+    const merged = topics.concat(prev.filter(t=>!topics.includes(t)));
+    rec[subject] = merged.slice(0, MAX_RECENT);
+    saveRecent(rec);
+  }
+  function recentFor(subject){ return (loadRecent()[subject]||[]).slice(); }
+
+  function ensureDom(){
+    if($('esiTopicSheet')) return;
+    const style = document.createElement('style');
+    style.textContent = `
+      #esiTopicSheet{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;z-index:5000;align-items:flex-end;justify-content:center}
+      #esiTopicSheet.show{display:flex}
+      .esi-topic-card{width:100%;max-width:520px;max-height:88vh;background:var(--card2,#0f172a);border:1px solid var(--border,#1e4080);border-radius:16px 16px 0 0;padding:12px 12px 16px;display:flex;flex-direction:column;color:var(--text,#e6eeff)}
+      .esi-topic-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+      .esi-topic-head h3{margin:0;font-size:14px;font-weight:800;letter-spacing:.02em}
+      .esi-topic-head .esi-x{border:0;background:transparent;color:var(--flag,#ff4757);font-size:20px;cursor:pointer;line-height:1}
+      .esi-topic-search{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--border,#1e4080);background:var(--card,#0b1220);color:inherit;font-size:13px;outline:none;margin-bottom:8px}
+      .esi-topic-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+      .esi-selectall{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;cursor:pointer}
+      .esi-selectall input{width:16px;height:16px}
+      .esi-topic-count{font-size:11px;color:var(--accent,#ffd700);font-weight:700}
+      .esi-topic-scroll{overflow:auto;flex:1;min-height:180px;padding-right:2px}
+      .esi-sec{margin:10px 0 6px;font-size:11px;font-weight:800;color:var(--accent,#ffd700);letter-spacing:.04em;text-transform:uppercase}
+      .esi-row{display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border2,#1a2a4a);font-size:12.5px;cursor:pointer}
+      .esi-row input{width:16px;height:16px;flex-shrink:0}
+      .esi-row.on{background:rgba(255,215,0,.06)}
+      .esi-recent-wrap{margin-bottom:6px}
+      .esi-actions{display:flex;gap:8px;margin-top:10px}
+      .esi-actions button{flex:1;padding:11px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer}
+      .esi-btn-cancel{background:transparent;border:1px solid var(--border,#1e4080);color:inherit}
+      .esi-btn-done{background:#ffd700;border:0;color:#111}
+      .esi-topic-btn{width:100%;margin-top:6px;padding:9px 10px;border-radius:10px;border:1px solid var(--border,#1e4080);background:var(--card2,#0f172a);color:var(--text,#e6eeff);display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;font-size:11.5px}
+      .esi-topic-btn b{color:var(--accent,#ffd700);font-size:10.5px}
+      .esi-topic-stack{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+    `;
+    document.head.appendChild(style);
+
+    const wrap = document.createElement('div');
+    wrap.id = 'esiTopicSheet';
+    wrap.innerHTML = `
+      <div class="esi-topic-card" onclick="event.stopPropagation()">
+        <div class="esi-topic-head">
+          <h3 id="esiTopicTitle">Select Topic</h3>
+          <button type="button" class="esi-x" id="esiTopicClose">×</button>
+        </div>
+        <input id="esiTopicSearch" class="esi-topic-search" placeholder="Search topics (arrow, Lens, ss2…)" autocomplete="off">
+        <div class="esi-topic-tools">
+          <label class="esi-selectall"><input type="checkbox" id="esiTopicSelectAll"> Select All</label>
+          <span class="esi-topic-count" id="esiTopicCount"></span>
+        </div>
+        <div class="esi-topic-scroll" id="esiTopicList"></div>
+        <div class="esi-actions">
+          <button type="button" class="esi-btn-cancel" id="esiTopicCancel">Cancel</button>
+          <button type="button" class="esi-btn-done" id="esiTopicDone">Done</button>
+        </div>
+      </div>`;
+    wrap.addEventListener('click', (e)=>{ if(e.target===wrap) cancel(); });
+    document.body.appendChild(wrap);
+
+    $('esiTopicClose').onclick = cancel;
+    $('esiTopicCancel').onclick = cancel;
+    $('esiTopicDone').onclick = apply;
+    $('esiTopicSelectAll').onchange = function(){
+      const on = this.checked;
+      Object.keys(state.working).forEach(t=>{ state.working[t] = on; });
+      renderList();
+    };
+    $('esiTopicSearch').addEventListener('input', renderList);
+  }
+
+  const state = {
+    subject: null,
+    working: {},
+    snapshot: {},
+    onApply: null
+  };
+
+  function allOn(){
+    const keys = Object.keys(state.working);
+    return keys.length>0 && keys.every(k=>state.working[k]);
+  }
+  function selectedNames(){
+    return Object.keys(state.working).filter(k=>state.working[k]);
+  }
+  function matchesQuery(topic, q){
+    if(!q) return true;
+    const t = topic.toLowerCase();
+    if(t.startsWith(q) || t.includes(q)) return true;
+    const compact = t.replace(/[^a-z0-9]/g,'');
+    const q2 = q.replace(/[^a-z0-9]/g,'');
+    return !!(q2 && compact.includes(q2));
+  }
+
+  function renderList(){
+    const rawQ = ($('esiTopicSearch').value||'').trim();
+    const q = rawQ.toLowerCase();
+    const group = ESITopics.grouped(state.subject);
+    const recent = recentFor(state.subject).filter(t=>state.working[t]!=null);
+    const selectedFirst = (arr)=>arr.slice().sort((a,b)=>{
+      const as = state.working[a]?0:1, bs = state.working[b]?0:1;
+      if(as!==bs) return as-bs;
+      return a.localeCompare(b);
+    });
+
+    let html = '';
+    const bandHint = q==='ss1'||q==='ss2'||q==='ss3';
+
+    if(recent.length && !bandHint){
+      const recShow = selectedFirst(recent).filter(t=>matchesQuery(t,q));
+      if(recShow.length){
+        html += `<div class="esi-sec">Recently Selected</div><div class="esi-recent-wrap">`;
+        recShow.forEach(t=>{
+          html += rowHtml(t);
+        });
+        html += `</div>`;
+      }
+    }
+    ['SS1','SS2','SS3'].forEach(band=>{
+      if(bandHint && q!==band.toLowerCase()) return;
+      let items = group[band]||[];
+      items = selectedFirst(items).filter(t=>bandHint || matchesQuery(t,q));
+      if(!items.length) return;
+      html += `<div class="esi-sec">${band}</div>`;
+      items.forEach(t=>{ html += rowHtml(t); });
+    });
+    if(!html) html = '<div class="esi-sec">No topic matches that search</div>';
+    $('esiTopicList').innerHTML = html;
+    $('esiTopicList').querySelectorAll('.esi-row').forEach(row=>{
+      row.onclick = ()=>{
+        const t = row.getAttribute('data-t');
+        state.working[t] = !state.working[t];
+        renderList();
+      };
+    });
+    const n = selectedNames().length;
+    const tot = Object.keys(state.working).length;
+    $('esiTopicCount').textContent = n+' / '+tot+' topics';
+    $('esiTopicSelectAll').checked = allOn();
+  }
+
+  function rowHtml(t){
+    const on = !!state.working[t];
+    return `<div class="esi-row${on?' on':''}" data-t="${escapeAttr(t)}"><input type="checkbox" ${on?'checked':''} onclick="event.stopPropagation()"><span>${escapeHtml(t)}</span></div>`;
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function escapeAttr(s){ return escapeHtml(s); }
+
+  function open(opts){
+    ensureDom();
+    const subject = opts.subject;
+    const chosen = opts.selected || ESITopics.flat(subject);
+    state.subject = subject;
+    state.onApply = opts.onApply || null;
+    state.working = {};
+    ESITopics.flat(subject).forEach(t=>{ state.working[t] = chosen.includes(t); });
+    if(!Object.keys(state.working).length){
+      ESITopics.flat(subject).forEach(t=>{ state.working[t] = true; });
+    }
+    state.snapshot = Object.assign({}, state.working);
+    $('esiTopicTitle').textContent = 'Select Topic · '+subject;
+    $('esiTopicSearch').value = '';
+    $('esiTopicSheet').classList.add('show');
+    renderList();
+    setTimeout(()=>{ try{ $('esiTopicSearch').focus(); }catch(e){} }, 50);
+  }
+
+  function cancel(){
+    state.working = Object.assign({}, state.snapshot);
+    $('esiTopicSheet').classList.remove('show');
+  }
+  function apply(){
+    let picked = selectedNames();
+    if(!picked.length){
+      // never allow empty — fall back to all
+      picked = ESITopics.flat(state.subject);
+    }
+    remember(state.subject, picked);
+    $('esiTopicSheet').classList.remove('show');
+    if(typeof state.onApply==='function') state.onApply(state.subject, picked);
+  }
+
+  function defaultAll(subject){
+    return ESITopics.flat(subject).slice();
+  }
+
+  function renderButtons(container, subjects, getMap, openFor){
+    if(!container) return;
+    const list = Array.from(subjects||[]);
+    if(!list.length){ container.innerHTML=''; return; }
+    container.innerHTML = list.map(sub=>{
+      const all = ESITopics.flat(sub);
+      const cur = (getMap()[sub] && getMap()[sub].length) ? getMap()[sub] : all;
+      const n = cur.length;
+      const label = n>=all.length ? 'All topics' : (n+' selected');
+      return `<button type="button" class="esi-topic-btn" data-sub="${escapeAttr(sub)}"><span>Select Topic · ${escapeHtml(sub)}</span><b>${label}</b></button>`;
+    }).join('');
+    container.querySelectorAll('.esi-topic-btn').forEach(btn=>{
+      btn.onclick = (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const sub = btn.getAttribute('data-sub');
+        openFor(sub);
+      };
+    });
+  }
+
+  global.ESITopicPicker = {
+    open, cancel, apply, renderButtons, recentFor, defaultAll, remember, ensureDom
+  };
+})(window);
+
 /* ================================================================
    ELITE SCHOLAR INSTITUTE — multiplayer.js
    All Firebase config/API keys and app logic previously inline in
@@ -61,10 +2547,16 @@
         let updates = {};
         questions.forEach(q=>{
             if(!q || !q.q || !Array.isArray(q.options)) return;
-            updates[hashQ(q.q)] = {subject:subject, q:q.q, options:q.options, answer:q.answer, explanation:q.explanation};
+            updates[hashQ(q.q)] = {subject:subject, topic:q.topic||'', q:q.q, options:q.options, answer:q.answer, explanation:q.explanation};
         });
         if(!Object.keys(updates).length) return;
         qbDb.ref(path).update(updates).catch(e=>console.warn('[QuestionBank] save failed for "'+path+'":', e && e.message));
+        questions.forEach(q=>{
+            if(!q || !q.q || !q.topic || !window.ESITopics) return;
+            let tPath = `elite_subject_database/${subject}/${subMode}/${diff}/topic/${ESITopics.sanitizeKey(q.topic)}/question_bank`;
+            let one={}; one[hashQ(q.q)] = {subject:subject, topic:q.topic, q:q.q, options:q.options, answer:q.answer, explanation:q.explanation};
+            qbDb.ref(tPath).update(one).catch(()=>{});
+        });
     }
 
 
@@ -347,6 +2839,38 @@ let notifCache={};
 let chatOpenWith=null;       // uid of friend whose chat modal is open
 let chatModalUnsub=null;
 let selSubjects={qm:new Set(['Mathematics']), cr:new Set(['Mathematics']), ch:new Set(['Mathematics']), ct:new Set(['Mathematics'])};
+let selTopicsMp={qm:{}, cr:{}, ch:{}, ct:{}};
+let activeTopicScope=null; // settings.topics while generating a match
+function mpTopicsFor(subject, scope){
+    const map = scope || activeTopicScope || {};
+    if(window.ESITopics) return ESITopics.normalizeList(subject, map[subject]);
+    return (TOPICS[subject]||[]).slice();
+}
+function packTopicsForKey(setKey){
+    const out={};
+    selSubjects[setKey].forEach(s=>{
+        const cur = selTopicsMp[setKey][s];
+        out[s] = window.ESITopics ? ESITopics.normalizeList(s, cur) : (cur||TOPICS[s]||[]).slice();
+    });
+    return out;
+}
+function renderMpTopicButtons(setKey, wrapId){
+    if(!window.ESITopicPicker) return;
+    let wrap=document.getElementById(wrapId);
+    if(!wrap) return;
+    ESITopicPicker.renderButtons(wrap, [...selSubjects[setKey]], ()=>selTopicsMp[setKey], function(sub){
+        if(!selTopicsMp[setKey][sub]) selTopicsMp[setKey][sub] = window.ESITopics ? ESITopics.flat(sub) : (TOPICS[sub]||[]).slice();
+        ESITopicPicker.open({
+            subject:sub,
+            selected: selTopicsMp[setKey][sub],
+            onApply:function(subject, picked){
+                selTopicsMp[setKey][subject]=picked.slice();
+                topicRotation[subject]=null;
+                renderMpTopicButtons(setKey, wrapId);
+            }
+        });
+    });
+}
 let crMode='spak';
 let currentRoomId=null;
 let roomUnsub=null;
@@ -901,6 +3425,8 @@ function buildSubjectMini(containerId, setKey){
     wrap.innerHTML = `
         <div class="subj-dd-btn" onclick="toggleSubjectDropdown('${containerId}')"><span>${esc(label)}</span><span class="subj-dd-arrow">${isOpen?'▴':'▾'}</span></div>
         <div class="subj-dd-panel ${isOpen?'open':''}">${ALL.map(s=>`<label class="subj-dd-item"><input type="checkbox" ${selSubjects[setKey].has(s)?'checked':''} onchange="toggleSubj('${containerId}','${setKey}','${esc(s)}')"> ${esc(s)}</label>`).join('')}</div>`;
+    const wrapMap={qm:'qmTopicPickWrap',cr:'crTopicPickWrap',ch:'chTopicPickWrap',ct:'ctTopicPickWrap'};
+    renderMpTopicButtons(setKey, wrapMap[setKey]);
 }
 function toggleSubjectDropdown(containerId){
     let wrap=$(containerId);if(!wrap)return;
@@ -916,8 +3442,8 @@ function toggleSubjectDropdown(containerId){
 }
 function toggleSubj(containerId, setKey, subj){
     let set=selSubjects[setKey];
-    if(set.has(subj)){ if(set.size>1) set.delete(subj); else { toast('Keep at least one subject selected.'); return; } }
-    else set.add(subj);
+    if(set.has(subj)){ if(set.size>1){ set.delete(subj); if(selTopicsMp[setKey]) delete selTopicsMp[setKey][subj]; } else { toast('Keep at least one subject selected.'); return; } }
+    else { set.add(subj); if(selTopicsMp[setKey] && !selTopicsMp[setKey][subj]) selTopicsMp[setKey][subj] = window.ESITopics ? ESITopics.flat(subj) : (TOPICS[subj]||[]).slice(); }
     let wrap=$(containerId);
     let wasOpen = wrap && wrap.dataset.open==='1';
     buildSubjectMini(containerId, setKey);
@@ -1332,7 +3858,7 @@ $('chMode') && $('chMode').addEventListener && document.addEventListener('DOMCon
 async function sendChallenge(){
     if(!challengeTargetUid){toast('Pick a friend to challenge first.');return;}
     let settings={
-        subjects:[...selSubjects.ch], difficulty:$('chDiff').value, subMode:'standard',
+        subjects:[...selSubjects.ch], topics:packTopicsForKey('ch'), difficulty:$('chDiff').value, subMode:'standard',
         mode:$('chMode').value, qcount:parseInt($('chCount').value)||10,
         perQ: $('chMode').value==='spak' ? (parseInt($('chTime').value)||20) : null,
         totalMinutes: $('chMode').value==='speed' ? (parseInt($('chTime').value)||10) : null,
@@ -1449,7 +3975,7 @@ function shuffleCopyForTopics(a){
 }
 
 function nextTopicsForSubject(subject, howMany){
-    let list = TOPICS[subject];
+    let list = mpTopicsFor(subject);
     if(!list || !list.length) return [];
     if(!topicRotation[subject] || !topicRotation[subject].length){
         topicRotation[subject] = shuffleCopyForTopics(list);
@@ -1526,6 +4052,7 @@ async function fetchViaPuterMP(subject, subMode, diff, count, excludeHashSet, on
                         if(result.length >= count) return;
                         if(!q.q || !q.options || q.options.length < 4) return;
                         q.subject = subject;
+                        q.topic = chunkTopics[result.length] || chunkTopics[0] || '';
                         q.options = q.options.map(o => String(o).replace(/^\s*[A-D]\s*[\.\)\-]\s*/i, '').trim()).slice(0, 4);
                         q.answer = parseInt(q.answer); if(isNaN(q.answer) || q.answer < 0 || q.answer > 3) q.answer = 0;
                         if(q.answer >= q.options.length) q.answer = 0;
@@ -1552,6 +4079,7 @@ async function fetchViaPuterMP(subject, subMode, diff, count, excludeHashSet, on
 // WITHOUT the answer field ever attached — callers must pull `answer` separately via the
 // parallel array this function also returns (answers[i] matches questions[i]).
 async function fetchQuestionsForMatch(settings, onStatus){
+    activeTopicScope = settings.topics || null;
     let subs=settings.subjects && settings.subjects.length ? settings.subjects : ['Mathematics'];
     let totalRequested=Math.max(3, Math.min(50, settings.qcount||10));
     let diff=settings.difficulty||'Hard';
@@ -1573,13 +4101,16 @@ async function fetchQuestionsForMatch(settings, onStatus){
         shuffleArr(bankList);
         let fromBank=[];
         let localTaken=new Set();
+        let allowedTopics=new Set(mpTopicsFor(subject, settings.topics));
+        let customTopics=window.ESITopics && settings.topics && !ESITopics.isAllSelected(subject, settings.topics[subject]);
         for(let q of bankList){
             if(fromBank.length>=quota) break;
             if(!q||!q.q||!Array.isArray(q.options)) continue;
+            if(customTopics && q.topic && !allowedTopics.has(q.topic)) continue;
             let h=hashQ(q.q);
             if(mpSessionSeen.has(h)||localTaken.has(h)) continue;
             localTaken.add(h);
-            fromBank.push({subject:subject,q:q.q,options:q.options.slice(),answer:q.answer,explanation:q.explanation});
+            fromBank.push({subject:subject,topic:q.topic||'',q:q.q,options:q.options.slice(),answer:q.answer,explanation:q.explanation});
         }
         perSubjectQuestions[subject]=fromBank;
         let shortfall=quota-fromBank.length;
@@ -1641,7 +4172,7 @@ async function createRoom(){
     let powerups=$('crPowerups').value==='on';
     let showExplanations=$('crShowExplain').value!=='off';
     let settings={
-        subjects:[...selSubjects.cr], difficulty:$('crDiff').value, subMode:$('crSubMode').value,
+        subjects:[...selSubjects.cr], topics:packTopicsForKey('cr'), difficulty:$('crDiff').value, subMode:$('crSubMode').value,
         mode:crMode, qcount:parseInt($('crCount').value)||10,
         perQ: crMode==='spak' ? (parseInt($('crTime').value)||20) : null,
         totalMinutes: crMode==='speed' ? (parseInt($('crTime').value)||10) : null,
@@ -1897,6 +4428,7 @@ function renderLobby(roomId, room){
     let s=room.settings;
     $('lobbySettingsSummary').innerHTML=`
         <span class="chip-mini">${subjectsWithIcons(s.subjects)}</span>
+        ${(()=>{ const shown=(window.ESITopics && s.topics)?ESITopics.displayable(s.topics,5):[]; return shown.length?`<span class="chip-mini">📌 ${esc(shown.join(' · '))}</span>`:''; })()}
         <span class="chip-mini">${esc(s.difficulty)}</span>
         <span class="chip-mini">${esc(s.mode)}${s.raceMode?' ⚡Race':''}</span>
         <span class="chip-mini">${s.qcount} Qs</span>
@@ -2037,7 +4569,7 @@ function renderPublicRoomsList(entries, liveEntries){
     if(target1)target1.innerHTML=html;
     if(target2)target2.innerHTML=entries.slice(0,3).map(([id,r])=>{
         let count=Object.keys(r.players||{}).length;
-        return `<div class="room-card"><div class="room-title">🚪 ${esc(r.hostName)}'s Room</div><div class="room-meta">${esc(r.settings.subjects.join(', '))} • ${count}/${r.maxPlayers}</div><button class="btn btn-g btn-sm" style="margin-top:6px" onclick="showScreen('rooms')">View</button></div>`;
+        return `<div class="room-card"><div class="room-title">🚪 ${esc(r.hostName)}'s Room</div><div class="room-meta">${esc(r.settings.subjects.join(', '))}${(()=>{ const shown=(window.ESITopics && r.settings.topics)?ESITopics.displayable(r.settings.topics,5):[]; return shown.length?' • '+esc(shown.join(' · ')):''; })()} • ${count}/${r.maxPlayers}</div><button class="btn btn-g btn-sm" style="margin-top:6px" onclick="showScreen('rooms')">View</button></div>`;
     }).join('');
 }
 let ignoredSearches=new Set();
@@ -2053,7 +4585,8 @@ function refreshLiveSearches(){
         el.innerHTML=entries.map(([uid,t])=>{
             let s=t.settings||{};
             let tier=tierFor(t.elo||0);
-            let info=`${(s.subjects||[]).join(', ')} · ${s.mode} MODE · ${s.qcount||10}Q`.toUpperCase();
+            let shown=(window.ESITopics && s.topics)?ESITopics.displayable(s.topics,5):[];
+            let info=`${(s.subjects||[]).join(', ')}${shown.length?' · '+shown.join(', '):''} · ${s.mode} MODE · ${s.qcount||10}Q`.toUpperCase();
             return `<div class="room-card">
                 <div class="room-title">${tier[3]} ${esc(t.name)} IS SEARCHING FOR A MATCH</div>
                 <div class="room-meta">${esc(info)}</div>
@@ -2146,7 +4679,7 @@ function openQuickMatchModal(){
 async function startQuickMatchSearch(){
     if(!ME)return;
     let settings={
-        subjects:[...selSubjects.qm], difficulty:$('qmDiff').value, subMode:'standard',
+        subjects:[...selSubjects.qm], topics:packTopicsForKey('qm'), difficulty:$('qmDiff').value, subMode:'standard',
         mode:$('qmMode').value, qcount:parseInt($('qmCount').value)||10,
         perQ: $('qmMode').value==='spak' ? (parseInt($('qmTime').value)||20) : null,
         totalMinutes: $('qmMode').value==='speed' ? (parseInt($('qmTime').value)||10) : null,
@@ -2203,7 +4736,14 @@ async function startQuickMatchSearch(){
     let queueCb=async snap=>{
         if(!qmSearching)return;
         let all=snap.val()||{};
-        let exact=Object.keys(all).filter(uid=>uid!==MY_UID && !all[uid].claimed && all[uid].settings.difficulty===settings.difficulty && all[uid].settings.mode===settings.mode);
+        let myFp = (window.ESITopics && settings.topics) ? ESITopics.fingerprint(settings.subjects, settings.topics) : '';
+        let exact=Object.keys(all).filter(uid=>{
+            if(uid===MY_UID || all[uid].claimed) return false;
+            if(all[uid].settings.difficulty!==settings.difficulty || all[uid].settings.mode!==settings.mode) return false;
+            if(!window.ESITopics) return true;
+            let fp = ESITopics.fingerprint(all[uid].settings.subjects||settings.subjects, all[uid].settings.topics||{});
+            return fp===myFp;
+        });
         let candidates=exact;
         if(!candidates.length && widenedAt){
             // Closest-settings fallback: same mode only, ranked by ELO closeness — still a fair
@@ -2879,7 +5419,7 @@ function renderMatchScreen(matchId, m){
         let swWrap2=$('matchSwitchWrap'); if(swWrap2) swWrap2.style.display='none';
     }
     // ---- progress + timer ----
-    $('mQc').textContent=`${isSpectating?'👁 SPECTATING • ':''}Question ${qIdx+1} / ${m.questions.length}${q.subject?(' • '+q.subject):''}`;
+    $('mQc').textContent=`${isSpectating?'👁 SPECTATING • ':''}Question ${qIdx+1} / ${m.questions.length}${q.subject?(' • '+q.subject):''}${(()=>{ const shown=(window.ESITopics && m.settings && m.settings.topics)?ESITopics.displayable(m.settings.topics,5):[]; if(shown.length && q.topic) return ' • '+q.topic; if(shown.length) return ' • '+shown.join(' · '); return ''; })()}`;
     $('mProg').style.width=Math.round((qIdx/(m.questions.length||1))*100)+'%';
     // ---- question + options ----
     $('mQt').textContent=q.q;
@@ -3565,7 +6105,12 @@ async function buildMatchResultCanvas(){
     ctx.fillStyle=headColor; ctx.font='900 54px Poppins, sans-serif';
     ctx.fillText(d.headline.replace(/^[^\w]+/,'').trim(), W/2, cursor+50);
     ctx.fillStyle='#8ea0c8'; ctx.font='600 21px Poppins, sans-serif';
+    let shownT=(window.ESITopics && d.topics)?ESITopics.displayable(d.topics,5):[];
     ctx.fillText(`${(d.subjects||[]).map(s=>subjectIcon(s)+' '+s).join(', ').toUpperCase()} · ${(d.mode||'').toUpperCase()} MODE`, W/2, cursor+88);
+    if(shownT.length){
+        ctx.fillStyle='#c9b24a'; ctx.font='600 14px Poppins, sans-serif';
+        ctx.fillText(shownT.join(' · '), W/2, cursor+108);
+    }
     cursor+=headlineBlock;
     // ---- host + date/time ----
     ctx.fillStyle='#5d75ac'; ctx.font='600 17px Poppins, sans-serif';
@@ -3695,7 +6240,8 @@ async function buildTournamentResultCanvas(){
     ctx.fillStyle='#8ea0c8'; ctx.font='600 18px Poppins, sans-serif';
     let formatLabel = d.teamMode ? 'TEAM BATTLE' : (d.format==='round_robin'?'ROUND ROBIN LEAGUE':'SINGLE ELIMINATION')+(d.rounds?` · ${d.rounds} ROUND${d.rounds>1?'S':''}`:'');
     ctx.fillText(formatLabel, W/2, cursor+96);
-    let metaLine=[(d.subjects||[]).map(s=>subjectIcon(s)+' '+s).join(', ').toUpperCase(), d.mode?d.mode.toUpperCase()+' MODE':'', d.hostName?'HOST: '+d.hostName.toUpperCase():''].filter(Boolean).join(' · ');
+    let shownT=(window.ESITopics && d.topics)?ESITopics.displayable(d.topics,5):[];
+    let metaLine=[(d.subjects||[]).map(s=>subjectIcon(s)+' '+s).join(', ').toUpperCase(), shownT.length?shownT.join(' · '):'', d.mode?d.mode.toUpperCase()+' MODE':'', d.hostName?'HOST: '+d.hostName.toUpperCase():''].filter(Boolean).join(' · ');
     if(metaLine){ ctx.font='600 15px Poppins, sans-serif'; ctx.fillStyle='#5d75ac'; ctx.fillText(metaLine, W/2, cursor+122); }
     cursor+=titleBlock;
     if(d.teamMode){
@@ -3968,7 +6514,7 @@ async function applyMyResultToProfile(matchId, m, iWon, isDraw){
     let keyArr=qids.map(qi=>({answer:m.answerKey[qi].answer, explanation:m.answerKey[qi].explanation||''}));
     await mdb.ref('mp_match_history/'+MY_UID).push({
         matchId, opponentUid:myOpponentUid(m), result: isDraw?'draw':(iWon?'win':'loss'),
-        score:m.scores[MY_UID]||0, subjects:m.settings.subjects, mode:m.settings.mode,
+        score:m.scores[MY_UID]||0, subjects:m.settings.subjects, topics:m.settings.topics||{}, mode:m.settings.mode,
         teamMode:!!m.teamMode, contribPct, correct:myCorrect, total:myTotal,
         questions:qArr, answerKey:keyArr, myAnswers,
         ts:firebase.database.ServerValue.TIMESTAMP
@@ -4498,7 +7044,7 @@ async function createTournament(){
     gapMinutes=Math.max(30, Math.min(1440, gapMinutes));
     let roundGapSeconds=gapMinutes*60;
     let settings={
-        subjects:[...selSubjects.ct], difficulty:$('ctDiff').value, subMode:'standard',
+        subjects:[...selSubjects.ct], topics:packTopicsForKey('ct'), difficulty:$('ctDiff').value, subMode:'standard',
         mode:ctMode, qcount:parseInt($('ctCount').value)||8,
         perQ: ctMode==='spak' ? (parseInt($('ctTime').value)||20) : null,
         totalMinutes: ctMode==='speed' ? (parseInt($('ctTime').value)||10) : null,
@@ -4654,6 +7200,7 @@ function renderTournamentDetail(tid, t){
     $('tDetailMeta').innerHTML=`
         <span class="chip-mini">${esc(t.format==='single_elim'?'Single Elimination':'Round Robin')}</span>
         <span class="chip-mini">${subjectsWithIcons(t.settings.subjects)}</span>
+        ${(()=>{ const shown=(window.ESITopics && t.settings && t.settings.topics)?ESITopics.displayable(t.settings.topics,5):[]; return shown.length?`<span class="chip-mini">📌 ${esc(shown.join(' · '))}</span>`:''; })()}
         <span class="chip-mini">${esc(t.settings.difficulty)}</span>
         <span class="chip-mini">${esc(t.settings.mode)}${t.settings.raceMode?' ⚡Race':''}</span>
         <span class="chip-mini">${t.teamMode?'👥 Team Tournament':'Individual'}</span>
@@ -4763,7 +7310,7 @@ function renderTournamentDetail(tid, t){
                 name:t.name, format:t.format,
                 championName:t.championName||null, championAvatar:(t.championUid&&t.players[t.championUid])?t.players[t.championUid].avatarEmoji:'🏆',
                 players: players.map(p=>({uid:p.uid, name:p.name, avatarEmoji:p.avatarEmoji||'🎓', isChamp:p.uid===t.championUid})),
-                subjects:(t.settings&&t.settings.subjects)||[], mode:t.settings&&t.settings.mode,
+                subjects:(t.settings&&t.settings.subjects)||[], topics:(t.settings&&t.settings.topics)||{}, mode:t.settings&&t.settings.mode,
                 hostName:t.hostName||null,
                 rounds: t.format==='single_elim' ? Math.max(1,Math.ceil(Math.log2(Math.max(2,players.length)))) : null
             };

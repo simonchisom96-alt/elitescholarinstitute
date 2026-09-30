@@ -1382,6 +1382,7 @@ function closeYourCustomModal() {
             <div class="select-btn-wrap">
                 <label>Subject(s)</label>
                 <div class="subj-dd" id="qmSubjectMini"></div>
+                <div id="qmTopicPickWrap" class="esi-topic-stack"></div>
             </div>
             <div class="row" style="margin-top:8px">
                 <div><label>Difficulty</label><select id="qmDiff"><option>Easy</option><option>Medium</option><option selected>Hard</option><option>Olympian</option></select></div>
@@ -1403,6 +1404,7 @@ function closeYourCustomModal() {
             <h2 id="crModalTitle">⚔️ Create Room</h2>
             <label>Subject(s)</label>
             <div class="subj-dd" id="crSubjectMini"></div>
+                <div id="crTopicPickWrap" class="esi-topic-stack"></div>
             <div class="mode-row" style="margin-top:10px">
                 <div class="mode-card on" id="crm_spak" onclick="setCRMode('spak')"><b>Spak</b><span>Per-Q timer</span></div>
                 <div class="mode-card" id="crm_speed" onclick="setCRMode('speed')"><b>Sprint</b><span>Total timer</span></div>
@@ -1456,6 +1458,7 @@ function closeYourCustomModal() {
             <p class="subtext">Your opponent will play under YOUR settings below.</p>
             <label>Subject(s)</label>
             <div class="subj-dd" id="chSubjectMini"></div>
+                <div id="chTopicPickWrap" class="esi-topic-stack"></div>
             <div class="row" style="margin-top:8px">
                 <div><label>Difficulty</label><select id="chDiff"><option>Easy</option><option>Medium</option><option selected>Hard</option><option>Olympian</option></select></div>
                 <div><label>Mode</label><select id="chMode"><option value="spak" selected>Spak</option><option value="speed">Sprint</option><option value="free">Casual</option></select></div>
@@ -1528,6 +1531,7 @@ function closeYourCustomModal() {
             </div>
             <label>Subject(s)</label>
             <div class="subj-dd" id="ctSubjectMini"></div>
+                <div id="ctTopicPickWrap" class="esi-topic-stack"></div>
             <div class="mode-row" style="margin-top:8px">
                 <div class="mode-card on" id="ctm_spak" onclick="setCTMode('spak')"><b>Spak</b><span>Per-Q timer</span></div>
                 <div class="mode-card" id="ctm_speed" onclick="setCTMode('speed')"><b>Sprint</b><span>Total timer</span></div>
@@ -1654,6 +1658,6 @@ function closeYourCustomModal() {
 
     
 
-    <script src="multiplayer.js"></script>
+            <script src="multiplayer.js"></script>
 </body>
 </html>
