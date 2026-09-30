@@ -2673,7 +2673,7 @@ global.ESITopics = {
     const qbApp = firebase.initializeApp(qbConfig, "questionBank");
     const qbDb = qbApp.database();
 
-    async function qbGetBank(subject, subMode, diff){
+    async function qbGetBank(subject, subMode, diff, scope){
         let path = `elite_subject_database/${subject}/${subMode}/${diff}/question_bank`;
         let merged = {};
         try{
@@ -2683,7 +2683,7 @@ global.ESITopics = {
             console.warn('[QuestionBank] read failed for "'+path+'":', e && e.message);
         }
         try{
-            const picks = mpTopicsFor(subject);
+            const picks = mpTopicsFor(subject, scope);
             const custom = window.ESITopics && !ESITopics.isAllSelected(subject, picks);
             if(custom){
                 for(const topic of picks.slice(0, 40)){
@@ -4130,8 +4130,14 @@ function shuffleCopyForTopics(a){
     return arr;
 }
 
-function nextTopicsForSubject(subject, howMany){
-    let list = mpTopicsFor(subject);
+function nextTopicsForSubject(subject, howMany, scope){
+    let list = mpTopicsFor(subject, scope);
+    if(scope && window.ESITopics && !ESITopics.isAllSelected(subject, scope[subject])){
+        let shuffled=shuffleCopyForTopics(list);
+        let picked=[];
+        for(let n=0;n<howMany;n++) picked.push(shuffled[n % shuffled.length]);
+        return picked;
+    }
     if(!list || !list.length) return [];
     if(!topicRotation[subject] || !topicRotation[subject].length){
         topicRotation[subject] = shuffleCopyForTopics(list);
@@ -4165,7 +4171,7 @@ function normalizeExplanationCasing(q){
     return q;
 }
 
-async function fetchViaPuterMP(subject, subMode, diff, count, excludeHashSet, onStatus){
+async function fetchViaPuterMP(subject, subMode, diff, count, excludeHashSet, onStatus, scope){
     const CHUNK_SIZE = 20;
     let avoidHashes = new Set([...mpSessionSeen, ...excludeHashSet]);
     let seenList = [...avoidHashes].slice(-150).join(', ');
@@ -4183,8 +4189,8 @@ async function fetchViaPuterMP(subject, subMode, diff, count, excludeHashSet, on
 
         // Randomly assign ONE topic per question index off the rotation queue,
         // instead of handing Puter the entire topic bank to wander through.
-        let chunkTopics = nextTopicsForSubject(subject, chunkCount);
-        let allowedTopics = mpTopicsFor(subject);
+        let chunkTopics = nextTopicsForSubject(subject, chunkCount, scope);
+        let allowedTopics = mpTopicsFor(subject, scope);
         let topicFocus = chunkTopics.length
             ? `USER-SELECTED TOPICS ONLY (do not invent or switch topics): ${(allowedTopics||[]).join(' || ')}. Assign EXACTLY one of those topics per question index, in order — ${chunkTopics.map((t,idx)=>`Q${idx+1}=${t}`).join(' | ')}. Each question must stay strictly inside its own assigned topic only, never drifting onto a different one.`
             : `FOCUS: Core ${subject} syllabus.`;
@@ -4236,7 +4242,6 @@ async function fetchViaPuterMP(subject, subMode, diff, count, excludeHashSet, on
 // WITHOUT the answer field ever attached — callers must pull `answer` separately via the
 // parallel array this function also returns (answers[i] matches questions[i]).
 async function fetchQuestionsForMatch(settings, onStatus){
-    activeTopicScope = settings.topics || null;
     let subs=settings.subjects && settings.subjects.length ? settings.subjects : ['Mathematics'];
     let totalRequested=Math.max(3, Math.min(50, settings.qcount||10));
     let diff=settings.difficulty||'Hard';
@@ -4253,7 +4258,7 @@ async function fetchQuestionsForMatch(settings, onStatus){
         perSubjectQuestions[subject]=[];
         if(quota<=0) continue;
         if(onStatus) onStatus(`Checking shared bank for ${subject}…`);
-        let bank=await qbGetBank(subject, subMode, diff);
+        let bank=await qbGetBank(subject, subMode, diff, settings.topics);
         let bankList=Object.values(bank||{});
         shuffleArr(bankList);
         let fromBank=[];
@@ -4281,7 +4286,7 @@ async function fetchQuestionsForMatch(settings, onStatus){
         let shortfall=quota-fromBank.length;
         if(shortfall>0){
             if(onStatus) onStatus(`Generating ${shortfall} new ${subject} questions…`);
-            let fresh=await fetchViaPuterMP(subject, subMode, diff, shortfall, localTaken, onStatus);
+            let fresh=await fetchViaPuterMP(subject, subMode, diff, shortfall, localTaken, onStatus, settings.topics);
             perSubjectQuestions[subject]=perSubjectQuestions[subject].concat(fresh);
             qbSaveQuestions(subject, subMode, diff, fresh);
         }
@@ -4298,7 +4303,7 @@ async function fetchQuestionsForMatch(settings, onStatus){
         let already=new Set(Q.map(q=>hashQ(q.q)));
         let subjForFill=subs[fillAttempts%subs.length]||subs[0];
         if(onStatus) onStatus(`Topping up ${stillNeeded} more unique question(s)…`);
-        let extra=await fetchViaPuterMP(subjForFill, subMode, diff, stillNeeded, already, onStatus);
+        let extra=await fetchViaPuterMP(subjForFill, subMode, diff, stillNeeded, already, onStatus, settings.topics);
         if(extra && extra.length){Q=Q.concat(extra);qbSaveQuestions(subjForFill, subMode, diff, extra);}else break;
     }
     Q=Q.slice(0,totalRequested);
@@ -5885,7 +5890,7 @@ async function resolveEndOrSuddenDeath(matchId, fromQIdx, totalQ){
                     let sdRef=mdb.ref(`mp_matches/${matchId}/suddenDeathRounds`);
                     let claim=await sdRef.transaction(cur=>(cur||0)===sdRounds ? sdRounds+1 : undefined);
                     if(!claim.committed) return;
-                    let extra=await fetchQuestionsForMatch({subjects:m.settings.subjects, difficulty:m.settings.difficulty, subMode:m.settings.subMode, mode:m.settings.mode, qcount:1});
+                    let extra=await fetchQuestionsForMatch({subjects:m.settings.subjects, topics:m.settings.topics, difficulty:m.settings.difficulty, subMode:m.settings.subMode, mode:m.settings.mode, qcount:1});
                     if(extra && extra.length){
                         let newIdx=totalQ;
                         let updates={};
