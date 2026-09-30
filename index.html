@@ -2747,73 +2747,7 @@ html.esi-loader-active body{
 
 
 <style id="esi-exact-final-fix">
-/* EXACT requested floating labels. */
-.float-quiz::before{
-  content:"CBT QUIZ"!important;
-}
-.float-chat::before{
-  content:"NEED HELP?"!important;
-}
 
-/* Put the timetable lightbox ABOVE the React About modal.
-   The About modal is z-index:100000, so the previous 99999 was underneath it. */
-.lightbox{
-  position:fixed!important;
-  inset:0!important;
-  width:100vw!important;
-  height:100vh!important;
-  z-index:200000!important;
-}
-.lightbox-arrow{
-  z-index:200001!important;
-}
-
-/* Give the About Us text the maximum usable line width on mobile. */
-.esi-about-panel{
-  width:calc(100vw - 2px)!important;
-  max-width:none!important;
-}
-.esi-about-panel>.section{
-  width:100%!important;
-  max-width:none!important;
-  padding-left:0!important;
-  padding-right:0!important;
-}
-.esi-about-panel .about-box,
-.esi-about-panel .department-box,
-.esi-about-panel .why-box,
-.esi-about-panel .result-card,
-.esi-about-panel .transform-box,
-.esi-about-panel .review-box,
-.esi-about-panel .faq-box,
-.esi-about-panel .contact-box{
-  width:100%!important;
-  max-width:none!important;
-  box-sizing:border-box!important;
-}
-.esi-about-panel .about-box{
-  padding-left:7px!important;
-  padding-right:7px!important;
-}
-.esi-about-panel .about-box h3,
-.esi-about-panel .about-box p,
-.esi-about-panel .department-box li,
-.esi-about-panel .why-box p{
-  width:100%!important;
-  max-width:none!important;
-  margin-left:0!important;
-  margin-right:0!important;
-  padding-left:0!important;
-  padding-right:0!important;
-  word-break:normal!important;
-  overflow-wrap:normal!important;
-}
-
-/* Move the advert framing toward the user's right-hand side by ~20%. */
-.esi-hero-card{
-  background-position:55% 30%!important;
-}
-</style>
 
 <style id="esi-final-visual-polish">
 /* Bottom navigation icons: clear chat bubble and three stacked books. */
@@ -2874,6 +2808,200 @@ html.esi-loader-active body{
 /* Shift the advert artwork toward the phone user's right-hand side. */
 .esi-hero-card{
   background-position:35% 30%!important;
+}
+</style>
+<style id="esi-restore-former-floating-actions">
+/* FLOATING AI QUIZ - BLUE - Above chat with 20px gap */
+.float-quiz{
+position:fixed;
+right:18px;
+bottom:115px; /* 30px gap - guaranteed not touching */
+width:65px;
+height:65px;
+border-radius:50%;
+background:linear-gradient(135deg,#00bfff,#0066ff);
+display:flex;
+justify-content:center;
+align-items:center;
+font-size:26px;
+text-decoration:none;
+z-index:9998;
+box-shadow:0 0 0 0 rgba(0,191,255,0.7);
+transition:0.3s cubic-bezier(0.4,0,0.2,1);
+cursor:pointer;
+animation:pulseBlue 2s infinite;
+}
+@keyframes pulseBlue{
+0%{box-shadow:0 0 0 0 rgba(0,191,255,0.7);}
+70%{box-shadow:0 0 0 15px rgba(0,191,255,0);}
+100%{box-shadow:0 0 0 0 rgba(0,191,255,0);}
+}
+.float-quiz::before{
+content:"CBT QUIZ";
+position:absolute;
+bottom:75px;
+right:50%;
+transform:translateX(50%) translateY(10px);
+background:linear-gradient(135deg,#1e293b,#334155);
+color:white;
+padding:10px 16px;
+border-radius:20px;
+font-size:13px;
+font-weight:700;
+font-family:Arial,sans-serif;
+white-space:nowrap;
+transition:0.4s;
+pointer-events:none;
+box-shadow:0 8px 20px rgba(0,0,0,0.3),0 0 15px rgba(0,191,255,0.2);
+}
+.float-quiz::after{
+content:"";
+position:absolute;
+bottom:70px;
+right:50%;
+transform:translateX(50%);
+width:24px;
+height:12px;
+background:#1e293b;
+ border-radius:0 0 12px 12px;
+transition:0.4s;
+pointer-events:none;
+}
+@media (min-width:768px){
+.float-quiz::before,.float-quiz::after{opacity:0;transform:translateX(50%) translateY(20px);}
+.float-quiz:hover::before,.float-quiz:hover::after{opacity:1;transform:translateX(50%) translateY(0);}
+}
+.float-quiz:hover{transform:scale(1.12);animation:none;box-shadow:0 12px 35px rgba(0,191,255,0.5);}
+.float-quiz:active{transform:scale(0.92);}
+
+/* FLOATING CHAT - GREEN - Bottom */
+.float-chat{
+position:fixed;
+right:18px;
+bottom:20px;
+width:65px;
+height:65px;
+border-radius:50%;
+background:linear-gradient(135deg,#00c853,#00ff88);
+display:flex;
+justify-content:center;
+align-items:center;
+font-size:30px;
+text-decoration:none;
+z-index:9999;
+box-shadow:0 0 0 0 rgba(0,255,120,0.7);
+transition:0.3s cubic-bezier(0.4,0,0.2,1);
+cursor:pointer;
+animation:pulse 2s infinite;
+}
+@keyframes pulse{
+0%{box-shadow:0 0 0 0 rgba(0,255,120,0.7);}
+70%{box-shadow:0 0 0 15px rgba(0,255,120,0);}
+100%{box-shadow:0 0 0 0 rgba(0,255,120,0);}
+}
+.float-chat::before{
+content:"Need help?";
+position:absolute;
+bottom:75px;
+right:50%;
+transform:translateX(50%) translateY(10px);
+background:linear-gradient(135deg,#1e293b,#334155);
+color:white;
+padding:10px 16px;
+border-radius:20px;
+font-size:13px;
+font-weight:700;
+font-family:Arial,sans-serif;
+white-space:nowrap;
+transition:0.4s;
+pointer-events:none;
+box-shadow:0 8px 20px rgba(0,0,0,0.3),0 0 15px rgba(0,255,120,0.2);
+}
+.float-chat::after{
+content:"";
+position:absolute;
+bottom:70px;
+right:50%;
+transform:translateX(50%);
+width:24px;
+height:12px;
+background:#1e293b;
+border-radius:0 0 12px 12px;
+transition:0.4s;
+pointer-events:none;
+}
+@media (min-width:768px){
+.float-chat::before,.float-chat::after{opacity:0;transform:translateX(50%) translateY(20px);}
+.float-chat:hover::before,.float-chat:hover::after{opacity:1;transform:translateX(50%) translateY(0);}
+}
+.float-chat:hover{transform:scale(1.12);animation:none;box-shadow:0 12px 35px rgba(0,255,120,0.6);}
+.float-chat:active{transform:scale(0.92);}
+/* FLOATING CHAT - GREEN - Bottom */
+.float-chat{
+position:fixed;
+right:18px;
+bottom:20px;
+width:65px;
+height:65px;
+border-radius:50%;
+background:linear-gradient(135deg,#00c853,#00ff88);
+display:flex;
+justify-content:center;
+align-items:center;
+font-size:30px;
+text-decoration:none;
+z-index:9999;
+box-shadow:0 0 0 0 rgba(0,255,120,0.7);
+transition:0.3s cubic-bezier(0.4,0,0.2,1);
+cursor:pointer;
+animation:pulse 2s infinite;
+}
+@keyframes pulse{
+0%{box-shadow:0 0 0 0 rgba(0,255,120,0.7);}
+70%{box-shadow:0 0 0 15px rgba(0,255,120,0);}
+100%{box-shadow:0 0 0 0 rgba(0,255,120,0);}
+}
+.float-chat::before{
+content:"NEED HELP?";
+position:absolute;
+bottom:75px;
+right:50%;
+transform:translateX(50%) translateY(10px);
+background:linear-gradient(135deg,#1e293b,#334155);
+color:white;
+padding:10px 16px;
+border-radius:20px;
+font-size:13px;
+font-weight:700;
+font-family:Arial,sans-serif;
+white-space:nowrap;
+transition:0.4s;
+pointer-events:none;
+box-shadow:0 8px 20px rgba(0,0,0,0.3),0 0 15px rgba(0,255,120,0.2);
+}
+.float-chat::after{
+content:"";
+position:absolute;
+bottom:70px;
+right:50%;
+transform:translateX(50%);
+width:24px;
+height:12px;
+background:#1e293b;
+border-radius:0 0 12px 12px;
+transition:0.4s;
+pointer-events:none;
+}
+@media (min-width:768px){
+.float-chat::before,.float-chat::after{opacity:0;transform:translateX(50%) translateY(20px);}
+.float-chat:hover::before,.float-chat:hover::after{opacity:1;transform:translateX(50%) translateY(0);}
+}
+.float-chat:hover{transform:scale(1.12);animation:none;box-shadow:0 12px 35px rgba(0,255,120,0.6);}
+.float-chat:active{transform:scale(0.92);}
+
+/* Keep the restored former deployment's behavior, but ensure the labels are visible on mobile. */
+.float-quiz::before,.float-quiz::after,.float-chat::before,.float-chat::after{
+  pointer-events:none!important;
 }
 </style>
 </head>
