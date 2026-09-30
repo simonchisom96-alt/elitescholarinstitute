@@ -2292,6 +2292,8 @@ global.ESITopics = {
       .esi-selectall{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;cursor:pointer}
       .esi-selectall input{width:16px;height:16px}
       .esi-topic-count{font-size:11px;color:var(--accent,#ffd700);font-weight:700}
+      .esi-topic-hint{font-size:10px;color:var(--muted,#8ea0c8);margin:0 0 8px;line-height:1.35}
+      .esi-reset-all{border:0;background:transparent;color:var(--info,#00bfff);font-size:11px;font-weight:800;cursor:pointer;padding:0}
       .esi-topic-scroll{overflow:auto;flex:1;min-height:180px;padding-right:2px}
       .esi-sec{margin:10px 0 6px;font-size:11px;font-weight:800;color:var(--accent,#ffd700);letter-spacing:.04em;text-transform:uppercase}
       .esi-row{display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border2,#1a2a4a);font-size:12.5px;cursor:pointer}
@@ -2316,9 +2318,11 @@ global.ESITopics = {
           <h3 id="esiTopicTitle">Select Topic</h3>
           <button type="button" class="esi-x" id="esiTopicClose">×</button>
         </div>
+        <div class="esi-topic-hint">Saved picks stay ticked. Tick more or fewer any time — nothing is locked.</div>
         <input id="esiTopicSearch" class="esi-topic-search" placeholder="Search topics (arrow, Lens, ss2…)" autocomplete="off">
         <div class="esi-topic-tools">
           <label class="esi-selectall"><input type="checkbox" id="esiTopicSelectAll"> Select All</label>
+          <button type="button" class="esi-reset-all" id="esiTopicReset">Reset all</button>
           <span class="esi-topic-count" id="esiTopicCount"></span>
         </div>
         <div class="esi-topic-scroll" id="esiTopicList"></div>
@@ -2336,6 +2340,10 @@ global.ESITopics = {
     $('esiTopicSelectAll').onchange = function(){
       const on = this.checked;
       Object.keys(state.working).forEach(t=>{ state.working[t] = on; });
+      renderList();
+    };
+    $('esiTopicReset').onclick = function(){
+      ESITopics.flat(state.subject).forEach(t=>{ state.working[t]=true; });
       renderList();
     };
     $('esiTopicSearch').addEventListener('input', renderList);
@@ -2468,7 +2476,7 @@ global.ESITopics = {
       const all = ESITopics.flat(sub);
       const cur = (getMap()[sub] && getMap()[sub].length) ? getMap()[sub] : all;
       const n = cur.length;
-      const label = n>=all.length ? 'All topics' : (n+' selected');
+      const label = n>=all.length ? 'All topics · tap to change' : (n+' selected · tap to change');
       return `<button type="button" class="esi-topic-btn" data-sub="${escapeAttr(sub)}"><span>Select Topic · ${escapeHtml(sub)}</span><b>${label}</b></button>`;
     }).join('');
     container.querySelectorAll('.esi-topic-btn').forEach(btn=>{
