@@ -2053,6 +2053,16 @@ html.esi-loader-active body{
 .esi-resource-card:hover{transform:translateY(-4px)!important;box-shadow:0 16px 32px rgba(0,0,0,.28)!important}
 .esi-resource-card h3{text-transform:uppercase!important;font-size:21px!important}
 @media(max-width:760px){.esi-card-grid{grid-template-columns:1fr 1fr!important;gap:12px!important}.esi-resource-card{grid-template-columns:72px minmax(0,1fr)!important;gap:12px!important;min-height:165px!important;padding:18px 30px 18px 14px!important;background-size:auto,64px!important}.esi-icon{width:72px!important;height:72px!important;min-width:72px!important}.esi-icon svg{width:36px!important;height:36px!important}.esi-resource-card h3{font-size:14px!important}.esi-resource-card p{font-size:11px!important}.esi-resource-card:after{right:8px!important;font-size:34px!important}}
+</style><style id="esi-about-v3">
+.esi-about-modal{position:fixed!important;inset:0!important;z-index:100000!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:12px!important;background:rgba(0,7,22,.88)!important;backdrop-filter:blur(10px)!important}
+.esi-about-panel{width:min(920px,100%)!important;max-height:94vh!important;overflow:auto!important;padding:16px!important;border-radius:26px!important;background:linear-gradient(180deg,rgba(4,22,55,.98),rgba(2,12,32,.99)),url("advert.png") center/cover!important;border:1px solid rgba(255,215,0,.3)!important}
+.esi-about-close{position:sticky!important;top:0!important;float:right!important;z-index:5!important;width:44px!important;height:44px!important;border-radius:50%!important;background:#061a3c!important;color:#ffd700!important;border:1px solid rgba(255,215,0,.4)!important;font-size:30px!important}
+.esi-about-identity{text-align:center!important;padding:12px 8px 26px!important}
+.esi-about-image{display:block!important;width:min(320px,82vw)!important;height:min(320px,82vw)!important;object-fit:contain!important;object-position:center!important;margin:10px auto 16px!important;border-radius:22px!important;border:3px solid #ffd700!important;background:rgba(255,255,255,.05)!important;box-shadow:0 12px 40px rgba(0,0,0,.4)!important}
+.esi-about-identity h2{margin:0!important;color:#fff!important;font-size:29px!important}
+.esi-about-role{margin:4px 0!important;color:#ffd700!important;font-weight:900!important;letter-spacing:1.5px!important}
+.esi-about-subrole{color:#c5dcff!important;font-size:13px!important}
+.esi-about-panel .section{scroll-margin-top:15px!important}
 </style></head>
 
 
@@ -2182,69 +2192,1117 @@ onclick="closeMenu()">
 <a class="active" href="index.html"><span>⌂</span>Home</a><a href="#esi-dashboard"><span>▣</span>Study</a><a href="quiz.html"><span>▤</span>Quiz</a><a href="notification.html"><span>♧</span>Notifications</a><a href="#sideMenu" onclick="openMenu();return false;"><span>⋮</span>More</a>
 </nav>
 
-<!-- ABOUT US: React component mount -->
+<!-- ABOUT US CONTENT IS STORED HERE AND OPENED THROUGH THE REACT ABOUT VIEW -->
+<template id="esi-about-content"><!-- ABOUT -->
+
+<section
+class="section"
+id="about">
+
+<div class="title">
+
+ABOUT ELITE SCHOLAR INSTITUTE 
+</div>
+
+<div class="about-box">
+
+<img
+src="founder.jpg"
+class="about-image">
+
+<h3>
+Semiu Awwal & Ezeigwe Simon Chisom
+</h3>
+
+<p>
+    <div class="loader-sub">
+
+Semiu Awwal, the Administrative Head of Elite Scholar Institute. His precision, consistency towards the development of the elite community and student-first leadership helped shape the institute into a structured, results-driven academy built for real academic growth and excellence.
+
+</p>
+
+<p>
+
+Ezeigwe Simon Chisom, Founder and Visionary Head of Elite Scholar Institute. His passion for academic excellence and youth development led to the establishment of a tutorial platform focused on transforming average students into outstanding scholars. He is also the developer of this website.</div>
+</p>
+</div>
+
+<div class="about-box">
+
+<h3>
+Our Academic Mission
+</h3>
+
+
+
+<p>
+
+To raise every student into an elite unstoppable scholar through an absolute disciplined mastery and relentless training sections securing total legendary academic triumph without compromise.
+</p>
+</div>
+
+</section>
+
+<!-- DEPARTMENTS -->
+
+<section
+class="section"
+id="classes">
+
+<div class="title">
+
+DEPARTMENT & CLASSES 
+
+</div>
+
+<div class="department-grid">
+
+<div class="department-box">
+
+<h2>
+🔬 Science Department
+</h2>
+
+<ul>
+
+<br><b><li>English Language</li>
+<li>Chemistry</li>
+<li>Biology</li>
+<li>Physics</li>
+<li>Mathematics</li>
+
+
+</ul>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- WHY STUDENTS CHOOSE -->
+
+
+<!-- RESULTS -->
+
+<section
+class="section"
+id="breakdown">
+
+<div class="title">
+
+TOP RESULTS OF PREVIOUS ELITES
+
+</div>
+
+</div>
+
+<div class="results-grid">
+
+<!-- 352 -->
+
+<div class="result-card">
+
+<img src="339.jpg">
+
+<h2>
+352
+</h2>
+
+<h3>
+Moses Wisdom
+</h3>
+
+<p>
+
+One of our highest performing science students whose consistency and revision discipline produced an exceptional UTME result.
+
+</p>
+
+<div class="table-box">
+
+<div>
+English Language — 88
+</div>
+
+<div>
+Physics — 92
+</div>
+
+<div>
+Chemistry — 86
+</div>
+
+<div>
+Mathematics — 86
+</div>
+
+<div>
+UTME Aggregate — 352
+</div>
+
+</div>
+
+</div>
+
+<!-- 339 -->
+
+<div class="result-card">
+
+<img src="325.jpg">
+
+<h2>
+338
+</h2>
+
+<h3>
+Odeyemi Olamide 
+</h3>
+
+<p>
+
+A brilliant science student trained through Elite Scholar Institute CBT systems and weekend brainstorming sessions.
+
+</p>
+
+<div class="table-box">
+
+<div>
+English Language — 82
+</div>
+
+<div>
+Biology — 87
+</div>
+
+<div>
+Chemistry — 85
+</div>
+
+<div>
+Physics — 84
+</div>
+
+<div>
+UTME Aggregate — 338
+</div>
+
+</div>
+
+</div>
+
+<!-- 328 -->
+
+
+
+<!-- 325 -->
+
+<div class="result-card">
+
+<img src="Grace.jpg">
+
+<h2>
+325
+</h2>
+
+<h3>
+Faloke Oluwaseun
+</h3>
+
+<p>
+
+A focused student whose examination confidence and speed improved greatly through our CBT revision structure.
+
+</p>
+
+<div class="table-box">
+
+<div>
+English Language — 79
+</div>
+
+<div>
+Biology — 82
+</div>
+
+<div>
+Chemistry — 81
+</div>
+
+<div>
+Physics — 83
+</div>
+
+<div>
+UTME Aggregate — 325
+</div>
+
+</div>
+
+</div>
+
+<!-- 339 -->
+
+<div class="result-card">
+
+<img src="emma.jpg">
+
+<h2>
+320
+</h2>
+
+<h3>
+Chuka Divine 
+</h3>
+
+<p>
+
+A well dedicated student who practiced hard and did all necessary things in order to get up to his desired score.
+</p>
+
+<div class="table-box">
+
+<div>
+English Language — 66
+</div>
+
+<div>
+Biology — 83
+</div>
+
+<div>
+Chemistry — 83
+</div>
+
+<div>
+Physics — 88
+</div>
+
+<div>
+UTME Aggregate — 320
+</div>
+
+</div>
+
+</div>
+
+
+<!-- 316 -->
+
+<div class="result-card">
+
+<img src="faloke.jpg">
+
+<h2>
+316
+</h2>
+
+<h3>
+Adelabi Favour
+</h3>
+
+<p>
+
+One of our inspiring students whose serious dedication and practice produced outstanding academic improvement.
+
+</p>
+
+<div class="table-box">
+
+<div>
+English Language — 75
+</div>
+
+<div>
+Biology — 82
+</div>
+
+<div>
+Chemistry — 79
+</div>
+
+<div>
+Mathematics — 80
+</div>
+
+<div>
+UTME Aggregate — 316
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<section class="section">
+
+<div class="title">
+
+ELITE STUDY MATERIALS 
+
+</div>
+
+
+<div class="grid">
+
+<!-- BIOLOGY -->
+
+<div class="card government">
+
+<h3>
+UTME RECOMMENDED TEXTBOOKS 
+</h3>
+
+<p>
+
+Ace your examinations by studying carefully selected unified recommended textbooks, tested and trusted by thousands of examiners.
+
+</p>
+
+<a href="Textbooks.html">
+
+Open Material
+
+</a>
+
+</div>
+
+<!-- PHYSICS -->
+
+<div class="card government">
+
+<h3>
+FREQUENTLY USED SYLLABLES 
+</h3>
+
+<p>
+
+Know where you stand in your studies by using our utme frequently used and highly recommend syllables as a guide.
+</p>
+
+<a href="syllables.html">
+
+Open Material
+
+</a>
+
+</div>
+
+<!-- CHEMISTRY -->
+
+<div class="card government">
+
+<h3>
+ELITE AI CBT QUIZ DRILLER 
+</h3>
+
+<p>
+
+Train yourself on speed, accuracy and ability to reason using different settings, challenges, quiz and time trials produced by the elite Scholar team. 
+</p>
+
+<a href="quiz.html">
+
+Open Material 
+
+</a>
+
+</div>
+
+<!-- MATHEMATICS -->
+
+<div class="card government">
+
+<h3>
+ELITE EDUCATIONAL GALLERY 
+</h3>
+
+<p>
+Enhance your retentive memory by viewing and understanding our photo gallery which contains numerous photographic concepts.
+
+
+</p>
+
+<a href="picture.html">
+
+Open Material
+
+</a>
+
+</div>
+
+<!-- ENGLISH -->
+
+<div class="card government">
+
+<h3>
+UNIVERSITY POST-UTME MCQ
+</h3>
+
+<p>
+Use our carefully selected post utme past questions for major universities to aid in your post utme preparations towards the university of your choice.
+
+</p>
+
+<a href="postutme.html">
+
+Open Material
+
+</a>
+
+</div>
+
+<!-- LITERATURE -->
+
+<div class="card government">
+
+<h3>
+ESI MOTIVATIONAL GUIDE
+</h3>
+
+<p>
+
+Feeling a little academically down?, Elite Scholar Institute motivational guide got you covered. 
+</p>
+
+<a href="motivatio.html">
+
+Open Material 
+
+</a>
+
+</div>
+
+</div>
+
+</section>
+<!-- TIMETABLE -->
+
+<section
+class="section"
+id="timetable">
+
+<div class="title">
+
+SCIENCE & ART TIMETABLE 
+</div>
+
+<div class="timetable-grid">
+
+<div class="timetable-box" style="width:100% !important; margin-top:16px !important;">
+
+<h2 style="text-align:center !important; margin-bottom:12px !important;">
+Science Timetable
+</h2>
+<div class="loader-sub" style="width:100% !important; display:flex !important; justify-content:center !important; margin:0 auto !important; padding:0 !important;">
+   <div class="book-card" style="width:94% !important; max-width:400px !important; padding:5px !important; border-radius:16px !important; border:1px solid rgba(255,255,255,0.1) !important; overflow:hidden !important; margin:0 auto !important; box-sizing:border-box !important; background:rgba(255,255,255,0.03) !important;">
+<div class="book-image" style="width:100% !important; padding:0 !important; margin:0 !important; border:none !important; overflow:hidden !important; border-radius:12px !important; display:flex !important; flex-direction:column !important; align-items:center !important;">
+    <div class="hero-image" style="width:100% !important; height:90% !important; max-height:240px !important; overflow:hidden !important; display:flex !important; justify-content:center !important; align-items:center !important; padding:0 !important; margin:0 !important; border-radius:10px !important;">
+<img src="timetable1.jpg" alt="Check your Internet connection to load images, images would show offline once this is done." style="width:180% !important; max-width:180% !important; height:90% !important; min-height:90% !important; max-height:240px !important; display:block !important; margin:0 auto !important; margin-left:-40% !important; position:relative !important; left:20% !important; object-fit:cover !important; border-radius:8px !important;">
+</div>
+<span style="font-size:11px !important; font-weight:800 !important; letter-spacing:1.2px !important; margin-top:7px !important; margin-bottom:2px !important; opacity:0.85 !important; text-transform:uppercase !important;">CLICK IMAGE TO EXPAND</span>
+</div>
+</div>
+</div>
+</div>
+
+</section>
+
+
+<!-- PRICING -->
+
+<section
+class="section"
+id="pricing">
+
+<div class="title">
+    
+
+AFFORDABLE PRICING 
+
+</div>
+
+<div class="price-grid">
+
+   <section>
+       
+<div class="price-box">
+
+<h2>
+    
+₦0
+
+</h2>
+
+<p>
+<div class="loader-sub">
+Enjoy your first month completely FREE with access to classes, quizzes, CBT practice and revision sessions.
+</div>
+</p>
+
+<div class="small-news">
+
+<div class="small-track">
+
+🔥 FREE CLASS STARTS 1ST AUGUST 2026 • FREE CLASSES STARTS 1ST AUGUST 2026 •
+
+</div>
+
+</div>
+
+<a
+href="https://chat.whatsapp.com/DJE3tvwkRQzA6qboxbsLzP?s=cl&p=a&ilr=2&amv=3"
+target="_blank">
+
+Start Free
+
+</a>
+</div>
+</section>
+
+
+
+<section>
+<div class="price-box">
+
+<h2>
+₦5,000/One month 
+</h2>
+
+<p>
+    <div class="loader-sub">
+
+Pay 5,000 every month and join Elite Scholar Institute's live intense classes for 2027 classes and access to all tutorial activities and mentorship systems </div>
+</p>
+
+<div class="small-news">
+
+<div class="small-track">
+
+🔥 PAID CLASS STARTS SEPTEMBER 6TH 2026 • REGISTER EARLY •</div>
+</div>
+
+<a
+href="https://form.svhrt.com/69c5817b122307131754d5ce"
+target="_blank">
+
+Register Now
+</a>
+</div>
+</section>
+
+<section>
+<div class="price-box">
+
+
+
+<h2>
+₦9,000/Two months 
+</h2>
+
+<p>
+    <div class="loader-sub">
+    
+
+Pay 9,000 instead of 10,000 every two months and get unlimited free access to study materials, past questions, practical and access to all tutorial activities and mentorship systems.
+</div>
+</p>
+
+<a
+href="https://form.svhrt.com/69c5817b122307131754d5ce"
+target="_blank">
+
+Register Now
+
+</a>
+
+</div>
+</section>
+<section>
+<div class="price-box">
+
+
+<h2>
+₦13,000/Three months 
+</h2>
+
+<p>
+    <div class="loader-sub">
+
+ Pay 13,000 instead of 15,000 every three months and get highly intense sessions with trusted teachers willing to sacrifice anything for your success together with access to all tutorial activities and mentorship systems.</div>
+</p>
+
+<a
+href="https://form.svhrt.com/69c5817b122307131754d5ce"
+target="_blank">
+
+Register Now
+
+</a>
+
+</div>
+
+</div>
+</section>
+
+<!-- TRANSFORMATIONS -->
+
+<section
+class="section"
+id="transformations">
+
+<div class="title">
+
+REMARKABLE ACADEMIC TRANSFORMATION 
+
+</div>
+
+<div class="transform-grid">
+
+<div class="transform-box">
+
+<h2>
+223 ➜ 309
+</h2>
+
+<h3>
+Amaka Nwosu
+</h3>
+
+<p>
+
+A student who struggled academically became one of our strongest science students after consistent participation in Elite Scholar Institute CBT drilling and revision sessions.
+
+</p>
+
+</div>
+
+<div class="transform-box">
+
+<h2>
+259 ➜ 316
+</h2>
+
+<h3>
+Adelabi Favour
+</h3>
+
+<p>
+
+Through determination, mentorship and intensive classes, this student gained admission confidence and academic discipline.
+
+</p>
+
+</div>
+
+<div class="transform-box">
+
+<h2>
+279 ➜ 301
+</h2>
+
+<h3>
+Chukwudi Eze
+</h3>
+
+<p>
+
+A life-changing transformation achieved through revision systems, weekly mock examinations and motivation classes.
+
+</p>
+
+</div>
+
+<div class="transform-box">
+
+<h2>
+258 ➜ 307
+</h2>
+
+<h3>
+Emmanuel Chris
+</h3>
+
+<p>
+
+One of our most inspiring science transformations proving the impact of discipline and quality tutoring.
+
+</p>
+
+</div>
+
+<div class="transform-box">
+
+<h2>
+277 ➜ 320
+</h2>
+
+<h3>
+    Emma Divine 
+</h3>
+
+<p>
+
+After joining Elite Scholar Institute, this student improved confidence, answering speed and examination understanding tremendously.
+
+</p>
+
+</div>
+
+<div class="transform-box">
+
+<h2>
+195 ➜ 298
+</h2>
+
+<h3>
+Daniel Ugochukwu
+</h3>
+
+<p>
+
+Elite Scholar Institute helped this student improve weak subjects through personalized mentoring and weekend brainstorming classes.
+
+</p>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- REVIEWS -->
+
+<section
+class="section"
+id="reviews">
+
+<div class="title">
+
+STUDENT REVIEWS
+
+</div>
+
+<div class="review-grid">
+
+<div class="review-box">
+
+<p>
+
+"Elite Scholar Institute changed my academic life completely. I moved from scoring below 240 to scoring 328 in JAMB."
+
+</p>
+
+<h4>
+— Obi; 2024 student 
+</h4>
+
+</div>
+
+<div class="review-box">
+
+<p>
+
+"The Physics and Chemistry explanations are world class. Difficult topics became very easy for me."
+
+</p>
+
+<h4>
+— Daniel; 2025 student 
+</h4>
+
+</div>
+
+<div class="review-box">
+
+<p>
+
+"The mock examinations prepared me mentally before the real exam and gave me courage, all thanks to Elite Scholar Institute."
+
+</p>
+
+<h4>
+— Esther; 2025 student 
+</h4>
+
+</div>
+
+<div class="review-box">
+
+<p>
+
+"The discipline and daily classes helped me become serious academically and this gave me a better opportunity to have a stronger academic foundation for my future."
+
+</p>
+
+<h4>
+— Chiamaka; 2024 student
+</h4>
+
+</div>
+
+<div class="review-box">
+
+<p>
+
+"Best online tutorial currently. Their revision system is unmatched."
+
+</p>
+
+<h4>
+— David; 2023 student 
+</h4>
+
+</div>
+
+<div class="review-box">
+
+<p>
+
+"I loved the weekend brainstorming sessions and motivation classes together with the amazing prices."
+
+</p>
+
+<h4>
+— Chukwudi; 2025 student 
+</h4>
+
+</div>
+
+<div class="review-box">
+
+<p>
+
+"The teachers are friendly and they explain difficult calculations in simple ways, they are 24/7 ready to help you."
+
+</p>
+
+<h4>
+— Chinedu; 2024 student 
+</h4>
+
+</div>
+
+<div class="review-box">
+
+<p>
+
+"My confidence increased after joining Elite Scholar Institute classes and now I am also doing well in my medical study."
+
+</p>
+
+<h4>
+— Favour; 2025 student 
+</h4>
+
+</div>
+
+</div>
+
+</section>
+
+
+
+<!-- FAQ -->
+
+<section
+class="section"
+id="faq">
+
+<div class="title">
+
+FREQUENTLY ASKED QUESTIONS 
+
+</div>
+
+<div class="faq-grid">
+
+<div class="faq-box">
+
+<h3>
+Is the first month really free?
+</h3>
+
+<p>
+
+Yes. New students enjoy one complete month of free classes, CBT revision sessions and mentoring support.
+
+</p>
+
+</div>
+
+<div class="faq-box">
+
+<h3>
+Are the classes online?
+</h3>
+
+<p>
+
+Yes. Classes are conducted online through organized tutorial platforms, WhatsApp and Telegram learning systems.
+
+</p>
+
+</div>
+
+<div class="faq-box">
+
+<h3>
+Do you train science and art students?
+</h3>
+
+<p>
+
+Yes. Elite Scholar Institute trains Science, Art and Commercial students preparing for major examinations.
+
+</p>
+
+</div>
+
+<div class="faq-box">
+
+<h3>
+Are there mock examinations?
+</h3>
+
+<p>
+
+Yes. Weekly CBT mock examinations and challenge tests are organized regularly, with amazing prizes for the top three winners.
+
+</p>
+
+</div>
+
+<div class="faq-box">
+
+<h3>
+Can students from different states join?
+</h3>
+
+<p>
+
+Yes. Students from all parts of Nigeria can join and participate fully online.
+
+</p>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- CONTACT -->
+
+<section
+class="section"
+id="contact">
+
+<div class="title">
+
+CONTACT & REGISTRATION 
+
+</div>
+<br>
+<div class="contact-box">
+<div class="loader-sub">
+<h3><b style="color: #00abff; font:bold 22px Arial; text-decoration:none;">
+    
+    FOR MORE ENQUIRES PLEASE CONTACT</b></h3>
+<br>
+<p>
+📞 08108391083
+</p>
+<br>
+<p>
+📞 07072917715
+</p>
+<br>
+<p>
+📞 07038735325
+</p>
+
+<br><p>
+Email us on: elitescholarinstitute@gmail.com
+</p>
+
+<br>
+<p>
+🕖 Classes Begin By 7PM Daily
+</p>
+<br>
+<p>
+🎓 Free Class Starts 1st August 2026
+</p>
+<br>
+<p>
+📚 Registration For 2027 Students Is Ongoing
+</p>
+
+</div>
+</div>
+
+</section>
+
+<!-- Suggestion -->
+<button id="openSuggestionBtn" class="suggest-btn"> Make suggestions</button>
+
+<!-- Suggestion Modal -->
+<div id="suggestionModal" class="modal-overlay">
+  <div class="modal-box">
+    <button id="closeModalBtn" class="close-btn">&times;</button>
+    <h2>Make Suggestions</h2>
+    <p class="subtext">Help us improve Elite Scholar Institute.</p>
+
+    <form id="suggestionForm">
+      <label for="category">Category</label>
+      <select id="category" required>
+        <option value="" disabled selected>Select category</option>
+        <option value="Design/UI">Design/UI</option>
+        <option value="Speed/Performance">Speed/Performance</option>
+        <option value="Content/Idea">Content/Idea</option>
+        <option value="Bug/Issue">Bug/Issue</option>
+        <option value="Ratings and reviews">Rate and review us</option>
+        <option value="Other">Others</option>
+      </select>
+
+      <label for="message">Your Suggestion</label>
+      <textarea id="message" placeholder="Tell us how we can grow..." rows="4" required></textarea>
+
+      <button type="submit" class="send-btn">Send suggestion.</button>
+    </form>
+  </div>
+</div>
+
+</template>
 <div id="esi-about"></div>
-
-<!-- React powers the interactive About Us panel without changing the rest of the static site. -->
 <script type="module">
-import React, { useState } from "https://esm.unpkg.com/react@18.3.1";
-import { createRoot } from "https://esm.unpkg.com/react-dom@18.3.1/client";
-
-const e = React.createElement;
-
-function AboutUsPanel() {
-  const [open, setOpen] = useState(false);
-
-  React.useEffect(() => {
-    window.openAboutFromMenu = () => {
-      setOpen(true);
-      const menu = document.getElementById("sideMenu");
-      const overlay = document.getElementById("overlay");
-      if (menu) menu.classList.remove("active");
-      if (overlay) overlay.style.display = "none";
-    };
-    return () => { delete window.openAboutFromMenu; };
-  }, []);
-
-  if (!open) return null;
-
-  return e("div", {
-    className: "esi-about-modal",
-    role: "dialog",
-    "aria-modal": "true",
-    "aria-label": "About Elite Scholar Institute",
-    onClick: (event) => {
-      if (event.target === event.currentTarget) setOpen(false);
-    }
-  },
-    e("div", { className: "esi-about-panel" },
-      e("button", {
-        className: "esi-about-close",
-        type: "button",
-        "aria-label": "Close About Us",
-        onClick: () => setOpen(false)
-      }, "×"),
-      e("img", {
-        src: "founder.jpg",
-        alt: "Elite Scholar Institute",
-        className: "esi-about-image"
-      }),
-      e("div", { className: "esi-about-kicker" }, "ABOUT ESI"),
-      e("h2", null, "Elite Scholar Institute"),
-      e("p", { className: "esi-about-lead" }, "An academic ecosystem built around disciplined preparation, focused learning and real examination practice."),
-      e("div", { className: "esi-about-copy" },
-        e("h3", null, "Our Leadership"),
-        e("p", null, "Semiu Awwal serves as the Administrative Head of Elite Scholar Institute, supporting the structure and development of the ESI community."),
-        e("p", null, "Ezeigwe Simon Chisom is the Founder and Visionary Head of Elite Scholar Institute and the developer of this website."),
-        e("h3", null, "Our Academic Mission"),
-        e("p", null, "To build an elite academic ecosystem where students can prepare consistently through quality study resources, past questions, revision and guided learning.")
-      )
-    )
-  );
-}
-
-const aboutRoot = document.getElementById("esi-about");
-if (aboutRoot) createRoot(aboutRoot).render(e(AboutUsPanel));
+import React,{useState,useEffect} from "https://esm.unpkg.com/react@18.3.1";
+import {createRoot} from "https://esm.unpkg.com/react-dom@18.3.1/client";
+const e=React.createElement;
+function AboutESI(){
+ const [open,setOpen]=useState(false),[target,setTarget]=useState("");
+ useEffect(()=>{window.openAboutFromMenu=(id="")=>{setTarget(id);setOpen(true);document.documentElement.style.overflow="hidden";document.body.style.overflow="hidden";const m=document.getElementById("sideMenu"),o=document.getElementById("overlay");if(m)m.classList.remove("active");if(o){o.classList.remove("active");o.style.display="none"}};return()=>delete window.openAboutFromMenu},[]);
+ useEffect(()=>{if(open){setTimeout(()=>{const p=document.querySelector(".esi-about-panel"),x=target&&p?p.querySelector("#"+target):null;if(x)x.scrollIntoView({behavior:"smooth",block:"start"});else if(p)p.scrollTop=0},80)}},[open,target]);
+ const close=()=>{setOpen(false);document.documentElement.style.overflow="";document.body.style.overflow=""};
+ if(!open)return null;
+ const t=document.getElementById("esi-about-content");
+ return e("div",{className:"esi-about-modal",role:"dialog","aria-modal":"true",onClick:x=>{if(x.target===x.currentTarget)close()}},
+  e("div",{className:"esi-about-panel"},
+   e("button",{className:"esi-about-close",onClick:close,"aria-label":"Close"},"×"),
+   e("div",{className:"esi-about-identity"},
+    e("div",{className:"esi-about-kicker"},"ABOUT ESI"),
+    e("img",{src:"founder.jpg",alt:"Semiu Awwal and Ezeigwe Simon Chisom",className:"esi-about-image"}),
+    e("h2",null,"Semiu Awwal"),
+    e("div",{className:"esi-about-role"},"FOUNDER"),
+    e("div",{className:"esi-about-subrole"},"Ezeigwe Simon Chisom — Website Developer")
+   ),
+   e("div",{dangerouslySetInnerHTML:{__html:t?t.innerHTML:""}})
+  )
+ )}
+createRoot(document.getElementById("esi-about")).render(e(AboutESI));
 </script>
 
 <!-- FOOTER -->
