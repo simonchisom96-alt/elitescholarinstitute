@@ -11,64 +11,6 @@ FULLY UPGRADED VERSION
     <meta name="google-site-verification" content="W_BaST0q-FNBrogiyFSCkw8ztigpAtrzH3VO2Zi_5oo" />
     
     <link rel="manifest" href="/manifest.json">
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-/* Elite Scholar Institute — OneSignal Web Push */
-window.OneSignalDeferred = window.OneSignalDeferred || [];
-window.OneSignalDeferred.push(async function(OneSignal) {
-  try {
-    await OneSignal.init({
-      appId: "d6de8773-107f-484f-bf7c-e16b8bb44ac3",
-      serviceWorkerPath: "sw.js",
-      serviceWorkerParam: {
-        scope: "/"
-      },
-      promptOptions: {
-        slidedown: {
-          prompts: [{
-            type: "push",
-            autoPrompt: false,
-            delay: { pageViews: 1, timeDelay: 0 }
-          }]
-        }
-      }
-    });
-
-    const ESI_ONESIGNAL_RETRY_MS = 50 * 60 * 60 * 1000;
-    const ESI_ONESIGNAL_LAST_PROMPT = "esi_onesignal_last_prompt_v1";
-
-    const showESIOneSignalPrompt = async (force) => {
-      try {
-        if (OneSignal.Notifications.permission === true ||
-            OneSignal.Notifications.permissionNative === "granted") return;
-
-        const now = Date.now();
-        const last = Number(localStorage.getItem(ESI_ONESIGNAL_LAST_PROMPT) || 0);
-
-        if (!force && last && (now - last) < ESI_ONESIGNAL_RETRY_MS) return;
-
-        localStorage.setItem(ESI_ONESIGNAL_LAST_PROMPT, String(now));
-        await OneSignal.Slidedown.promptPush({
-          force: true,
-          forceSlidedownOverNative: true
-        });
-      } catch (error) {
-        console.warn("ESI OneSignal prompt:", error);
-      }
-    };
-
-    const last = Number(localStorage.getItem(ESI_ONESIGNAL_LAST_PROMPT) || 0);
-    if (!last) {
-      await showESIOneSignalPrompt(false);
-    } else if ((Date.now() - last) >= ESI_ONESIGNAL_RETRY_MS) {
-      await showESIOneSignalPrompt(true);
-    }
-  } catch (error) {
-    console.warn("ESI OneSignal initialization:", error);
-  }
-});
-</script>
-
 <meta name="theme-color" content="#0d47a1">
 <link rel="apple-touch-icon" href="logo.jpg">
   <style>
