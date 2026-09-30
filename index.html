@@ -5074,4 +5074,56 @@ document.addEventListener('click',function(e){
 }
 .float-quiz:active,.float-chat:active{transform:scale(.92)!important;}
 </style>
+<style id="esi-absolute-final-home-fix">
+/* ABSOLUTE FINAL HOME FIX — this block is intentionally last so no older
+   homepage rule can override it. */
+.esi-hero-card{
+  background-position:35% 30%!important;
+}
+@media(max-width:700px){
+  .float-quiz,
+  .float-chat{
+    position:fixed!important;
+    right:90px!important;
+    width:65px!important;
+    height:65px!important;
+    border-radius:50%!important;
+    display:flex!important;
+    justify-content:center!important;
+    align-items:center!important;
+  }
+  .float-quiz{
+    bottom:265px!important;
+    background:linear-gradient(135deg,#00bfff,#0066ff)!important;
+    z-index:9998!important;
+  }
+  .float-chat{
+    bottom:150px!important;
+    background:linear-gradient(135deg,#00c853,#00ff88)!important;
+    z-index:9999!important;
+  }
+  .float-quiz::before,
+  .float-chat::before{
+    top:72px!important;
+    bottom:auto!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    margin:0!important;
+    padding:7px 12px!important;
+    border-radius:17px!important;
+    white-space:nowrap!important;
+    font:800 12px/1 Arial,sans-serif!important;
+    display:block!important;
+    pointer-events:none!important;
+  }
+  .float-quiz::before{content:"CBT QUIZ"!important;}
+  .float-chat::before{content:"NEED HELP?"!important;}
+  .float-quiz::after,
+  .float-chat::after{
+    display:none!important;
+    content:none!important;
+  }
+}
+</style>
 </html>
