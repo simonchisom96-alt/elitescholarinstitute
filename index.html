@@ -2371,7 +2371,66 @@ html.esi-loader-active body{
   .esi-about-panel .about-box h3{font-size:18px!important}
   .esi-about-panel .about-image{border-radius:16px!important}
 }
-</style><style id="esi-about-v3">
+</style><style id="esi-final-touch-v4">
+.esi-resource-card:after{display:none!important}
+.esi-notification-btn svg{
+  width:34px!important;height:34px!important;
+  fill:#ffd700!important;color:#ffd700!important;
+  display:block!important;
+}
+.esi-bottom-nav a{color:#c9d8f2!important}
+.esi-bottom-nav a.active,
+.esi-bottom-nav a.active span{color:#1688ff!important}
+.esi-bottom-nav a.active span{filter:drop-shadow(0 0 8px rgba(22,136,255,.65))}
+.esi-bottom-nav a span{font-size:25px!important;line-height:1!important}
+.esi-about-panel .about-box{
+  overflow:hidden!important;
+  margin-bottom:22px!important;
+  padding:24px!important;
+  border-radius:26px!important;
+}
+.esi-about-panel .about-image{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  max-height:none!important;
+  object-fit:cover!important;
+  border-radius:20px!important;
+  margin:0 0 22px!important;
+}
+.esi-about-panel .about-box h3{
+  margin:0 0 14px!important;
+  font-size:20px!important;
+  line-height:1.35!important;
+}
+.esi-about-panel .about-box p{
+  margin:0 0 16px!important;
+  font-size:14.5px!important;
+  line-height:1.82!important;
+  width:100%!important;
+  max-width:none!important;
+}
+.esi-about-panel .about-box p:last-child{margin-bottom:0!important}
+</style>
+<script>
+(function(){
+  function syncESINav(){
+    var path=(location.pathname||"").toLowerCase();
+    document.querySelectorAll(".esi-bottom-nav a[data-nav]").forEach(function(a){
+      a.classList.remove("active");
+      var n=a.getAttribute("data-nav");
+      if((n==="home" && (path.endsWith("/")||path.endsWith("/index.html"))) ||
+         (n==="quiz" && path.endsWith("/quiz.html")) ||
+         (n==="chat" && path.endsWith("/notification.html")) ||
+         (n==="study" && (path.endsWith("/textbooks.html")||path.endsWith("/syllables.html")))){
+        a.classList.add("active");
+      }
+    });
+  }
+  document.addEventListener("DOMContentLoaded",syncESINav);
+  window.addEventListener("pageshow",syncESINav);
+})();
+</script><style id="esi-about-v3">
 .esi-about-modal{position:fixed!important;inset:0!important;z-index:100000!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:12px!important;background:rgba(0,7,22,.88)!important;backdrop-filter:blur(10px)!important}
 .esi-about-panel{width:min(920px,100%)!important;max-height:94vh!important;overflow:auto!important;padding:16px!important;border-radius:26px!important;background:linear-gradient(180deg,rgba(4,22,55,.98),rgba(2,12,32,.99)),url("advert.png") center/cover!important;border:1px solid rgba(255,215,0,.3)!important}
 .esi-about-close{position:sticky!important;top:0!important;float:right!important;z-index:5!important;width:44px!important;height:44px!important;border-radius:50%!important;background:#061a3c!important;color:#ffd700!important;border:1px solid rgba(255,215,0,.4)!important;font-size:30px!important}
@@ -2503,15 +2562,19 @@ onclick="closeMenu()">
     </div>
   </div>
   <a class="esi-notification-btn" href="notification.html" aria-label="Notifications">
-    <svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-3-9-3ZM10 21h4"/></svg>
-  </a>
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7Z"/>
+    <path d="M10 20a2 2 0 0 0 4 0"/>
+  </svg>
+</a>
 </div>
 
 <div class="esi-hero-card">
   <h2>ACADEMIC EXCELLENCE REDEFINED</h2><p>ELITE ECOSYSTEM</p>
 </div>
 
-<div class="esi-card-grid">
+<!--
+ELITE SCHOLAR INSTITUT
   <a class="esi-resource-card esi-c1" href="Textbooks.html">
     <span class="esi-icon">
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -2546,16 +2609,6 @@ onclick="closeMenu()">
     <div><h3>POST-UTME PAST QUESTIONS</h3><p>Practice university post-UTME past questions and prepare smarter.</p></div>
   </a>
 
-  <a class="esi-resource-card esi-c4" href="motivation.html">
-    <span class="esi-icon">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 21a9 9 0 1 0-9-9c0 2.2.8 4.2 2.2 5.8L4 21l4.2-1.3A9 9 0 0 0 12 21Z"/>
-        <path d="M9 12h6M12 9v6"/>
-      </svg>
-    </span>
-    <div><h3>MOTIVATIONAL GUIDE</h3><p>Build consistency, confidence and the mindset to keep going.</p></div>
-  </a>
-
   <a class="esi-resource-card esi-c5" href="quiz.html">
     <span class="esi-icon">
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -2563,7 +2616,7 @@ onclick="closeMenu()">
         <path d="M9 3h6M8 10h8M8 14h5M8 18h7"/>
       </svg>
     </span>
-    <div><h3>ELITE AI QUIZ DRILLER</h3><p>Challenge yourself with ESI CBT and quiz practice.</p></div>
+    <div><h3>ELITE CBT</h3><p>Challenge yourself with ESI CBT and quiz practice.</p></div>
   </a>
 
   <a class="esi-resource-card esi-c4" href="motivation.html">
@@ -2606,7 +2659,7 @@ onclick="closeMenu()">
     </span>
     <div><h3>ELITE GALLERY</h3><p>Explore the ESI gallery and institute moments.</p></div>
   </a>
-</div>
+</div></div>
 </section>
 <nav class="esi-bottom-nav" aria-label="Main app navigation">
 <a class="active" href="index.html"><span>⌂</span>Home</a>
@@ -2638,17 +2691,8 @@ class="about-image">
 Semiu Awwal & Ezeigwe Simon Chisom
 </h3>
 
-<p>
-    <div class="loader-sub">
-
-Semiu Awwal, the Founder of Elite Scholar Institute. His precision, consistency towards the development of the elite community and student-first leadership helped shape the institute into a structured, results-driven academy built for real academic growth and excellence.
-
-</p>
-
-<p>
-
-Ezeigwe Simon Chisom, Website Developer and Visionary contributor to Elite Scholar Institute. His passion for academic excellence and youth development led to the establishment of a tutorial platform focused on transforming average students into outstanding scholars. He is also the developer of this website.</div>
-</p>
+<p>Semiu Awwal, the Founder of Elite Scholar Institute. His precision, consistency towards the development of the elite community and student-first leadership helped shape the institute into a structured, results-driven academy built for real academic growth and excellence.</p>
+<p>Ezeigwe Simon Chisom, Website Developer and Visionary contributor to Elite Scholar Institute. His passion for academic excellence and youth development led to the establishment of a tutorial platform focused on transforming average students into outstanding scholars. He is also the developer of this website.</p>
 </div>
 
 <div class="about-box">
