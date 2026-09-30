@@ -4677,12 +4677,21 @@ allImages.forEach((img, index) => {
 });
 
 window.openLightboxWithWatermark = function(imgElement){
+  if(!imgElement) return;
   if(loading && !lightbox.classList.contains('active')) loading = false;
   if(loading) return;
+
+  // Always move the lightbox to the very end of <body> before opening.
+  // This guarantees it paints above the React About Us modal and every
+  // other page layer, even when the timetable image lives inside About Us.
+  if(lightbox.parentElement !== document.body) document.body.appendChild(lightbox);
+  document.body.appendChild(lightbox);
+  lightbox.style.setProperty('z-index','200000','important');
+
   loading = true;
   document.body.style.overflow = 'hidden'; 
 
-  const src = imgElement.src;
+  const src = imgElement.currentSrc || imgElement.src;
   lightbox.classList.add('active');
   
   // Instantly use the cached DOM image element so it displays even if offline
