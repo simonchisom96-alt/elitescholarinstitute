@@ -1,5 +1,3 @@
-importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
-
 /* Elite Scholar Institute service worker — offline shell + runtime cache */
 const CACHE_VERSION = 'esi-cache-36.2401';
 const APP_SHELL = [
