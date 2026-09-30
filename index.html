@@ -1862,6 +1862,32 @@ document.addEventListener('keydown', function(e) {
 
 </style>
 
+
+<style id="esi-dashboard-redesign">
+:root{--esi-blue:#0d47a1;--esi-blue2:#1565ff;--esi-cyan:#00bfff;--esi-navy:#04142f;--esi-text:#0b2348}
+body{background:radial-gradient(circle at 10% 5%,rgba(21,101,255,.18),transparent 28%),radial-gradient(circle at 90% 28%,rgba(0,191,255,.10),transparent 24%),linear-gradient(180deg,#03122d 0%,#041a3b 45%,#06152e 100%) !important}
+.esi-dashboard{width:100%;max-width:980px;margin:0 auto;padding:18px 14px 105px}
+.esi-app-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 18px}
+.esi-brand{display:flex;align-items:center;min-width:0;gap:12px}
+.esi-brand img{width:58px;height:58px;flex:0 0 58px;border-radius:50%;object-fit:cover;border:2px solid #ffd700;box-shadow:0 0 20px rgba(255,215,0,.32)}
+.esi-brand-copy{min-width:0}.esi-brand-copy h1{color:#fff;font-size:21px;line-height:1.15;font-weight:900;margin:0 0 5px}.esi-brand-copy p{color:#bcd6f5;font-size:11px;line-height:1.45;margin:0}
+.esi-home-pill{width:46px;height:46px;flex:0 0 46px;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(145deg,#1257c8,#07357d);border:1px solid rgba(0,191,255,.42);box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:21px}
+.esi-hero-card{position:relative;overflow:hidden;min-height:145px;border-radius:25px;padding:23px 20px;margin-bottom:18px;background:linear-gradient(120deg,rgba(2,24,67,.97),rgba(6,55,132,.91)),url("advert.png") center/cover;border:1px solid rgba(0,191,255,.55);box-shadow:0 16px 38px rgba(0,0,0,.28),inset 0 0 30px rgba(21,101,255,.16)}
+.esi-hero-card::after{content:"";position:absolute;width:210px;height:210px;right:-70px;bottom:-115px;border-radius:50%;border:28px solid rgba(0,191,255,.18);box-shadow:0 0 0 18px rgba(21,101,255,.08)}
+.esi-hero-card h2{position:relative;z-index:1;max-width:78%;margin:0 0 8px;color:#fff;font-size:24px;line-height:1.25;font-weight:900}.esi-hero-card h2 span{color:#ffd700}.esi-hero-card p{position:relative;z-index:1;margin:0;color:#cfe3ff;font-size:13px;line-height:1.55}
+.esi-dashboard-label{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:20px 2px 12px}.esi-dashboard-label h2{margin:0;color:#fff;font-size:20px;font-weight:900}.esi-dashboard-label span{color:#8db8ed;font-size:11px;font-weight:700}
+.esi-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.esi-resource-card{position:relative;min-height:154px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:16px 14px 15px;border-radius:22px;text-decoration:none !important;color:var(--esi-text) !important;border:1px solid rgba(255,255,255,.78);box-shadow:0 10px 24px rgba(0,0,0,.18);transition:transform .22s ease,box-shadow .22s ease}
+.esi-resource-card:active{transform:scale(.985)}.esi-resource-card::after{content:"›";position:absolute;right:12px;bottom:10px;font-size:25px;line-height:1;font-weight:700;opacity:.62}
+.esi-icon{width:43px;height:43px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:rgba(255,255,255,.72);box-shadow:0 5px 12px rgba(0,0,0,.12)}
+.esi-resource-card h3{margin:12px 24px 0 0;font-size:15px;line-height:1.25;font-weight:900}.esi-resource-card p{margin:5px 24px 0 0;color:#31567f;font-size:10.5px;line-height:1.35}
+.esi-c1{background:linear-gradient(145deg,#dff1ff,#cce6ff)}.esi-c2{background:linear-gradient(145deg,#eee7ff,#e2d8ff)}.esi-c3{background:linear-gradient(145deg,#dcfaef,#c9f1e2)}.esi-c4{background:linear-gradient(145deg,#ffe8ef,#ffdce6)}.esi-c5{background:linear-gradient(145deg,#fff2d9,#ffebc8)}.esi-c6{background:linear-gradient(145deg,#dff7ff,#cbeefa)}.esi-c7{background:linear-gradient(145deg,#eee5ff,#e2d5ff)}.esi-c8{background:linear-gradient(145deg,#ffe5ef,#ffd8e6)}.esi-c9{background:linear-gradient(145deg,#dff1ff,#d1e7ff)}.esi-c10{background:linear-gradient(145deg,#dff9ed,#cdf2e1)}
+.esi-quick-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.esi-quick{min-height:82px;padding:14px;border-radius:21px;display:flex;align-items:center;gap:11px;color:#fff !important;text-decoration:none !important;background:linear-gradient(135deg,#0c55bd,#0b2e74);border:1px solid rgba(0,191,255,.32);box-shadow:0 10px 24px rgba(0,0,0,.2)}.esi-quick strong{display:block;font-size:13px;line-height:1.25}.esi-quick small{display:block;color:#a9c9f2;margin-top:3px;font-size:9.5px}
+.esi-bottom-nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(980px,100%);height:72px;padding:7px 10px calc(7px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(5,1fr);gap:3px;z-index:9000;background:rgba(3,19,48,.96);border-top:1px solid rgba(104,174,255,.22);box-shadow:0 -10px 28px rgba(0,0,0,.24);backdrop-filter:blur(18px)}
+.esi-bottom-nav a{display:flex !important;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;padding:5px 2px;border-radius:14px;text-decoration:none !important;color:#91a9ca !important;font-size:9.5px;font-weight:700}.esi-bottom-nav a span{font-size:20px;line-height:1}.esi-bottom-nav a.active{color:#fff !important;background:rgba(21,101,255,.18)}.esi-bottom-nav a.active span{filter:drop-shadow(0 0 8px rgba(0,191,255,.7))}
+@media(max-width:390px){.esi-dashboard{padding-left:11px;padding-right:11px}.esi-brand-copy h1{font-size:18px}.esi-resource-card{min-height:148px;padding:14px 12px}.esi-resource-card h3{font-size:14px}}
+@media(min-width:760px){.esi-dashboard{padding-left:24px;padding-right:24px}.esi-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.esi-resource-card{min-height:165px}}
+</style>
 </head>
 
 
@@ -2009,13 +2035,7 @@ target="_blank">
 
 
 
-<a
-href="https://t.me/elitescholarinstitute"
-target="_blank">
 
-🗨️ JOIN OUR TELEGRAM COMMUNITY
-
-</a>
 
 <a href="notification.html">👋 ELITE ANNOUNCEMENT CHANNEL</a>
 
@@ -2028,89 +2048,53 @@ target="_blank">
 
 </div>
 
-<!-- HERO -->
+<!-- ESI APP-STYLE HOME DASHBOARD -->
+<section class="esi-dashboard" aria-label="Elite Scholar Institute home dashboard">
+  <div class="esi-app-head">
+    <div class="esi-brand">
+      <img src="logo.jpg" alt="Elite Scholar Institute">
+      <div class="esi-brand-copy">
+        <h1>Elite Scholar Institute</h1>
+        <p>Premium Online Tutorial Platform For JAMB, WAEC, NECO &amp; Post UTME Students In Nigeria</p>
+      </div>
+    </div>
+    <div class="esi-home-pill" aria-hidden="true">⌂</div>
+  </div>
 
-<section class="hero">
+  <div class="esi-hero-card">
+    <h2>No Fees — <span>First Month Free</span></h2>
+    <p>Study smarter. Score higher. Access your ESI resources from one organized dashboard.</p>
+  </div>
 
-<div class="hero-badge">
-    • WELCOME TO ESI ECOSYSTEM 🌐• </div>
+  <div class="esi-dashboard-label"><h2>Study</h2><span>ESI RESOURCES</span></div>
 
-<img
-src="advert.png"
-class="hero-image1">
+  <div class="esi-card-grid">
+    <a class="esi-resource-card esi-c1" href="postutme.html"><div class="esi-icon">⏱️</div><div><h3>Study Past Questions</h3><p>Practice available ESI past-question resources.</p></div></a>
+    <a class="esi-resource-card esi-c2" href="Textbooks.html"><div class="esi-icon">📖</div><div><h3>UTME Recommended Textbooks</h3><p>Open the existing ESI textbook library.</p></div></a>
+    <a class="esi-resource-card esi-c3" href="#classes"><div class="esi-icon">▶️</div><div><h3>Video Lessons</h3><p>Jump to the ESI classes and learning area.</p></div></a>
+    <a class="esi-resource-card esi-c4" href="motivation.html"><div class="esi-icon">📚</div><div><h3>Lesson Notes</h3><p>Open the existing ESI learning notes and guides.</p></div></a>
+    <a class="esi-resource-card esi-c5" href="Textbooks.html"><div class="esi-icon">📄</div><div><h3>JAMB Brochure</h3><p>Open the existing ESI study-material library.</p></div></a>
+    <a class="esi-resource-card esi-c6" href="syllables.html"><div class="esi-icon">▤</div><div><h3>JAMB Syllabus</h3><p>Open the existing ESI Syllabus Library.</p></div></a>
+    <a class="esi-resource-card esi-c7" href="syllables.html"><div class="esi-icon">▦</div><div><h3>WAEC Syllabus</h3><p>Use the existing ESI syllabus resource.</p></div></a>
+    <a class="esi-resource-card esi-c8" href="quiz.html"><div class="esi-icon">🏆</div><div><h3>Quiz</h3><p>Open the Elite AI Quiz Driller.</p></div></a>
+    <a class="esi-resource-card esi-c9" href="#timetable"><div class="esi-icon">🪑</div><div><h3>Seating Arrangement</h3><p>Open the existing timetable and academic schedule area.</p></div></a>
+    <a class="esi-resource-card esi-c10" href="notification.html"><div class="esi-icon">🔔</div><div><h3>Notifications</h3><p>Open the ESI announcement and notification page.</p></div></a>
+  </div>
 
-<div class="hero-content">
-
-<h1>
-WELCOME TO ELITE SCHOLAR INSTITUTE 
-</h1>
-
-<p>
-<div class="loader-sub">
-A smart academic platform helping students excel in JAMB, WAEC, NECO and Post-UTME.</div>
-
-<div style="margin-top:18px;text-align:center;font-weight:800;color:#ffd700;font-size:13px;">PROCEED TO OUR MENU</div>
-
-</p>
-
-
-</div>
-
+  <div class="esi-dashboard-label"><h2>Quick access</h2><span>MORE ESI</span></div>
+  <div class="esi-quick-row">
+    <a class="esi-quick" href="picture.html"><span class="esi-icon">🖼️</span><div><strong>Elite Gallery</strong><small>View ESI pictures</small></div></a>
+    <a class="esi-quick" href="postutme.html"><span class="esi-icon">📝</span><div><strong>Post UTME</strong><small>Open questions</small></div></a>
+  </div>
 </section>
 
-<!-- STATS -->
-
-<section class="stats">
-
-<div class="stat-box">
-
-<h2>
-352
-</h2>
-
-<p>
-Highest JAMB Score
-</p>
-
-</div>
-
-<div class="stat-box">
-
-<h2>
-500+
-</h2>
-
-<p>
-Students Mentored
-</p>
-
-</div>
-
-<div class="stat-box">
-
-<h2>
-100+
-</h2>
-
-<p>
-Study Materials 
-</p>
-
-</div>
-
-<div class="stat-box">
-
-<h2>
-24/7
-</h2>
-
-<p>
-Student Support
-</p>
-
-</div>
-
-</section>
+<nav class="esi-bottom-nav" aria-label="Main app navigation">
+  <a class="active" href="index.html"><span>⌂</span>Home</a>
+  <a href="#esi-dashboard"><span>📖</span>Study</a>
+  <a href="quiz.html"><span>☑</span>Test</a>
+  <a href="https://wa.me/2348108391083" target="_blank" rel="noopener"><span>💬</span>Chat</a>
+  <a href="#sideMenu" onclick="openMenu();return false;"><span>●</span>More</a>
+</nav>
 
 <!-- ABOUT -->
 
