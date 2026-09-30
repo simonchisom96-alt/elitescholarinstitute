@@ -36,4 +36,5 @@ dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.activity:activity:1.10.0")
     implementation("androidx.webkit:webkit:1.12.1")
+    implementation("com.onesignal:OneSignal:5.9.9")
 }
