@@ -2239,6 +2239,138 @@ html.esi-loader-active body{
   .esi-about-role{font-size:21px!important}
   .esi-about-subrole{font-size:14px!important}
 }
+</style><style id="esi-reference-final-v2">
+/* Exact reference-style dashboard proportions */
+.esi-hero-card{
+  min-height:145px!important;
+  padding:28px 30px!important;
+}
+.esi-hero-card h2{
+  max-width:100%!important;
+  text-transform:uppercase!important;
+  font-size:25px!important;
+  line-height:1.18!important;
+  letter-spacing:.15px!important;
+}
+.esi-hero-card p{
+  margin:8px 0 0!important;
+  color:#ffd700!important;
+  font-size:15px!important;
+  line-height:1.2!important;
+  font-weight:900!important;
+  letter-spacing:2px!important;
+  text-transform:uppercase!important;
+}
+@media(max-width:700px){
+  .esi-hero-card{min-height:132px!important;padding:25px 18px!important}
+  .esi-hero-card h2{font-size:21px!important;line-height:1.18!important}
+  .esi-hero-card p{font-size:13px!important;letter-spacing:1.6px!important}
+  .esi-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+  .esi-resource-card{
+    display:grid!important;
+    grid-template-columns:48px minmax(0,1fr)!important;
+    gap:8px!important;
+    min-height:178px!important;
+    padding:12px 20px 12px 9px!important;
+    border-radius:18px!important;
+  }
+  .esi-icon,.esi-resource-card .esi-icon{
+    width:48px!important;height:48px!important;min-width:48px!important;
+  }
+  .esi-icon svg{width:28px!important;height:28px!important}
+  .esi-resource-card>div:last-child{
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    overflow:visible!important;
+  }
+  .esi-resource-card h3{
+    margin:0 4px 7px 0!important;
+    font-size:13px!important;
+    line-height:1.18!important;
+    letter-spacing:0!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+    hyphens:none!important;
+  }
+  .esi-resource-card p{
+    font-size:10px!important;
+    line-height:1.38!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+  }
+  .esi-resource-card:after{right:5px!important;font-size:30px!important}
+}
+/* About opens exactly from the original ABOUT section — no separate founder hero. */
+.esi-about-panel{
+  width:min(720px,100%)!important;
+  max-height:90vh!important;
+  padding:18px 16px 40px!important;
+  overflow:auto!important;
+}
+.esi-about-panel>.section{
+  width:100%!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+  padding:42px 8px 12px!important;
+}
+.esi-about-panel>.section:first-of-type{padding-top:42px!important}
+.esi-about-panel .title{
+  width:100%!important;
+  max-width:none!important;
+  font-size:26px!important;
+  line-height:1.22!important;
+  margin-bottom:22px!important;
+}
+.esi-about-panel .about-box,
+.esi-about-panel .department-box,
+.esi-about-panel .why-box,
+.esi-about-panel .result-card,
+.esi-about-panel .transform-box,
+.esi-about-panel .review-box,
+.esi-about-panel .faq-box,
+.esi-about-panel .contact-box{
+  width:100%!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+}
+.esi-about-panel .about-box p,
+.esi-about-panel .department-box li,
+.esi-about-panel .why-box p{
+  width:100%!important;
+  max-width:none!important;
+  font-size:15px!important;
+  line-height:1.78!important;
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+}
+.esi-about-panel .about-image{
+  width:100%!important;
+  max-width:none!important;
+  height:auto!important;
+  object-fit:cover!important;
+}
+.esi-about-panel .about-box h3{
+  font-size:19px!important;
+  line-height:1.35!important;
+}
+.esi-about-panel #openSuggestionBtn{
+  display:block!important;
+  width:calc(100% - 16px)!important;
+  margin:22px 8px 10px!important;
+  box-sizing:border-box!important;
+  text-align:center!important;
+}
+@media(max-width:700px){
+  .esi-about-panel{padding:10px 10px 34px!important;border-radius:24px!important}
+  .esi-about-panel>.section{padding:38px 5px 10px!important}
+  .esi-about-panel .title{font-size:24px!important}
+  .esi-about-panel .about-box{padding:20px!important;border-radius:24px!important}
+  .esi-about-panel .about-box p{font-size:14px!important;line-height:1.75!important}
+  .esi-about-panel .about-box h3{font-size:18px!important}
+  .esi-about-panel .about-image{border-radius:16px!important}
+}
 </style><style id="esi-about-v3">
 .esi-about-modal{position:fixed!important;inset:0!important;z-index:100000!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:12px!important;background:rgba(0,7,22,.88)!important;backdrop-filter:blur(10px)!important}
 .esi-about-panel{width:min(920px,100%)!important;max-height:94vh!important;overflow:auto!important;padding:16px!important;border-radius:26px!important;background:linear-gradient(180deg,rgba(4,22,55,.98),rgba(2,12,32,.99)),url("advert.png") center/cover!important;border:1px solid rgba(255,215,0,.3)!important}
@@ -2376,7 +2508,7 @@ onclick="closeMenu()">
 </div>
 
 <div class="esi-hero-card">
-  <h2>Academic Excellence Ecosystem</h2>
+  <h2>ACADEMIC EXCELLENCE REDEFINED</h2><p>ELITE ECOSYSTEM</p>
 </div>
 
 <div class="esi-card-grid">
@@ -3574,13 +3706,6 @@ function AboutESI(){
  return e("div",{className:"esi-about-modal",role:"dialog","aria-modal":"true",onClick:x=>{if(x.target===x.currentTarget)close()}},
   e("div",{className:"esi-about-panel"},
    e("button",{className:"esi-about-close",onClick:close,"aria-label":"Close"},"×"),
-   e("div",{className:"esi-about-identity"},
-    e("div",{className:"esi-about-kicker"},"ABOUT ESI"),
-    e("img",{src:"founder.jpg",alt:"Semiu Awwal and Ezeigwe Simon Chisom",className:"esi-about-image"}),
-    e("h2",null,"Semiu Awwal"),
-    e("div",{className:"esi-about-role"},"FOUNDER"),
-    e("div",{className:"esi-about-subrole"},"Ezeigwe Simon Chisom — Website Developer")
-   ),
    e("div",{dangerouslySetInnerHTML:{__html:t?t.innerHTML:""}})
   )
  )}
