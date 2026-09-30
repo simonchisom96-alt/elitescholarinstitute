@@ -2281,7 +2281,7 @@ global.ESITopics = {
     if($('esiTopicSheet')) return;
     const style = document.createElement('style');
     style.textContent = `
-      #esiTopicSheet{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;z-index:8000;align-items:flex-end;justify-content:center}
+      #esiTopicSheet{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;z-index:8000;color-scheme:dark;align-items:flex-end;justify-content:center}
       #esiTopicSheet.show{display:flex}
       .esi-topic-card{width:100%;max-width:520px;max-height:88vh;background:#07111f;border:1px solid #1e4080;border-radius:16px 16px 0 0;padding:12px 12px 16px;display:flex;flex-direction:column;color:#e6eeff}
       .esi-topic-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
@@ -2484,23 +2484,141 @@ global.ESITopics = {
     if(!container) return;
     const list = Array.from(subjects||[]);
     if(!list.length){ container.innerHTML=''; return; }
-    container.innerHTML = list.map(sub=>{
+
+    function currentFor(sub){
       const all = ESITopics.flat(sub);
       const cur = (getMap()[sub] && getMap()[sub].length) ? getMap()[sub] : all;
-      const n = cur.length;
-      const label = n>=all.length ? 'All topics · tap to change' : (n+' selected · tap to change');
-      return `<button type="button" class="esi-topic-btn" data-sub="${escapeAttr(sub)}"><span>Select Topic · ${escapeHtml(sub)}</span><b>${label}</b></button>`;
+      return { all, cur };
+    }
+    function summary(sub){
+      const {all,cur}=currentFor(sub);
+      const n=cur.length;
+      return n>=all.length ? 'All topics' : ('DONE('+n+')');
+    }
+
+    container.innerHTML = list.map(sub=>{
+      const {all,cur}=currentFor(sub);
+      const n=cur.length;
+      const right = n>=all.length ? 'All topics' : (n+' selected');
+      return `<div class="esi-topic-dd" data-sub="${escapeAttr(sub)}" style="position:relative;margin:0 0 6px;width:100%">
+        <div class="esi-topic-dd-btn" style="width:100%;padding:12px;background:var(--card2,#0f172a);border:1.5px solid var(--border,#1e4080);border-radius:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:12.5px;color:var(--text,#e6eeff)">
+          <span>Select Topic · ${escapeHtml(sub)}</span>
+          <span style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+            <b style="color:var(--accent,#ffd700);font-size:11px">${right}</b>
+            <span class="esi-topic-dd-arrow" style="color:var(--accent,#ffd700);font-size:10px">▾</span>
+          </span>
+        </div>
+        <div class="esi-topic-dd-panel" style="display:none;margin-top:4px;background:var(--card2,#0f172a);border:1.5px solid var(--border,#1e4080);border-radius:10px;max-height:280px;overflow:auto;padding:8px;box-shadow:0 10px 24px rgba(0,0,0,.4);color:var(--text,#e6eeff)"></div>
+      </div>`;
     }).join('');
-    container.querySelectorAll('.esi-topic-btn').forEach(btn=>{
-      btn.onclick = (e)=>{
-        e.preventDefault();
-        e.stopPropagation();
-        const sub = btn.getAttribute('data-sub');
-        openFor(sub);
+
+    function paintPanel(root, sub){
+      const panel = root.querySelector('.esi-topic-dd-panel');
+      const all = ESITopics.flat(sub);
+      const map = getMap();
+      if(!map[sub] || !map[sub].length) map[sub] = all.slice();
+      const selected = new Set(map[sub]);
+      const group = ESITopics.grouped(sub);
+      const recent = recentFor(sub).filter(t=>all.includes(t));
+      const q = ((panel.dataset.q)||'').toLowerCase();
+      const matches = (t)=> !q || t.toLowerCase().includes(q) || t.toLowerCase().startsWith(q);
+      const selectedFirst = (arr)=>arr.slice().sort((a,b)=>{
+        const as=selected.has(a)?0:1, bs=selected.has(b)?0:1;
+        if(as!==bs) return as-bs;
+        return a.localeCompare(b);
+      });
+      function row(t){
+        const on = selected.has(t);
+        return `<label class="subj-dd-item" data-t="${escapeAttr(t)}" style="display:flex;align-items:center;gap:9px;padding:9px 8px;font-size:12px;color:var(--text,#e6eeff);cursor:pointer;border-bottom:1px solid var(--border2,#1a2a4a);${on?'background:rgba(255,215,0,.12)':''}"><input type="checkbox" ${on?'checked':''} style="width:16px;height:16px;flex-shrink:0;accent-color:#ffd700"> ${escapeHtml(t)}</label>`;
+      }
+      let html = '';
+      html += `<input class="esi-dd-search" type="search" placeholder="Search topics" value="${escapeAttr(panel.dataset.q||'')}" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border,#1e4080);background:var(--bg,#020818);color:var(--text,#e6eeff);font-size:12px;margin-bottom:8px">`;
+      html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;cursor:pointer"><input type="checkbox" class="esi-dd-all" ${selected.size>=all.length?'checked':''} style="width:16px;height:16px;accent-color:#ffd700"> Select All</label>
+        <span style="font-size:11px;color:var(--accent,#ffd700);font-weight:700">${selected.size} / ${all.length}</span>
+      </div>`;
+      if(recent.length){
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 4px;font-size:11px;font-weight:800;color:var(--accent,#ffd700)">Recently Selected <button type="button" class="esi-dd-clear" style="border:0;background:transparent;color:#7ec8ff;font-size:10px;font-weight:800;cursor:pointer">Clear</button></div>`;
+        selectedFirst(recent).filter(matches).forEach(t=>{ html += row(t); });
+      }
+      ['SS1','SS2','SS3'].forEach(band=>{
+        const items = selectedFirst(group[band]||[]).filter(t=>matches(t));
+        if(!items.length) return;
+        html += `<div style="margin:10px 0 4px;font-size:11px;font-weight:800;color:var(--accent,#ffd700)">${band}</div>`;
+        items.forEach(t=>{ html += row(t); });
+      });
+      html += `<div style="display:flex;gap:8px;margin-top:10px">
+        <button type="button" class="esi-dd-cancel" style="flex:1;padding:11px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;background:transparent;border:1px solid var(--border,#1e4080);color:var(--text,#e6eeff)">Cancel</button>
+        <button type="button" class="esi-dd-done" style="flex:1;padding:11px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;background:#ffd700;border:0;color:#111">DONE(${selected.size})</button>
+      </div>`;
+      panel.innerHTML = html;
+
+      panel.querySelector('.esi-dd-search').oninput = function(){
+        panel.dataset.q = this.value||'';
+        paintPanel(root, sub);
+        const again = root.querySelector('.esi-dd-search');
+        if(again){ again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+      };
+      panel.querySelector('.esi-dd-all').onchange = function(){
+        map[sub] = this.checked ? all.slice() : [];
+        paintPanel(root, sub);
+      };
+      const clr = panel.querySelector('.esi-dd-clear');
+      if(clr) clr.onclick = function(ev){
+        ev.preventDefault(); ev.stopPropagation();
+        if(!confirm('Clear recently selected topics for this subject?')) return;
+        const rec = loadRecent();
+        delete rec[sub];
+        saveRecent(rec);
+        paintPanel(root, sub);
+      };
+      panel.querySelectorAll('.subj-dd-item').forEach(lab=>{
+        lab.onclick = function(ev){
+          ev.preventDefault();
+          const t = this.getAttribute('data-t');
+          const set = new Set(map[sub]||[]);
+          if(set.has(t)) set.delete(t); else set.add(t);
+          map[sub] = Array.from(set);
+          paintPanel(root, sub);
+        };
+      });
+      panel.querySelector('.esi-dd-cancel').onclick = function(ev){
+        ev.preventDefault(); ev.stopPropagation();
+        panel.style.display = 'none';
+        root.querySelector('.esi-topic-dd-arrow').textContent = '▾';
+      };
+      panel.querySelector('.esi-dd-done').onclick = function(ev){
+        ev.preventDefault(); ev.stopPropagation();
+        let picked = (map[sub]||[]).slice();
+        if(!picked.length) picked = all.slice();
+        map[sub] = picked;
+        remember(sub, picked);
+        if(typeof openFor==='function') openFor(sub, picked);
+        panel.style.display = 'none';
+        root.querySelector('.esi-topic-dd-arrow').textContent = '▾';
+        const b = root.querySelector('.esi-topic-dd-btn b');
+        if(b) b.textContent = picked.length>=all.length ? 'All topics' : (picked.length+' selected');
+      };
+    }
+
+    container.querySelectorAll('.esi-topic-dd').forEach(root=>{
+      const sub = root.getAttribute('data-sub');
+      const btn = root.querySelector('.esi-topic-dd-btn');
+      const panel = root.querySelector('.esi-topic-dd-panel');
+      const arrow = root.querySelector('.esi-topic-dd-arrow');
+      btn.onclick = function(ev){
+        ev.preventDefault(); ev.stopPropagation();
+        const willOpen = panel.style.display==='none' || !panel.style.display;
+        container.querySelectorAll('.esi-topic-dd-panel').forEach(p=>p.style.display='none');
+        container.querySelectorAll('.esi-topic-dd-arrow').forEach(a=>a.textContent='▾');
+        if(willOpen){
+          paintPanel(root, sub);
+          panel.style.display = 'block';
+          arrow.textContent = '▴';
+        }
       };
     });
   }
-
   global.ESITopicPicker = {
     open, cancel, apply, renderButtons, recentFor, defaultAll, remember, ensureDom
   };
@@ -2681,17 +2799,9 @@ function renderTopicButtons(){
         wrap.className='esi-topic-stack';
         mini.parentNode.insertBefore(wrap, mini.nextSibling);
     }
-    ESITopicPicker.renderButtons(wrap, [...sel], ()=>selTopics, function(sub){
+    ESITopicPicker.renderButtons(wrap, [...sel], ()=>selTopics, function(sub, picked){
         ensureSubjectTopics(sub);
-        ESITopicPicker.open({
-            subject:sub,
-            selected: selTopics[sub] && selTopics[sub].length ? selTopics[sub] : topicsFor(sub),
-            onApply: function(subject, picked){
-                selTopics[subject]=picked.slice();
-                topicRotation[subject]=null;
-                renderTopicButtons();
-            }
-        });
+        if(picked){ selTopics[sub]=picked.slice(); topicRotation[sub]=null; }
     });
 }
 let sessionSpeedLogs=[];
