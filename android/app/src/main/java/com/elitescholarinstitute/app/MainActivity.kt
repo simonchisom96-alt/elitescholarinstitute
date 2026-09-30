@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
     private var authPopup: Dialog? = null
     private var fileChooserCallback: ValueCallback<Array<android.net.Uri>>? = null
     private val offlineHome = "https://appassets.androidplatform.net/index.html"
-    private val onlineOrigin = "https://elitescholarinstitute.pages.dev"
+    private val onlineOrigin = "https://elitescholarinstitute.onrender.com"
     private val diskCache by lazy { File(cacheDir, "esi-web-cache").apply { mkdirs() } }
     private val shareDir by lazy { File(cacheDir, "shared").apply { mkdirs() } }
     private val fileChooserRequestCode = 41001
@@ -119,8 +119,15 @@ class MainActivity : ComponentActivity() {
         if (uri.host != "appassets.androidplatform.net") return null
         val path = uri.path?.removePrefix("/") ?: return null
         if (path.isEmpty()) return null
+        val pathAndQuery = if (uri.query.isNullOrEmpty()) "/$path" else "/$path?" + uri.query
+
+        // Keep the APK homepage in sync with the live ESI site when online.
+        // If the network is unavailable, fall back to the bundled/cached copy.
+        if (path == "index.html") {
+            networkAsset(pathAndQuery, path)?.let { return it }
+        }
+
         bundledAsset(path)?.let { return it }
-        val pathAndQuery = if (uri.query.isNullOrEmpty()) "/$path" else "/$path?${uri.query}"
         cachedAsset(pathAndQuery, path)?.let { return it }
         return networkAsset(pathAndQuery, path)
     }
