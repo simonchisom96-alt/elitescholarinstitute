@@ -2874,7 +2874,7 @@ function renderMpTopicButtons(setKey, wrapId){
         wrap=document.createElement('div');
         wrap.id=wrapId;
         wrap.className='esi-topic-stack';
-        host.parentNode.insertBefore(wrap, host);
+        host.parentNode.insertBefore(wrap, host.nextSibling);
     }
     ESITopicPicker.renderButtons(wrap, [...selSubjects[setKey]], ()=>selTopicsMp[setKey], function(sub){
         if(!selTopicsMp[setKey][sub]) selTopicsMp[setKey][sub] = window.ESITopics ? ESITopics.flat(sub) : (TOPICS[sub]||[]).slice();
