@@ -32,6 +32,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.FileProvider
+import com.onesignal.OneSignal
+import com.onesignal.debug.LogLevel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileNotFoundException
@@ -41,6 +46,34 @@ import java.net.URL
 import java.security.MessageDigest
 
 class MainActivity : ComponentActivity() {
+    private val oneSignalAppId = "d6de8773-107f-484f-bf7c-e16b8bb44ac3"
+    private val oneSignalRetryMs = 50L * 60L * 60L * 1000L
+
+    private fun setupOneSignal() {
+        try {
+            OneSignal.initWithContext(applicationContext, oneSignalAppId)
+            if (BuildConfig.DEBUG) OneSignal.Debug.logLevel = LogLevel.VERBOSE
+
+            val prefs = getSharedPreferences("esi_onesignal", MODE_PRIVATE)
+            if (OneSignal.Notifications.permission) {
+                prefs.edit().remove("last_permission_request").apply()
+                return
+            }
+
+            val now = System.currentTimeMillis()
+            val last = prefs.getLong("last_permission_request", 0L)
+            if (last == 0L || now - last >= oneSignalRetryMs) {
+                prefs.edit().putLong("last_permission_request", now).apply()
+                CoroutineScope(Dispatchers.Main).launch {
+                    try {
+                        OneSignal.Notifications.requestPermission(true)
+                    } catch (_: Exception) { }
+                }
+            }
+        } catch (_: Exception) { }
+    }
+
+    
     private lateinit var webView: WebView
     private var authPopup: Dialog? = null
     private var fileChooserCallback: ValueCallback<Array<android.net.Uri>>? = null
@@ -505,6 +538,7 @@ class MainActivity : ComponentActivity() {
         webView = WebView(this)
         webView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         setContentView(webView)
+        setupOneSignal()
 
         webView.settings.apply {
             javaScriptEnabled = true
