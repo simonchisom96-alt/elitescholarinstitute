@@ -7036,7 +7036,7 @@ async function openLB(){
             return diff || String(a.name||'').localeCompare(String(b.name||''));
         });
         prevAll.forEach((e,i)=>{e.rank=i+1;});
-        const top3=[1,2,3].map(r=>prevAll.find(e=>e.rank===r)).filter(Boolean);
+        const top3=prevAll.slice(0,3);
 
         if(top3.length){
             hofHtml=`<div style="background:linear-gradient(135deg,#0d1b3d,#123166);color:#fff;padding:16px 12px;border-radius:16px;font-size:11px;margin-bottom:10px;text-align:center;border:1px solid #ffd70055;box-shadow:0 6px 18px rgba(0,0,0,0.4)">
@@ -7083,9 +7083,10 @@ async function openLB(){
     }
 
     let meId=MY_UID;
-    const first=all.find(e=>e.rank===1);
-    const second=all.find(e=>e.rank===2);
-    const third=all.find(e=>e.rank===3);
+    // Canonical order is already highest formula output -> lowest. Never infer rank from visual position.
+    const first=all[0]||null;
+    const second=all[1]||null;
+    const third=all[2]||null;
 
     // The podium is only a visual arrangement: 2nd | 1st | 3rd.
     // Rank is determined above and never by visual position.
@@ -7113,8 +7114,8 @@ async function openLB(){
         let nameCell=isMe
             ? `${e.avatarEmoji||'🎓'} <span style="${nameColorStyle(e)}">${esc(e.name)}</span> (you)`
             : `<span style="cursor:pointer" title="Tap to add friend" onclick="sendFriendRequestByUid('${e.uid}','${esc(e.name).replace(/'/g,"\\'")}')">${e.avatarEmoji||'🎓'} <span style="${nameColorStyle(e)}">${esc(e.name)}</span></span>`;
-        let title=idx===0?'🥇 1ST':idx===1?'🥈 2ND':idx===2?'🥉 3RD':`#${idx+1}`;
-        return `<tr class="${isMe?'me':''}"><td>${idx+1}</td><td>${nameCell}</td><td>${e.elo}</td><td><span class="elo-tier" style="background:${t[2]}33;color:${t[2]};border:1px solid ${t[2]}">${t[3]} ${t[1]}</span></td><td>${e.wins}</td><td>${e.losses}</td><td>${wr}%</td><td>${matches}</td><td title="Average share of correct answers within this player's team battles">${contribTxt}</td></tr>`;
+        let title=e.rank===1?'🥇 1ST':e.rank===2?'🥈 2ND':e.rank===3?'🥉 3RD':`#${e.rank}`;
+        return `<tr class="${isMe?'me':''}"><td>${e.rank}</td><td>${nameCell}</td><td>${e.elo}</td><td><span class="elo-tier" style="background:${t[2]}33;color:${t[2]};border:1px solid ${t[2]}">${t[3]} ${t[1]}</span></td><td>${e.wins}</td><td>${e.losses}</td><td>${wr}%</td><td>${matches}</td><td title="Average share of correct answers within this player's team battles">${contribTxt}</td></tr>`;
     }).join('') || '<tr><td colspan="9" style="text-align:center;padding:12px;color:var(--muted)">No players ranked yet this month — play a match!</td></tr>';
 
     checkTrophyBadge();
