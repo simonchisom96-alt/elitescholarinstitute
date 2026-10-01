@@ -7019,7 +7019,9 @@ async function openLB(){
     let statusEl=$('lbSyncStatus');if(statusEl)statusEl.textContent='Connecting…';
 
     let now=curMonthMP();let key=MP_LB_PREFIX+now;
-// Last month's top 3, read live off last month's real entries — no separately-stored
+    let hofHtml='';
+
+    // Last month's top 3, read live off last month's real entries — no separately-stored
     // "here's who won" snapshot for anyone's browser to fabricate.
     
     try{
