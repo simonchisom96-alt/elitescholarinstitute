@@ -7019,66 +7019,32 @@ async function openLB(){
     let statusEl=$('lbSyncStatus');if(statusEl)statusEl.textContent='Connecting…';
 
     let now=curMonthMP();let key=MP_LB_PREFIX+now;
-    let lastCheck=localStorage.getItem('mp_lb_last_month')||now;
-    if(lastCheck!==now){
-        try{
-            let prevKey=MP_LB_PREFIX+lastCheck;
-            let prevSnap=await mdb.ref(prevKey).get();
-            let prevBoard=prevSnap.exists()?Object.values(prevSnap.val()):[];
-            if(prevBoard.length){
-                prevBoard.forEach(e=>{if(!e.rankScore)e.rankScore=calcMPRankingScore(e);});
-                prevBoard.sort((a,b)=>b.rankScore-a.rankScore);
-                let top3=prevBoard.slice(0,3);
-                await mdb.ref('mp_lb_hof').set({month:lastCheck, top3, expires:Date.now()+86400000, created:Date.now()});
-            }
-        }catch(e){}
-        localStorage.setItem('mp_lb_last_month', now);
-    }
+// Last month's top 3, read live off last month's real entries — no separately-stored
+    // "here's who won" snapshot for anyone's browser to fabricate.
+    
+    try{
+        let lastMonth=prevMonthMP();
+        let prevSnap=await mdb.ref(MP_LB_PREFIX+lastMonth).get();
+        let prevRaw=prevSnap.exists()?prevSnap.val():{};
+        let prevAll=Object.keys(prevRaw).map(uid=>({id:uid, ...prevRaw[uid]}));
+        prevAll.forEach(e=>{if(!e.rankScore)e.rankScore=calcMPRankingScore(e)});
+        prevAll.sort((a,b)=>b.rankScore-a.rankScore);
+        let top3=prevAll.slice(0,3);
+        if(top3.length){
+            hofHtml=`<div style="background:linear-gradient(135deg,#0d1b3d,#123166);color:#fff;padding:16px 12px;border-radius:16px;font-size:11px;margin-bottom:10px;text-align:center;border:1px solid #ffd70055;box-shadow:0 6px 18px rgba(0,0,0,0.4)">
+    <div style="color:#ffd700;font-weight:900;font-size:13px;letter-spacing:0.4px">🏆 LAST MONTH'S TOP 3 — ${lastMonth} CHAMPIONS 🏆</div>
+    <div style="display:flex;justify-content:center;align-items:flex-end;gap:10px;margin-top:12px;flex-wrap:wrap">
+        <div style="min-width:78px;background:rgba(192,192,192,0.12);border:1px solid #c0c0c0;border-radius:12px;padding:10px 6px"><div style="font-size:20px">🥈</div><div style="font-weight:800;font-size:11px;text-transform:capitalize;margin-top:2px">${top3[1]?.name||'—'}</div><div style="font-size:10px;color:#9fc4ff;margin-top:3px;font-weight:700">${Math.round(top3[1]?.totalScore||0)} pts</div></div>
+        <div style="min-width:86px;background:rgba(255,215,0,0.14);border:1.5px solid gold;border-radius:14px;padding:12px 6px"><div style="font-size:24px">🥇</div><div style="font-weight:900;font-size:12px;text-transform:capitalize;margin-top:2px">${top3[0]?.name||'—'}</div><div style="font-size:10.5px;color:#ffd700;margin-top:3px;font-weight:800">${Math.round(top3[0]?.totalScore||0)} pts</div></div>
+        <div style="min-width:78px;background:rgba(205,127,50,0.12);border:1px solid #cd7f32;border-radius:12px;padding:10px 6px"><div style="font-size:20px">🥉</div><div style="font-weight:800;font-size:11px;text-transform:capitalize;margin-top:2px">${top3[2]?.name||'—'}</div><div style="font-size:10px;color:#9fc4ff;margin-top:3px;font-weight:700">${Math.round(top3[2]?.totalScore||0)} pts</div></div>
+    </div>
+    <div style="font-size:8.5px;margin-top:12px;color:#c9d8f5;line-height:1.5">🎉 Congratulations to our champions! 🎉<br>The administrators will be reaching out to you soon.</div>
+</div>`;
+        }
+    }catch(e){}
+
 
     let snap; let healthy=true;
-    try{ snap=await mdb.ref(key).get(); }catch(e){ healthy=false; }
-    let all=snap && snap.exists() ? Object.values(snap.val()) : [];
-    all.forEach(e=>{if(!e.rankScore)e.rankScore=calcMPRankingScore(e);});
-    all.sort((a,b)=>b.rankScore-a.rankScore);
-    if(statusEl){
-        statusEl.textContent = healthy ? `🟢 Live • ${all.length} player${all.length===1?'':'s'} ranked this month` : `🔴 Connection issue — tap Refresh to retry.`;
-        statusEl.style.color = healthy ? 'var(--success)' : 'var(--error)';
-    }
-
-    let hof=null;try{let hs=await mdb.ref('mp_lb_hof').get();hof=hs.exists()?hs.val():null;}catch(e){}
-    let hofHtml='';
-    if(hof && Date.now()<hof.expires){
-        // Slightly taller/shorter podium blocks per rank (gold tallest) so the hierarchy reads
-        // instantly even before anyone reads a name — same trick the champion card already
-        // uses on the tournament share image.
-        let rankBlock=(p, rank)=>{
-            let cfg = rank===1
-                ? {medal:'🥇', label:'1ST', h:118, fs:13, ring:'#ffd700', bg:'linear-gradient(180deg,rgba(255,215,0,0.28),rgba(255,215,0,0.06))', name:'#fff', sub:'#ffd700', border:'1.5px solid #ffd700'}
-                : rank===2
-                ? {medal:'🥈', label:'2ND', h:96, fs:11.5, ring:'#c0c0c0', bg:'rgba(192,192,192,0.12)', name:'#eef2fb', sub:'#9fc4ff', border:'1px solid #c0c0c0'}
-                : {medal:'🥉', label:'3RD', h:96, fs:11.5, ring:'#cd7f32', bg:'rgba(205,127,50,0.12)', name:'#eef2fb', sub:'#9fc4ff', border:'1px solid #cd7f32'};
-            return `<div style="display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:${rank===1?92:78}px;height:${cfg.h}px;background:${cfg.bg};border:${cfg.border};border-radius:14px;padding:10px 6px;position:relative;${rank===1?'box-shadow:0 0 22px rgba(255,215,0,0.35)':''}">
-                <div style="position:absolute;top:6px;left:0;right:0;font-size:8px;font-weight:900;letter-spacing:1px;color:${cfg.sub};opacity:0.85">${cfg.label}</div>
-                <div style="font-size:${rank===1?28:20}px;margin-top:10px">${cfg.medal}</div>
-                <div style="font-weight:900;font-size:${cfg.fs}px;margin-top:3px;color:${cfg.name};word-break:break-word">${esc(p?.name||'—')}</div>
-                <div style="font-size:10px;color:${cfg.sub};margin-top:2px;font-weight:800">${Math.round(p?.elo||0)} ELO</div>
-            </div>`;
-        };
-        hofHtml=`<div style="background:linear-gradient(160deg,#0a1530,#0d1b3d 45%,#15296b);color:#fff;padding:18px 14px 16px;border-radius:18px;font-size:11px;margin-bottom:10px;text-align:center;border:1px solid #ffd70066;box-shadow:0 10px 30px rgba(0,0,0,0.45), inset 0 0 40px rgba(255,215,0,0.04);position:relative;overflow:hidden">
-    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% -10%,rgba(255,215,0,0.16),transparent 60%);pointer-events:none"></div>
-    <div style="position:relative">
-        <div style="color:#ffd700;font-weight:900;font-size:9.5px;letter-spacing:2px;opacity:0.85">🏛️ HALL OF FAME</div>
-        <div style="color:#fff;font-weight:900;font-size:14.5px;letter-spacing:0.3px;margin-top:4px">${esc(hof.month)} CHAMPIONS</div>
-        <div style="display:flex;justify-content:center;align-items:flex-end;gap:10px;margin-top:14px;flex-wrap:wrap">
-            ${rankBlock(hof.top3[1],2)}${rankBlock(hof.top3[0],1)}${rankBlock(hof.top3[2],3)}
-        </div>
-        <div style="height:1px;background:linear-gradient(90deg,transparent,#ffd70055,transparent);margin:14px 4px 10px"></div>
-        <div style="font-size:8.5px;color:#c9d8f5;line-height:1.6">🎉 <b style="color:#ffd700">Congratulations to our champions!</b> 🎉<br>The administrators will be reaching out to you soon.</div>
-    </div>
-</div>`;
-    }
-    $('lbHOF').innerHTML=hofHtml;
-
     let meId=MY_UID;
     let podiumHtml=`<div style="display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;align-items:stretch;margin:12px 0">`;
     function podiumSlot(p, medal, big){
