@@ -3566,7 +3566,7 @@ async function openLB(){
     let now=curMonth();
     let raw={};try{raw=await kvGet(`${LB_PATH}/${now}`)||{};}catch(e){raw={};}
     let all=Object.keys(raw).map(uid=>({id:uid, ...raw[uid]}));
-    all.forEach(e=>{if(!e.rankScore)e.rankScore=calcRankingScore(e)});
+    all.forEach(e=>{e.rankScore=calcRankingScore(e)});
     all.sort((a,b)=>b.rankScore-a.rankScore);
     if(statusEl){
         statusEl.textContent=fbHealthy
