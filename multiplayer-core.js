@@ -7015,29 +7015,29 @@ async function updateMPLeaderboard(){
 }
 async function openLB(){
     openModal('lbModal');
-    $('lbPodium').innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Calculating rankings…</div>';
-    $('lbBody').innerHTML='<tr><td colspan="9" style="text-align:center;padding:12px;color:var(--muted)">Loading…</td></tr>';
-    let statusEl=$('lbSyncStatus');if(statusEl)statusEl.textContent='Connecting…';
+    $('lbPodium').innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Calculating rankings...</div>';
+    $('lbBody').innerHTML='<tr><td colspan="9" style="text-align:center;padding:12px;color:var(--muted)">Loading...</td></tr>';
+    let statusEl=$('lbSyncStatus');
+    if(statusEl)statusEl.textContent='Connecting...';
 
-    let now=curMonthMP();let key=MP_LB_PREFIX+now;
+    let now=curMonthMP();
+    let key=MP_LB_PREFIX+now;
+
+    // Last month's Top 3 uses the exact same canonical ranking engine.
     let hofHtml='';
-
-    // Last month's top 3, read live off last month's real entries — no separately-stored
-    // "here's who won" snapshot for anyone's browser to fabricate.
-    
     try{
         let lastMonth=prevMonthMP();
         let prevSnap=await mdb.ref(MP_LB_PREFIX+lastMonth).get();
         let prevRaw=prevSnap.exists()?prevSnap.val():{};
-        let prevAll=Object.keys(prevRaw).map(uid=>({id:uid, ...prevRaw[uid]}));
-        // Always recalculate the same ranking formula used by the live leaderboard.
+        let prevAll=Object.keys(prevRaw).map(uid=>({id:uid,...prevRaw[uid]}));
         prevAll.forEach(e=>{e.rankScore=Number(calcMPRankingScore(e));});
         prevAll.sort((a,b)=>{
             const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
             return diff || String(a.name||'').localeCompare(String(b.name||''));
         });
         prevAll.forEach((e,i)=>{e.rank=i+1;});
-const top3=[1,2,3].map(r=>prevAll.find(e=>e.rank===r)).filter(Boolean);
+        const top3=[1,2,3].map(r=>prevAll.find(e=>e.rank===r)).filter(Boolean);
+
         if(top3.length){
             hofHtml=`<div style="background:linear-gradient(135deg,#0d1b3d,#123166);color:#fff;padding:16px 12px;border-radius:16px;font-size:11px;margin-bottom:10px;text-align:center;border:1px solid #ffd70055;box-shadow:0 6px 18px rgba(0,0,0,0.4)">
     <div style="color:#ffd700;font-weight:900;font-size:13px;letter-spacing:0.4px">🏆 LAST MONTH'S TOP 3 — ${lastMonth} CHAMPIONS 🏆</div>
@@ -7053,46 +7053,68 @@ const top3=[1,2,3].map(r=>prevAll.find(e=>e.rank===r)).filter(Boolean);
 
     $('lbHOF').innerHTML=hofHtml;
 
-    let snap; let healthy=true;
+    let snap;
+    let healthy=true;
+    let raw={};
     try{
         snap=await mdb.ref(key).get();
-        let raw=snap.exists()?snap.val():{};
-        var all=Object.keys(raw).map(uid=>({id:uid,...raw[uid]}));
-        all.forEach(e=>{e.rankScore=Number(calcMPRankingScore(e));});
-        all.sort((a,b)=>{
-            const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
-            return diff || String(a.name||'').localeCompare(String(b.name||''));
-        });
-        all.forEach((e,i)=>{e.rank=i+1;});
+        raw=snap.exists()?snap.val():{};
     }catch(e){
-        all=[];
+        raw={};
         healthy=false;
     }
+
+    let all=Object.keys(raw).map(uid=>({id:uid,...raw[uid]}));
+
+    // Canonical ranking engine: formula -> descending score -> explicit rank.
+    // The formula itself is untouched.
+    all.forEach(e=>{e.rankScore=Number(calcMPRankingScore(e));});
+    all.sort((a,b)=>{
+        const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
+        return diff || String(a.name||'').localeCompare(String(b.name||''));
+    });
+    all.forEach((e,i)=>{e.rank=i+1;});
+
+    if(statusEl){
+        statusEl.textContent=healthy
+            ? `🟢 Live • ${all.length} player${all.length===1?'':'s'} ranked this month`
+            : `🔴 Connection issue — showing last cached data (${all.length} player${all.length===1?'':'s'}). Tap Refresh to retry.`;
+        statusEl.style.color=healthy?'var(--success)':'var(--error)';
+    }
+
     let meId=MY_UID;
     const first=all.find(e=>e.rank===1);
     const second=all.find(e=>e.rank===2);
     const third=all.find(e=>e.rank===3);
+
+    // The podium is only a visual arrangement: 2nd | 1st | 3rd.
+    // Rank is determined above and never by visual position.
     let podiumHtml=`<div style="display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;align-items:stretch;margin:12px 0">`;
-    function podiumSlot(p, medal, big){
-        if(!p)return '<div></div>';
-        return `<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:${big?'linear-gradient(180deg,rgba(255,215,0,0.28),rgba(255,215,0,0.08))':'rgba(192,192,192,0.15)'};padding:${big?'14px':'10px'} 6px;border-radius:${big?'14px':'12px'};border:${big?'1.5px solid gold':'1px solid #c0c0c0'};word-break:break-word">
-            <div style="font-size:${big?26:20}px">${medal}</div>
-            <div style="font-size:${big?12:11}px;font-weight:900;line-height:1.2;color:var(--text)">${esc(p.name)}${p.uid===meId?' (you)':''}</div>
-            <div style="font-size:9px;margin-top:4px;color:var(--muted)">ELO ${p.elo} • ${p.wins}W/${p.losses}L</div>
-        </div>`;
-    }
-    podiumHtml+=podiumSlot(second,'🥈',false)+podiumSlot(first,'🥇',true)+podiumSlot(third,'🥉',false)+'</div>';
+
+    if(second)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(192,192,192,0.15);padding:10px 6px;border-radius:12px;border:1px solid #c0c0c0;word-break:break-word"><div style="font-size:20px">🥈</div><div style="font-size:11px;font-weight:800;line-height:1.2;color:var(--text)">${esc(second.name)}${second.uid===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">ELO ${second.elo} • ${second.wins}W/${second.losses}L</div></div>`;
+    else podiumHtml+=`<div></div>`;
+
+    if(first)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:linear-gradient(180deg,rgba(255,215,0,0.28),rgba(255,215,0,0.08));padding:14px 6px;border-radius:14px;border:1.5px solid gold;word-break:break-word"><div style="font-size:26px">🥇</div><div style="font-size:12px;font-weight:900;line-height:1.2;color:var(--text)">${esc(first.name)}${first.uid===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">ELO ${first.elo} • ${first.wins}W/${first.losses}L</div></div>`;
+    else podiumHtml+=`<div></div>`;
+
+    if(third)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(205,127,50,0.15);padding:10px 6px;border-radius:12px;border:1px solid #cd7f32;word-break:break-word"><div style="font-size:20px">🥉</div><div style="font-size:11px;font-weight:800;line-height:1.2;color:var(--text)">${esc(third.name)}${third.uid===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">ELO ${third.elo} • ${third.wins}W/${third.losses}L</div></div>`;
+    else podiumHtml+=`<div></div>`;
+
+    podiumHtml+=`</div>`;
     $('lbPodium').innerHTML=podiumHtml;
 
+    // Normal leaderboard is the same canonical array, limited to the first 100.
     $('lbBody').innerHTML=all.slice(0,100).map((e,idx)=>{
         let t=tierFor(e.elo);
         let matches=e.totalMatches||0;
         let wr=matches?Math.round((e.wins/matches)*100):0;
-        let contribTxt = (e.avgTeamContrib!==null && e.avgTeamContrib!==undefined) ? e.avgTeamContrib+'%' : '—';
-        let nameCell = e.uid===meId
+        let contribTxt=(e.avgTeamContrib!==null&&e.avgTeamContrib!==undefined)?e.avgTeamContrib+'%':'—';
+        let isMe=e.uid===meId;
+        let nameCell=isMe
             ? `${e.avatarEmoji||'🎓'} <span style="${nameColorStyle(e)}">${esc(e.name)}</span> (you)`
-            : `<span style="cursor:pointer" title="Tap to add friend" onclick="sendFriendRequestByUid('${e.uid}','${esc(e.name).replace(/'/g,"")}')">${e.avatarEmoji||'🎓'} <span style="${nameColorStyle(e)}">${esc(e.name)}</span></span>`;
-        return `<tr class="${e.uid===meId?'me':''}"><td>${idx+1}</td><td>${nameCell}</td><td>${e.elo}</td><td><span class="elo-tier" style="background:${t[2]}33;color:${t[2]};border:1px solid ${t[2]}">${t[3]} ${t[1]}</span></td><td>${e.wins}</td><td>${e.losses}</td><td>${wr}%</td><td>${matches}</td><td title="Average share of correct answers within this player's team battles">${contribTxt}</td></tr>`;
+            : `<span style="cursor:pointer" title="Tap to add friend" onclick="sendFriendRequestByUid('${e.uid}','${esc(e.name).replace(/'/g,"\\'")}')">${e.avatarEmoji||'🎓'} <span style="${nameColorStyle(e)}">${esc(e.name)}</span></span>`;
+        let title=idx===0?'🥇 1ST':idx===1?'🥈 2ND':idx===2?'🥉 3RD':`#${idx+1}`;
+        return `<tr class="${isMe?'me':''}"><td>${idx+1}</td><td>${nameCell}</td><td>${e.elo}</td><td><span class="elo-tier" style="background:${t[2]}33;color:${t[2]};border:1px solid ${t[2]}">${t[3]} ${t[1]}</span></td><td>${e.wins}</td><td>${e.losses}</td><td>${wr}%</td><td>${matches}</td><td title="Average share of correct answers within this player's team battles">${contribTxt}</td></tr>`;
     }).join('') || '<tr><td colspan="9" style="text-align:center;padding:12px;color:var(--muted)">No players ranked yet this month — play a match!</td></tr>';
 
     checkTrophyBadge();
