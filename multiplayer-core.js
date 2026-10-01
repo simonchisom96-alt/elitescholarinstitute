@@ -6991,7 +6991,7 @@ const MP_LB_PREFIX='mp_global_lb/';
 function curMonthMP(){return new Date().toISOString().slice(0,7);}
 function prevMonthMP(){let d=new Date();d.setMonth(d.getMonth()-1);return d.toISOString().slice(0,7);}
 function calcMPRankingScore(e){
-    let elo=e.elo||1000, matches=e.totalMatches||0;
+    let elo=(e.elo!=null) ? Number(e.elo) : 1000, matches=e.totalMatches||0;
     // Elo is the dominant, self-correcting factor (already weighted by opponent strength).
     // A small experience factor rewards proven consistency over a handful of lucky wins,
     // capped so it can never outweigh Elo itself. A small team-contribution factor rewards
