@@ -3594,14 +3594,9 @@ async function openLB(){
         let lastMonth=prevMonth();
         let prevRaw=await kvGet(`${LB_PATH}/${lastMonth}`)||{};
         let prevAll=Object.keys(prevRaw).map(uid=>({id:uid, ...prevRaw[uid]}));
+        // Monthly champions come directly from the same canonical ranking order.
         canonicalLeaderboardOrder(prevAll,calcRankingScore);
-        // Always recalculate from the stored monthly stats so an old/stale rankScore
-        // value in Firebase can never preserve an incorrect podium order.
-        prevAll.sort((a,b)=>{
-            const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
-            return diff || String(a.name||'').localeCompare(String(b.name||''));
-        });
-let top3=prevAll.slice(0,3);
+        const top3=prevAll.slice(0,3);
         if(top3.length){
             hofHtml=`<div style="background:linear-gradient(135deg,#0d1b3d,#123166);color:#fff;padding:16px 12px;border-radius:16px;font-size:11px;margin-bottom:10px;text-align:center;border:1px solid #ffd70055;box-shadow:0 6px 18px rgba(0,0,0,0.4)">
     <div style="color:#ffd700;font-weight:900;font-size:13px;letter-spacing:0.4px">🏆 LAST MONTH'S TOP 3 — ${lastMonth} CHAMPIONS 🏆</div>
