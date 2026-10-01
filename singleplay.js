@@ -3526,6 +3526,7 @@ function calcRankingScore(entry){
     let totalOps=entry.totalOps||1;if(totalOps<1)totalOps=1;
     // Formula: accuracy is king, volume matters but can't cheat with 1-question quizzes
     return +(avgScore*0.6 + (10/avgSpeed)*0.15 + Math.log10(attendance)*12 + Math.log10(totalOps)*8).toFixed(1);
+}
 
 function canonicalLeaderboardOrder(entries, scoreFn){
     entries.forEach(e=>{

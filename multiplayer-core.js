@@ -6999,6 +6999,7 @@ function calcMPRankingScore(e){
     let experienceFactor = Math.min(20, Math.log2(matches+1)*4);
     let contribFactor = (e.avgTeamContrib!=null) ? Math.min(15, e.avgTeamContrib*0.15) : 0;
     return +(elo + experienceFactor + contribFactor).toFixed(2);
+}
 
 function canonicalMPLeaderboardOrder(entries){
     entries.forEach(e=>{
