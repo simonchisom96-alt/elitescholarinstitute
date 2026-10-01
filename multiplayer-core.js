@@ -7001,19 +7001,6 @@ function calcMPRankingScore(e){
     return +(elo + experienceFactor + contribFactor).toFixed(2);
 }
 
-function canonicalMPLeaderboardOrder(entries){
-    entries.forEach(e=>{
-        const score=Number(calcMPRankingScore(e));
-        e.rankScore=Number.isFinite(score)?score:0;
-    });
-    entries.sort((a,b)=>{
-        const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
-        return diff || String(a.name||'').localeCompare(String(b.name||''));
-    });
-    entries.forEach((e,i)=>{e.rank=i+1;});
-    return entries;
-}
-
 async function updateMPLeaderboard(){
     if(!ME)return;
     let month=curMonthMP();let key=MP_LB_PREFIX+month;
@@ -7044,8 +7031,13 @@ async function openLB(){
         let prevRaw=prevSnap.exists()?prevSnap.val():{};
         let prevAll=Object.keys(prevRaw).map(uid=>({id:uid, ...prevRaw[uid]}));
         // Always recalculate the same ranking formula used by the live leaderboard.
-        canonicalMPLeaderboardOrder(prevAll);
-let top3=prevAll.slice(0,3);
+        prevAll.forEach(e=>{e.rankScore=Number(calcMPRankingScore(e));});
+        prevAll.sort((a,b)=>{
+            const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
+            return diff || String(a.name||'').localeCompare(String(b.name||''));
+        });
+        prevAll.forEach((e,i)=>{e.rank=i+1;});
+const top3=[1,2,3].map(r=>prevAll.find(e=>e.rank===r)).filter(Boolean);
         if(top3.length){
             hofHtml=`<div style="background:linear-gradient(135deg,#0d1b3d,#123166);color:#fff;padding:16px 12px;border-radius:16px;font-size:11px;margin-bottom:10px;text-align:center;border:1px solid #ffd70055;box-shadow:0 6px 18px rgba(0,0,0,0.4)">
     <div style="color:#ffd700;font-weight:900;font-size:13px;letter-spacing:0.4px">🏆 LAST MONTH'S TOP 3 — ${lastMonth} CHAMPIONS 🏆</div>
@@ -7066,12 +7058,20 @@ let top3=prevAll.slice(0,3);
         snap=await mdb.ref(key).get();
         let raw=snap.exists()?snap.val():{};
         var all=Object.keys(raw).map(uid=>({id:uid,...raw[uid]}));
-        canonicalMPLeaderboardOrder(all);
+        all.forEach(e=>{e.rankScore=Number(calcMPRankingScore(e));});
+        all.sort((a,b)=>{
+            const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
+            return diff || String(a.name||'').localeCompare(String(b.name||''));
+        });
+        all.forEach((e,i)=>{e.rank=i+1;});
     }catch(e){
         all=[];
         healthy=false;
     }
     let meId=MY_UID;
+    const first=all.find(e=>e.rank===1);
+    const second=all.find(e=>e.rank===2);
+    const third=all.find(e=>e.rank===3);
     let podiumHtml=`<div style="display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;align-items:stretch;margin:12px 0">`;
     function podiumSlot(p, medal, big){
         if(!p)return '<div></div>';
@@ -7081,7 +7081,7 @@ let top3=prevAll.slice(0,3);
             <div style="font-size:9px;margin-top:4px;color:var(--muted)">ELO ${p.elo} • ${p.wins}W/${p.losses}L</div>
         </div>`;
     }
-    podiumHtml+=podiumSlot(all[1],'🥈',false)+podiumSlot(all[0],'🥇',true)+podiumSlot(all[2],'🥉',false)+'</div>';
+    podiumHtml+=podiumSlot(second,'🥈',false)+podiumSlot(first,'🥇',true)+podiumSlot(third,'🥉',false)+'</div>';
     $('lbPodium').innerHTML=podiumHtml;
 
     $('lbBody').innerHTML=all.slice(0,100).map((e,idx)=>{

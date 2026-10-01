@@ -3528,19 +3528,6 @@ function calcRankingScore(entry){
     return +(avgScore*0.6 + (10/avgSpeed)*0.15 + Math.log10(attendance)*12 + Math.log10(totalOps)*8).toFixed(1);
 }
 
-function canonicalLeaderboardOrder(entries, scoreFn){
-    entries.forEach(e=>{
-        const score=Number(scoreFn(e));
-        e.rankScore=Number.isFinite(score)?score:0;
-    });
-    entries.sort((a,b)=>{
-        const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
-        return diff || String(a.name||'').localeCompare(String(b.name||''));
-    });
-    entries.forEach((e,i)=>{e.rank=i+1;});
-    return entries;
-}
-
 async function updateGlobalLB(score,avgSpeedPerQ,totalOps=1,isAuto=false){
     if(IS_REDO){return;}
     let u=getLBUser();
@@ -3579,7 +3566,12 @@ async function openLB(){
     let now=curMonth();
     let raw={};try{raw=await kvGet(`${LB_PATH}/${now}`)||{};}catch(e){raw={};}
     let all=Object.keys(raw).map(uid=>({id:uid, ...raw[uid]}));
-    canonicalLeaderboardOrder(all,calcRankingScore);
+    all.forEach(e=>{e.rankScore=Number(calcRankingScore(e));});
+    all.sort((a,b)=>{
+        const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
+        return diff || String(a.name||'').localeCompare(String(b.name||''));
+    });
+    all.forEach((e,i)=>{e.rank=i+1;});
     if(statusEl){
         statusEl.textContent=fbHealthy
             ? `🟢 Live • ${all.length} player${all.length===1?'':'s'} ranked this month`
@@ -3595,8 +3587,13 @@ async function openLB(){
         let prevRaw=await kvGet(`${LB_PATH}/${lastMonth}`)||{};
         let prevAll=Object.keys(prevRaw).map(uid=>({id:uid, ...prevRaw[uid]}));
         // Monthly champions come directly from the same canonical ranking order.
-        canonicalLeaderboardOrder(prevAll,calcRankingScore);
-        const top3=prevAll.slice(0,3);
+        prevAll.forEach(e=>{e.rankScore=Number(calcRankingScore(e));});
+        prevAll.sort((a,b)=>{
+            const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
+            return diff || String(a.name||'').localeCompare(String(b.name||''));
+        });
+        prevAll.forEach((e,i)=>{e.rank=i+1;});
+        const top3=[1,2,3].map(r=>prevAll.find(e=>e.rank===r)).filter(Boolean);
         if(top3.length){
             hofHtml=`<div style="background:linear-gradient(135deg,#0d1b3d,#123166);color:#fff;padding:16px 12px;border-radius:16px;font-size:11px;margin-bottom:10px;text-align:center;border:1px solid #ffd70055;box-shadow:0 6px 18px rgba(0,0,0,0.4)">
     <div style="color:#ffd700;font-weight:900;font-size:13px;letter-spacing:0.4px">🏆 LAST MONTH'S TOP 3 — ${lastMonth} CHAMPIONS 🏆</div>
@@ -3611,12 +3608,15 @@ async function openLB(){
     }catch(e){}
 
     let meId=myUid;
+    const first=all.find(e=>e.rank===1);
+    const second=all.find(e=>e.rank===2);
+    const third=all.find(e=>e.rank===3);
     let podiumHtml=`<div style="display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;align-items:stretch;margin:12px 0">`;
-    if(all[1])podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(192,192,192,0.15);padding:10px 6px;border-radius:12px;border:1px solid #c0c0c0;word-break:break-word"><div style="font-size:20px">🥈</div><div style="font-size:11px;font-weight:800;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${all[1].name}${all[1].id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${all[1].avgScore}% • ${all[1].avgSpeed}s<br>${all[1].quizCount}×</div></div>`;
+    if(second)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(192,192,192,0.15);padding:10px 6px;border-radius:12px;border:1px solid #c0c0c0;word-break:break-word"><div style="font-size:20px">🥈</div><div style="font-size:11px;font-weight:800;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${second.name}${all[1].id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${second.avgScore}% • ${second.avgSpeed}s<br>${second.quizCount}×</div></div>`;
     else podiumHtml+=`<div></div>`;
-    if(all[0])podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:linear-gradient(180deg,rgba(255,215,0,0.28),rgba(255,215,0,0.08));padding:14px 6px;border-radius:14px;border:1.5px solid gold;word-break:break-word"><div style="font-size:26px">🥇</div><div style="font-size:12px;font-weight:900;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${all[0].name}${all[0].id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${all[0].avgScore}% • ${all[0].avgSpeed}s • ${all[0].quizCount}×</div><div style="font-size:8px;color:var(--muted)">${all[0].rankScore.toFixed(1)} pts</div></div>`;
+    if(first)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:linear-gradient(180deg,rgba(255,215,0,0.28),rgba(255,215,0,0.08));padding:14px 6px;border-radius:14px;border:1.5px solid gold;word-break:break-word"><div style="font-size:26px">🥇</div><div style="font-size:12px;font-weight:900;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${first.name}${all[0].id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${first.avgScore}% • ${first.avgSpeed}s • ${first.quizCount}×</div><div style="font-size:8px;color:var(--muted)">${all[0].rankScore.toFixed(1)} pts</div></div>`;
     else podiumHtml+=`<div></div>`;
-    if(all[2])podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(205,127,50,0.15);padding:10px 6px;border-radius:12px;border:1px solid #cd7f32;word-break:break-word"><div style="font-size:20px">🥉</div><div style="font-size:11px;font-weight:800;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${all[2].name}${all[2].id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${all[2].avgScore}% • ${all[2].avgSpeed}s<br>${all[2].quizCount}×</div></div>`;
+    if(third)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(205,127,50,0.15);padding:10px 6px;border-radius:12px;border:1px solid #cd7f32;word-break:break-word"><div style="font-size:20px">🥉</div><div style="font-size:11px;font-weight:800;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${third.name}${all[2].id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${third.avgScore}% • ${third.avgSpeed}s<br>${third.quizCount}×</div></div>`;
     else podiumHtml+=`<div></div>`;
     podiumHtml+=`</div>`;
 
