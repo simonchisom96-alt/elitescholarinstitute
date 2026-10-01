@@ -3567,7 +3567,7 @@ async function openLB(){
     let raw={};try{raw=await kvGet(`${LB_PATH}/${now}`)||{};}catch(e){raw={};}
     let all=Object.keys(raw).map(uid=>({id:uid, ...raw[uid]}));
     all.forEach(e=>{e.rankScore=calcRankingScore(e)});
-    all.sort((a,b)=>b.rankScore-a.rankScore);
+    all.sort((a,b)=>{\n        const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);\n        return diff || String(a.name||'').localeCompare(String(b.name||''));\n    });
     if(statusEl){
         statusEl.textContent=fbHealthy
             ? `🟢 Live • ${all.length} player${all.length===1?'':'s'} ranked this month`
