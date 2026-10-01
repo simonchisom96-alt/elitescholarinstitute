@@ -7053,6 +7053,19 @@ let top3=prevAll.slice(0,3);
     $('lbHOF').innerHTML=hofHtml;
 
     let snap; let healthy=true;
+    try{
+        snap=await mdb.ref(key).get();
+        let raw=snap.exists()?snap.val():{};
+        var all=Object.keys(raw).map(uid=>({id:uid,...raw[uid]}));
+        all.forEach(e=>{e.rankScore=calcMPRankingScore(e)});
+        all.sort((a,b)=>{
+            const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
+            return diff || String(a.name||'').localeCompare(String(b.name||''));
+        });
+    }catch(e){
+        all=[];
+        healthy=false;
+    }
     let meId=MY_UID;
     let podiumHtml=`<div style="display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;align-items:stretch;margin:12px 0">`;
     function podiumSlot(p, medal, big){
