@@ -7043,6 +7043,7 @@ async function openLB(){
         }
     }catch(e){}
 
+    $('lbHOF').innerHTML=hofHtml;
 
     let snap; let healthy=true;
     let meId=MY_UID;
