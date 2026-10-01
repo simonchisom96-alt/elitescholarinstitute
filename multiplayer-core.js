@@ -7019,21 +7019,22 @@ async function openLB(){
     let statusEl=$('lbSyncStatus');if(statusEl)statusEl.textContent='Connecting…';
 
     let now=curMonthMP();let key=MP_LB_PREFIX+now;
-    let lastCheck=localStorage.getItem('mp_lb_last_month')||now;
-    if(lastCheck!==now){
-        try{
-            let prevKey=MP_LB_PREFIX+lastCheck;
-            let prevSnap=await mdb.ref(prevKey).get();
-            let prevBoard=prevSnap.exists()?Object.values(prevSnap.val()):[];
-            if(prevBoard.length){
-                prevBoard.forEach(e=>{if(!e.rankScore)e.rankScore=calcMPRankingScore(e);});
-                prevBoard.sort((a,b)=>b.rankScore-a.rankScore);
-                let top3=prevBoard.slice(0,3);
-                await mdb.ref('mp_lb_hof').set({month:lastCheck, top3, expires:Date.now()+86400000, created:Date.now()});
-            }
-        }catch(e){}
-        localStorage.setItem('mp_lb_last_month', now);
-    }
+
+    // Monthly Top Three — mirror Single Player's corrected ranking method:
+    // read the previous month's real entries, calculate any missing rankScore,
+    // sort highest -> lowest, then take [0], [1], [2] as 1st/2nd/3rd.
+    // This is calculated live instead of relying on a browser-local month rollover,
+    // so every player sees the same previous-month Top Three.
+    let hof=null;
+    try{
+        let lastMonth=prevMonthMP();
+        let prevSnap=await mdb.ref(MP_LB_PREFIX+lastMonth).get();
+        let prevBoard=prevSnap.exists()?Object.values(prevSnap.val()):[];
+        prevBoard.forEach(e=>{if(!e.rankScore)e.rankScore=calcMPRankingScore(e);});
+        prevBoard.sort((a,b)=>b.rankScore-a.rankScore);
+        let top3=prevBoard.slice(0,3);
+        if(top3.length) hof={month:lastMonth,top3};
+    }catch(e){}
 
     let snap; let healthy=true;
     try{ snap=await mdb.ref(key).get(); }catch(e){ healthy=false; }
