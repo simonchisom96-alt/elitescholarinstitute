@@ -3526,6 +3526,18 @@ function calcRankingScore(entry){
     let totalOps=entry.totalOps||1;if(totalOps<1)totalOps=1;
     // Formula: accuracy is king, volume matters but can't cheat with 1-question quizzes
     return +(avgScore*0.6 + (10/avgSpeed)*0.15 + Math.log10(attendance)*12 + Math.log10(totalOps)*8).toFixed(1);
+
+function canonicalLeaderboardOrder(entries, scoreFn){
+    entries.forEach(e=>{
+        const score=Number(scoreFn(e));
+        e.rankScore=Number.isFinite(score)?score:0;
+    });
+    entries.sort((a,b)=>{
+        const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
+        return diff || String(a.name||'').localeCompare(String(b.name||''));
+    });
+    entries.forEach((e,i)=>{e.rank=i+1;});
+    return entries;
 }
 
 async function updateGlobalLB(score,avgSpeedPerQ,totalOps=1,isAuto=false){
@@ -3566,8 +3578,7 @@ async function openLB(){
     let now=curMonth();
     let raw={};try{raw=await kvGet(`${LB_PATH}/${now}`)||{};}catch(e){raw={};}
     let all=Object.keys(raw).map(uid=>({id:uid, ...raw[uid]}));
-    all.forEach(e=>{e.rankScore=calcRankingScore(e)});
-    all.sort((a,b)=>{\n        const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);\n        return diff || String(a.name||'').localeCompare(String(b.name||''));\n    });
+    canonicalLeaderboardOrder(all,calcRankingScore);
     if(statusEl){
         statusEl.textContent=fbHealthy
             ? `🟢 Live • ${all.length} player${all.length===1?'':'s'} ranked this month`
@@ -3582,7 +3593,7 @@ async function openLB(){
         let lastMonth=prevMonth();
         let prevRaw=await kvGet(`${LB_PATH}/${lastMonth}`)||{};
         let prevAll=Object.keys(prevRaw).map(uid=>({id:uid, ...prevRaw[uid]}));
-        prevAll.forEach(e=>{e.rankScore=calcRankingScore(e)});
+        canonicalLeaderboardOrder(prevAll,calcRankingScore);
         // Always recalculate from the stored monthly stats so an old/stale rankScore
         // value in Firebase can never preserve an incorrect podium order.
         prevAll.sort((a,b)=>{

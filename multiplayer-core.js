@@ -6999,7 +6999,20 @@ function calcMPRankingScore(e){
     let experienceFactor = Math.min(20, Math.log2(matches+1)*4);
     let contribFactor = (e.avgTeamContrib!=null) ? Math.min(15, e.avgTeamContrib*0.15) : 0;
     return +(elo + experienceFactor + contribFactor).toFixed(2);
+
+function canonicalMPLeaderboardOrder(entries){
+    entries.forEach(e=>{
+        const score=Number(calcMPRankingScore(e));
+        e.rankScore=Number.isFinite(score)?score:0;
+    });
+    entries.sort((a,b)=>{
+        const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
+        return diff || String(a.name||'').localeCompare(String(b.name||''));
+    });
+    entries.forEach((e,i)=>{e.rank=i+1;});
+    return entries;
 }
+
 async function updateMPLeaderboard(){
     if(!ME)return;
     let month=curMonthMP();let key=MP_LB_PREFIX+month;
@@ -7029,13 +7042,8 @@ async function openLB(){
         let prevSnap=await mdb.ref(MP_LB_PREFIX+lastMonth).get();
         let prevRaw=prevSnap.exists()?prevSnap.val():{};
         let prevAll=Object.keys(prevRaw).map(uid=>({id:uid, ...prevRaw[uid]}));
-        prevAll.forEach(e=>{e.rankScore=calcMPRankingScore(e)});
-        // Always recalculate from the stored monthly stats so an old/stale rankScore
-        // value in Firebase can never preserve an incorrect podium order.
-        prevAll.sort((a,b)=>{
-            const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
-            return diff || String(a.name||'').localeCompare(String(b.name||''));
-        });
+        // Always recalculate the same ranking formula used by the live leaderboard.
+        canonicalMPLeaderboardOrder(prevAll);
 let top3=prevAll.slice(0,3);
         if(top3.length){
             hofHtml=`<div style="background:linear-gradient(135deg,#0d1b3d,#123166);color:#fff;padding:16px 12px;border-radius:16px;font-size:11px;margin-bottom:10px;text-align:center;border:1px solid #ffd70055;box-shadow:0 6px 18px rgba(0,0,0,0.4)">
@@ -7057,11 +7065,7 @@ let top3=prevAll.slice(0,3);
         snap=await mdb.ref(key).get();
         let raw=snap.exists()?snap.val():{};
         var all=Object.keys(raw).map(uid=>({id:uid,...raw[uid]}));
-        all.forEach(e=>{e.rankScore=calcMPRankingScore(e)});
-        all.sort((a,b)=>{
-            const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
-            return diff || String(a.name||'').localeCompare(String(b.name||''));
-        });
+        canonicalMPLeaderboardOrder(all);
     }catch(e){
         all=[];
         healthy=false;
