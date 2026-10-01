@@ -1,5 +1,5 @@
 /* Elite Scholar Institute service worker — offline shell + runtime cache */
-const CACHE_VERSION = 'esi-cache-36.2401';
+const CACHE_VERSION = 'esi-cache-36.2501';
 const APP_SHELL = [
   '/', '/index.html', '/logo.jpg', '/advert.png', '/esi.jpg', '/founder.jpg',
   '/manifest.json', '/offline.html', '/app.js', '/downloader.js',
@@ -19,7 +19,7 @@ const APP_SHELL = [
   '/governmentp.html', '/economicsp.html', '/accountingp.html', '/oau.html',
   '/notification.html', '/abu.html', '/futa.html', '/unilorin.html', '/unizik.html',
   '/password.js', '/credit.html', '/timetable1.jpg', '/timetable2.jpg', '/quiz1.html',
-  '/quiz.html', '/video.mp4', '/firebase-config.js', '/multiplayer.js', '/singleplay.js'
+  '/quiz.html', '/video.mp4', '/firebase-config.js', '/multiplayer.js', '/multiplayer-core.js', '/singleplay.js'
 ];
 const isSameOrigin = request => new URL(request.url).origin === self.location.origin;
 const isGet = request => request.method === 'GET';
@@ -40,6 +40,21 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (url.pathname.startsWith('/api/')) return;
   if (/\.pdf$/i.test(url.pathname)) return;
+  // Leaderboard engines must not be served from an old service-worker cache after a deployment.
+  // Use the network first, with the cached copy only as an offline fallback.
+  if (/\\/(singleplay|multiplayer|multiplayer-core)\\.js$/i.test(url.pathname)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_VERSION);
+      try {
+        const network = await fetch(new Request(request, { cache: 'no-store' }));
+        if (network.ok) cache.put(request, network.clone()).catch(() => {});
+        return network;
+      } catch (_) {
+        return (await cache.match(request)) || Response.error();
+      }
+    })());
+    return;
+  }
   if (request.mode === 'navigate') {
     event.respondWith((async () => { try { const network = await fetch(request); if (network.ok) { const cache = await caches.open(CACHE_VERSION); cache.put(request, network.clone()).catch(() => {}); } return network; } catch (_) { const cache = await caches.open(CACHE_VERSION); return (await cache.match(request)) || (await cache.match('/index.html')) || (await cache.match('/offline.html')) || Response.error(); } })());
     return;
