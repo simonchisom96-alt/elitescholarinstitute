@@ -3593,7 +3593,7 @@ async function openLB(){
             return diff || String(a.name||'').localeCompare(String(b.name||''));
         });
         prevAll.forEach((e,i)=>{e.rank=i+1;});
-        const top3=[1,2,3].map(r=>prevAll.find(e=>e.rank===r)).filter(Boolean);
+        const top3=prevAll.slice(0,3);
         if(top3.length){
             hofHtml=`<div style="background:linear-gradient(135deg,#0d1b3d,#123166);color:#fff;padding:16px 12px;border-radius:16px;font-size:11px;margin-bottom:10px;text-align:center;border:1px solid #ffd70055;box-shadow:0 6px 18px rgba(0,0,0,0.4)">
     <div style="color:#ffd700;font-weight:900;font-size:13px;letter-spacing:0.4px">🏆 LAST MONTH'S TOP 3 — ${lastMonth} CHAMPIONS 🏆</div>
@@ -3608,15 +3608,16 @@ async function openLB(){
     }catch(e){}
 
     let meId=myUid;
-    const first=all.find(e=>e.rank===1);
-    const second=all.find(e=>e.rank===2);
-    const third=all.find(e=>e.rank===3);
+    // Canonical order is already highest formula output -> lowest. Never infer rank from visual position.
+    const first=all[0]||null;
+    const second=all[1]||null;
+    const third=all[2]||null;
     let podiumHtml=`<div style="display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;align-items:stretch;margin:12px 0">`;
-    if(second)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(192,192,192,0.15);padding:10px 6px;border-radius:12px;border:1px solid #c0c0c0;word-break:break-word"><div style="font-size:20px">🥈</div><div style="font-size:11px;font-weight:800;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${second.name}${all[1].id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${second.avgScore}% • ${second.avgSpeed}s<br>${second.quizCount}×</div></div>`;
+    if(second)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(192,192,192,0.15);padding:10px 6px;border-radius:12px;border:1px solid #c0c0c0;word-break:break-word"><div style="font-size:20px">🥈</div><div style="font-size:11px;font-weight:800;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${second.name}${second.id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${second.avgScore}% • ${second.avgSpeed}s<br>${second.quizCount}×</div></div>`;
     else podiumHtml+=`<div></div>`;
-    if(first)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:linear-gradient(180deg,rgba(255,215,0,0.28),rgba(255,215,0,0.08));padding:14px 6px;border-radius:14px;border:1.5px solid gold;word-break:break-word"><div style="font-size:26px">🥇</div><div style="font-size:12px;font-weight:900;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${first.name}${all[0].id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${first.avgScore}% • ${first.avgSpeed}s • ${first.quizCount}×</div><div style="font-size:8px;color:var(--muted)">${first.rankScore.toFixed(1)} pts</div></div>`;
+    if(first)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:linear-gradient(180deg,rgba(255,215,0,0.28),rgba(255,215,0,0.08));padding:14px 6px;border-radius:14px;border:1.5px solid gold;word-break:break-word"><div style="font-size:26px">🥇</div><div style="font-size:12px;font-weight:900;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${first.name}${first.id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${first.avgScore}% • ${first.avgSpeed}s • ${first.quizCount}×</div><div style="font-size:8px;color:var(--muted)">${first.rankScore.toFixed(1)} pts</div></div>`;
     else podiumHtml+=`<div></div>`;
-    if(third)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(205,127,50,0.15);padding:10px 6px;border-radius:12px;border:1px solid #cd7f32;word-break:break-word"><div style="font-size:20px">🥉</div><div style="font-size:11px;font-weight:800;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${third.name}${all[2].id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${third.avgScore}% • ${third.avgSpeed}s<br>${third.quizCount}×</div></div>`;
+    if(third)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(205,127,50,0.15);padding:10px 6px;border-radius:12px;border:1px solid #cd7f32;word-break:break-word"><div style="font-size:20px">🥉</div><div style="font-size:11px;font-weight:800;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${third.name}${third.id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${third.avgScore}% • ${third.avgSpeed}s<br>${third.quizCount}×</div></div>`;
     else podiumHtml+=`<div></div>`;
     podiumHtml+=`</div>`;
 
@@ -3629,10 +3630,10 @@ async function openLB(){
 
     $('lbBody').innerHTML=all.map((u,idx)=>{
         let isMe=u.id===meId;
-        let title=idx===0?'🥇 1ST':idx===1?'🥈 2ND':idx===2?'🥉 3RD':`#${idx+1}`;
+        let title=u.rank===1?'🥇 1ST':u.rank===2?'🥈 2ND':u.rank===3?'🥉 3RD':`#${u.rank}`;
         let rowClass=isMe?'class="me"':'';
         return `<tr ${rowClass}>
-            <td style="padding:8px 6px;font-weight:800;text-align:center">${idx+1}</td>
+            <td style="padding:8px 6px;font-weight:800;text-align:center">${u.rank}</td>
            <td style="padding:8px 6px;font-weight:600;word-break:break-word;white-space:normal;min-width:100px;text-transform:capitalize">${u.name}${isMe?'<span style="color:var(--accent);font-size:9px;margin-left:4px">(you)</span>':''}</td>
             <td style="padding:8px 6px;font-weight:800">${u.avgScore}%</td>
             <td style="padding:8px 6px">${u.avgSpeed}s</td>
