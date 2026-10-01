@@ -3590,9 +3590,9 @@ async function openLB(){
             return diff || String(a.name||'').localeCompare(String(b.name||''));
         });
         let top3=prevAll.slice(0,3);
-        let first=top3[0]||null;
+        let first=top3[2]||null;
         let second=top3[1]||null;
-        let third=top3[2]||null;
+        let third=top3[0]||null;
         if(top3.length){
             hofHtml=`<div style="background:linear-gradient(135deg,#0d1b3d,#123166);color:#fff;padding:16px 12px;border-radius:16px;font-size:11px;margin-bottom:10px;text-align:center;border:1px solid #ffd70055;box-shadow:0 6px 18px rgba(0,0,0,0.4)">
     <div style="color:#ffd700;font-weight:900;font-size:13px;letter-spacing:0.4px">🏆 LAST MONTH'S TOP 3 — ${lastMonth} CHAMPIONS 🏆</div>
