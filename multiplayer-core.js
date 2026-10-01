@@ -7036,6 +7036,7 @@ async function openLB(){
             const diff=(Number(b.rankScore)||0)-(Number(a.rankScore)||0);
             return diff || String(a.name||'').localeCompare(String(b.name||''));
         });
+        // MONTHLY_TOP3_FORCE_DEPLOY_2026_10_01
         let top3=prevAll.slice(0,3);
         let first=top3[2]||null;
         let second=top3[1]||null;
