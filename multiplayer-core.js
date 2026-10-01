@@ -7046,7 +7046,6 @@ async function openLB(){
         statusEl.style.color = healthy ? 'var(--success)' : 'var(--error)';
     }
 
-    let hof=null;try{let hs=await mdb.ref('mp_lb_hof').get();hof=hs.exists()?hs.val():null;}catch(e){}
     let hofHtml='';
     if(hof && Date.now()<hof.expires){
         // Slightly taller/shorter podium blocks per rank (gold tallest) so the hierarchy reads
