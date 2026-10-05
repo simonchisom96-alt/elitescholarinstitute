@@ -25,11 +25,108 @@
       // OneSignal remains responsible for background/closed-tab push delivery.
 
       readyResolve(OneSignal);
+      scheduleESIPushReminderCheck();
     } catch (error) {
       console.error("[ESI OneSignal] initialization failed", error);
       readyReject(error);
     }
   });
+
+  // Show a lightweight ESI reminder whenever push is not active.
+  // The native browser permission prompt is requested only from the user's
+  // click, because browsers can block unsolicited permission requests.
+  function getBrowserPermission() {
+    return ("Notification" in window) ? Notification.permission : "unsupported";
+  }
+
+  function removeESIPushReminder() {
+    const el = document.getElementById("esiPushReminder");
+    if (el) el.remove();
+  }
+
+  function showESIPushReminder(permission) {
+    if (permission === "granted") {
+      removeESIPushReminder();
+      return;
+    }
+    if (document.getElementById("esiPushReminder")) return;
+
+    const wrap = document.createElement("div");
+    wrap.id = "esiPushReminder";
+    wrap.style.cssText =
+      "position:fixed;left:12px;right:12px;bottom:88px;z-index:99999;" +
+      "background:#0d1b3e;color:#f2f6ff;border:1px solid #2a4d8f;" +
+      "border-radius:14px;padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,.45);" +
+      "font:600 12px Poppins,Arial,sans-serif;display:flex;align-items:center;gap:10px;";
+
+    const text = document.createElement("div");
+    text.style.cssText = "flex:1;line-height:1.35;";
+    text.textContent = permission === "denied"
+      ? "🔔 ESI notifications are blocked. Turn them back on in your browser's site settings."
+      : "🔔 Turn on ESI notifications so you don't miss announcements.";
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = permission === "denied" ? "Settings" : "Enable";
+    button.style.cssText =
+      "border:0;border-radius:9px;padding:8px 11px;background:#ff8a00;" +
+      "color:#1a0e00;font:800 11px Poppins,Arial,sans-serif;white-space:nowrap;";
+
+    if (permission === "denied") {
+      button.addEventListener("click", () => {
+        // Browsers do not allow a website to override an explicit denial.
+        // Give the user the exact browser-level next step instead.
+        alert("Open your browser's site settings for Elite Scholar Institute and change Notifications to Allow, then return here.");
+      });
+    } else {
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        button.textContent = "Enabling…";
+        try {
+          const result = await window.requestESIPushPermission();
+          if (result === true || result === "granted") {
+            removeESIPushReminder();
+          } else {
+            button.disabled = false;
+            button.textContent = "Enable";
+          }
+        } catch (error) {
+          console.error("[ESI OneSignal] permission request failed", error);
+          button.disabled = false;
+          button.textContent = "Enable";
+        }
+      });
+    }
+
+    wrap.append(text, button);
+    document.body.appendChild(wrap);
+  }
+
+  async function refreshESIPushReminder() {
+    try {
+      const OneSignal = await window.ESIOneSignalReady;
+      const browserPermission = getBrowserPermission();
+      const optedIn = !!OneSignal?.User?.PushSubscription?.optedIn;
+
+      if (browserPermission === "granted" && optedIn) {
+        removeESIPushReminder();
+      } else {
+        showESIPushReminder(browserPermission);
+      }
+    } catch (error) {
+      console.warn("[ESI OneSignal] push status check failed", error);
+    }
+  }
+
+  function scheduleESIPushReminderCheck() {
+    // Do not request permission automatically. Just re-check whenever the
+    // user returns to/refreshes the page and offer a user-initiated prompt.
+    setTimeout(refreshESIPushReminder, 1200);
+    window.addEventListener("pageshow", refreshESIPushReminder);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refreshESIPushReminder();
+    });
+  }
 
   window.requestESIPushPermission = async function() {
     const OneSignal = await window.ESIOneSignalReady;
