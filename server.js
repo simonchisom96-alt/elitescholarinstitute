@@ -168,6 +168,7 @@ function sendOneSignal(body) {
     url: body.url,
     web_url: body.url
   });
+  if (body.imageUrl) requestBody.chrome_web_image = body.imageUrl;
 
   return new Promise((resolve, reject) => {
     const req = https.request("https://api.onesignal.com/notifications", {
@@ -245,11 +246,15 @@ async function handle(req, res) {
 
       const title = String(body.title || "").trim();
       const message = String(body.message || "").trim();
+      const imageUrl = String(body.imageUrl || "").trim();
       const targetUrl = String(body.url || "/notification.html").trim();
 
       if (!title || !message) return json(res, 400, { error: "Notification title and message are required" });
-      if (title.length > 100 || message.length > 4000 || targetUrl.length > 1000) {
+      if (title.length > 100 || message.length > 4000 || imageUrl.length > 2000 || targetUrl.length > 1000) {
         return json(res, 400, { error: "Notification payload is too large" });
+      }
+      if (imageUrl && !/^https?:\/\//i.test(imageUrl)) {
+        return json(res, 400, { error: "Notification image URL must be HTTP(S)" });
       }
 
       // Only allow same-site relative destinations. This prevents the admin
@@ -259,7 +264,7 @@ async function handle(req, res) {
       }
 
       const absoluteUrl = WEBSITE_ORIGIN + targetUrl;
-      const result = await sendOneSignal({ title, message, url: absoluteUrl });
+      const result = await sendOneSignal({ title, message, imageUrl, url: absoluteUrl });
       return json(res, 200, { ok: true, id: result.id || null, recipients: result.recipients ?? null });
     } catch (error) {
       console.error("[OneSignal]", error.message);
