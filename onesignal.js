@@ -20,17 +20,9 @@
       });
       window.ESIOneSignal = OneSignal;
 
-      // OneSignal can receive a push while the ESI tab is in the foreground.
-      // Explicitly display it so the notification still pops up on-screen.
-      if (OneSignal.Notifications?.addEventListener) {
-        OneSignal.Notifications.addEventListener("foregroundWillDisplay", event => {
-          try {
-            event?.notification?.display?.();
-          } catch (e) {
-            console.warn("[ESI OneSignal] foreground display failed", e);
-          }
-        });
-      }
+      // Foreground pop-downs are handled by ESI's own service worker in
+      // password.js so Android/mobile browsers get a reliable native alert.
+      // OneSignal remains responsible for background/closed-tab push delivery.
 
       readyResolve(OneSignal);
     } catch (error) {
