@@ -82,6 +82,7 @@ let pageLimit = 20;
 let hasMore = false;
 let initialLoadDone = false;
 let lastMaxTimestamp = 0;
+let esiWasOffline = !navigator.onLine;
 let dbRefHandle = null, dbRefCb = null;
 let observer = null;
 
@@ -190,6 +191,12 @@ function changeFontSize(size, save=true){
 /* ============================================================
    REALTIME SUBSCRIPTION
 ============================================================ */
+window.addEventListener('offline', ()=>{ esiWasOffline = true; });
+window.addEventListener('online', ()=>{
+  esiWasOffline = true;
+  try{ subscribe(); }catch(e){ console.warn('[ESI reconnect]', e); }
+});
+
 function subscribe(){
   if(dbRefHandle && dbRefCb) dbRefHandle.off('value', dbRefCb);
   const ref = db.ref('notifications').orderByChild('timestamp').limitToLast(pageLimit);
@@ -212,12 +219,14 @@ function processSnapshot(snap){
     if(item.views && item.views[myUid()]) viewedIds.add(id);
   });
   if(initialLoadDone){
+    const recoveringFromOffline = esiWasOffline;
     ids.forEach(id=>{
       const item = newCache[id];
       if((item.timestamp||0) > lastMaxTimestamp){
-        handleNewItem(item);
+        handleNewItem(item, recoveringFromOffline);
       }
     });
+    esiWasOffline = false;
   }
   lastMaxTimestamp = Math.max(lastMaxTimestamp, maxTs);
   cache = newCache;
@@ -270,37 +279,57 @@ function playBeep(){
     o.start(); o.stop(ctx.currentTime+0.5);
   }catch(e){}
 }
-async function showESIForegroundNotification(preview, item){
+function getESINotificationContent(item){
+  if(item?.type === 'poll' && item.poll){
+    const options = Array.isArray(item.poll.options) ? item.poll.options : [];
+    return '📊 ' + String(item.poll.question || 'New poll') +
+      (options.length ? '\n' + options.slice(0,4).map((x,i)=>String.fromCharCode(65+i)+'. '+String(x)).join('\n') : '');
+  }
+  if(item?.type === 'quiz' && item.quiz){
+    const options = Array.isArray(item.quiz.options) ? item.quiz.options : [];
+    return '💡 ' + String(item.quiz.question || 'New quiz') +
+      (options.length ? '\n' + options.slice(0,4).map((x,i)=>String.fromCharCode(65+i)+'. '+String(x)).join('\n') : '');
+  }
+  if(item?.type === 'image') return '🖼️ ' + String(item.text || 'New image announcement');
+  return String(item?.text || 'New Elite Scholar Institute notification');
+}
+
+async function showESIForegroundNotification(item, forceNative=false){
   if(!('Notification' in window) || Notification.permission!=='granted') return;
   try{
     const reg = await navigator.serviceWorker.ready;
-    await reg.showNotification('Elite Scholar Institute', {
-      body: preview.slice(0,120),
+    const imageCandidate = String(item?.imageUrl || item?.poll?.imageUrl || item?.quiz?.imageUrl || '').trim();
+    const options = {
+      body: getESINotificationContent(item).slice(0,1000),
       icon: '/logo.jpg',
       badge: '/logo.jpg',
       tag: 'esi-broadcast-' + String(item.id || item.timestamp || Date.now()),
-      data: { url: '/notification.html' }
-    });
+      renotify: true,
+      data: { url: '/notification.html', id: item.id || null }
+    };
+    if(/^https:\/\/[^\s]+$/i.test(imageCandidate)) options.image = imageCandidate;
+    await reg.showNotification(
+      forceNative ? '📥 ESI — New while you were offline' : 'Elite Scholar Institute',
+      options
+    );
   }catch(e){
     console.warn('[ESI foreground notification]', e);
   }
 }
-function handleNewItem(item){
-  const preview = (item.poll && item.poll.question) || (item.quiz && item.quiz.question) || (item.text||'New announcement');
-  const label = item.type==='poll' ? '📊 New poll: ' : item.type==='quiz' ? '💡 New quiz: ' : item.type==='image' ? '🖼️ New image: ' : '💬 Announcement: ';
-  toast(label + preview.slice(0,40), item.priority==='urgent' ? 'orange' : 'blue');
-  playBeep();
 
-  if(document.hidden){
+function handleNewItem(item, forceNative=false){
+  const preview = getESINotificationContent(item);
+  const label = item.type==='poll' ? '📊 New poll: ' :
+    item.type==='quiz' ? '💡 New quiz: ' :
+    item.type==='image' ? '🖼️ New image: ' : '💬 Announcement: ';
+  toast(label + preview.replace(/\n/g,' ').slice(0,40), item.priority==='urgent' ? 'orange' : 'blue');
+  playBeep();
+  if(document.hidden || forceNative){
     startFlash();
-    // Background/closed delivery is handled by OneSignal.
+    showESIForegroundNotification(item, forceNative);
     return;
   }
-
-  // On Android/mobile browsers, the page-level Notification constructor is
-  // unreliable. Use the already-registered ESI service worker so a foreground
-  // announcement produces the same native notification pop-down.
-  showESIForegroundNotification(preview, item);
+  showESIForegroundNotification(item, false);
 }
 
 /* ============================================================
@@ -929,39 +958,38 @@ function fileToDataUrl(file, callback){
 
 async function pushNotif(data){
   try{
+    // Firebase is the source of truth. Save first, close the composer and
+    // render immediately. OneSignal must NEVER hold the ESI feed hostage.
     const ref = db.ref('notifications').push(data);
     await ref;
 
-    // Keep the existing Firebase in-app notification system as the source
-    // of truth, then fan the same broadcast out through OneSignal.
-    let pushResult = null;
-    try{
-      if(window.sendESIPush){
-        const preview =
-          data.text ||
-          (data.poll && data.poll.question) ||
-          (data.quiz && data.quiz.question) ||
-          'New Elite Scholar Institute notification';
-
-        pushResult = await window.sendESIPush({
-          title: data.priority === 'urgent' ? '🟠 ESI Urgent Announcement' : 'Elite Scholar Institute',
-          message: preview,
-          url: '/notification.html'
-        });
-      }
-    }catch(pushErr){
-      console.error('[ESI push]', pushErr);
-      toast('Saved in ESI feed, but web push failed: ' + pushErr.message, 'orange');
-    }
-
-    closeCompose();
     cache[ref.key] = { ...data, id: ref.key, timestamp: Date.now() };
+    closeCompose();
     renderFeed();
+    toast('Broadcast saved successfully ✓', 'blue');
 
-    if(pushResult){
-      toast('Broadcast + web push sent successfully ✓', 'blue');
-    }else{
-      toast('Broadcast saved successfully ✓', 'blue');
+    // Web push runs only after the Firebase UI is already updated.
+    if(window.sendESIPush){
+      const preview =
+        data.type === 'poll' && data.poll ? '📊 ' + String(data.poll.question || 'New poll') :
+        data.type === 'quiz' && data.quiz ? '💡 ' + String(data.quiz.question || 'New quiz') :
+        data.type === 'image' ? '🖼️ ' + String(data.text || 'New image announcement') :
+        String(data.text || 'New Elite Scholar Institute notification');
+
+      window.sendESIPush({
+        title: data.priority === 'urgent' ? '🟠 ESI Urgent Announcement' :
+          data.type === 'poll' ? '📊 ESI Poll' :
+          data.type === 'quiz' ? '💡 ESI Quiz' :
+          data.type === 'image' ? '🖼️ ESI Image' :
+          'Elite Scholar Institute',
+        message: preview,
+        url: '/notification.html'
+      }).then(()=>{
+        toast('Web push sent ✓', 'blue');
+      }).catch(pushErr=>{
+        console.error('[ESI push]', pushErr);
+        toast('Broadcast saved; web push failed: ' + pushErr.message, 'orange');
+      });
     }
   }catch(e){
     toast('Send failed: ' + e.message, 'orange');
