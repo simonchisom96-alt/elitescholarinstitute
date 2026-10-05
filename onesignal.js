@@ -44,8 +44,8 @@
     if (el) el.remove();
   }
 
-  function showESIPushReminder(permission) {
-    if (permission === "granted") {
+  function showESIPushReminder(permission, optedIn) {
+    if (permission === "granted" && optedIn) {
       removeESIPushReminder();
       return;
     }
@@ -61,24 +61,43 @@
 
     const text = document.createElement("div");
     text.style.cssText = "flex:1;line-height:1.35;";
-    text.textContent = permission === "denied"
-      ? "🔔 ESI notifications are blocked. Turn them back on in your browser's site settings."
-      : "🔔 Turn on ESI notifications so you don't miss announcements.";
 
     const button = document.createElement("button");
     button.type = "button";
-    button.textContent = permission === "denied" ? "Settings" : "Enable";
     button.style.cssText =
       "border:0;border-radius:9px;padding:8px 11px;background:#ff8a00;" +
       "color:#1a0e00;font:800 11px Poppins,Arial,sans-serif;white-space:nowrap;";
 
     if (permission === "denied") {
+      text.textContent = "🔔 ESI notifications are blocked by your browser.";
+      button.textContent = "Settings";
       button.addEventListener("click", () => {
-        // Browsers do not allow a website to override an explicit denial.
-        // Give the user the exact browser-level next step instead.
-        alert("Open your browser's site settings for Elite Scholar Institute and change Notifications to Allow, then return here.");
+        alert("Notifications are blocked for ESI. Re-enable Notifications for this site in your browser settings, then return to ESI.");
+      });
+    } else if (permission === "granted" && !optedIn) {
+      // The browser permission is already granted. In this case there is
+      // normally no browser permission popup to show; OneSignal can simply
+      // opt the existing permission back in.
+      text.textContent = "🔔 ESI notifications are turned off. Turn them back on?";
+      button.textContent = "Enable";
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        button.textContent = "Enabling…";
+        try {
+          const OneSignal = await window.ESIOneSignalReady;
+          if (OneSignal?.User?.PushSubscription?.optIn) {
+            await OneSignal.User.PushSubscription.optIn();
+          }
+          await refreshESIPushReminder();
+        } catch (error) {
+          console.error("[ESI OneSignal] re-subscribe failed", error);
+          button.disabled = false;
+          button.textContent = "Enable";
+        }
       });
     } else {
+      text.textContent = "🔔 Turn on ESI notifications so you don't miss announcements.";
+      button.textContent = "Enable";
       button.addEventListener("click", async () => {
         button.disabled = true;
         button.textContent = "Enabling…";
@@ -111,7 +130,7 @@
       if (browserPermission === "granted" && optedIn) {
         removeESIPushReminder();
       } else {
-        showESIPushReminder(browserPermission);
+        showESIPushReminder(browserPermission, optedIn);
       }
     } catch (error) {
       console.warn("[ESI OneSignal] push status check failed", error);
