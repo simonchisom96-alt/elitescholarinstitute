@@ -92,6 +92,92 @@ let observer = null;
 const ALL_REACTIONS = ['😴','🙇','😂','🥳','📚','😭','🤓','😄','👀', '🧠', '🎓', '⚡', '🏆','🥺','🥶','🥵','👍','❤️', '🔥', '😘', '🎉', '😮', '👏', '💯', '🚀', '💡', '🤔', '🎯', '🙌','💪','📌','🌚','🤭','😁','☺️'];
 
 /* ============================================================
+   NOTIFICATION IMAGE CACHE
+   Firebase Storage remains the online source of truth. A local
+   Cache API copy is also kept for every notification image so
+   previously loaded images survive reloads and offline use.
+============================================================ */
+const NOTIFICATION_IMAGE_CACHE = 'esi-notification-images-v1';
+const notificationImageObjectUrls = new Map();
+
+async function cacheNotificationImageUrl(url){
+  url = String(url || '');
+  if(!/^https?:\\/\\//i.test(url) || !('caches' in window)) return false;
+  try{
+    const cache = await caches.open(NOTIFICATION_IMAGE_CACHE);
+    if(await cache.match(url)) return true;
+    let response;
+    try{
+      response = await fetch(url, {cache:'force-cache'});
+    }catch(_){
+      response = await fetch(url, {mode:'no-cors', cache:'force-cache'});
+    }
+    if(response && (response.ok || response.type === 'opaque')){
+      await cache.put(url, response.clone());
+      return true;
+    }
+  }catch(err){
+    console.warn('[ESI image cache]', err);
+  }
+  return false;
+}
+
+async function cacheNotificationImageBlob(url, blob){
+  url = String(url || '');
+  if(!url || !blob || !('caches' in window)) return false;
+  try{
+    const cache = await caches.open(NOTIFICATION_IMAGE_CACHE);
+    await cache.put(url, new Response(blob, {
+      headers:{'Content-Type': blob.type || 'image/jpeg', 'Cache-Control':'public,max-age=31536000,immutable'}
+    }));
+    return true;
+  }catch(err){
+    console.warn('[ESI image blob cache]', err);
+    return false;
+  }
+}
+
+async function getCachedNotificationImageUrl(url){
+  url = String(url || '');
+  if(!/^https?:\\/\\//i.test(url) || !('caches' in window)) return '';
+  if(notificationImageObjectUrls.has(url)) return notificationImageObjectUrls.get(url);
+  try{
+    const cache = await caches.open(NOTIFICATION_IMAGE_CACHE);
+    const response = await cache.match(url);
+    if(!response) return '';
+    const blob = await response.blob();
+    if(!blob.size) return '';
+    const objectUrl = URL.createObjectURL(blob);
+    notificationImageObjectUrls.set(url, objectUrl);
+    return objectUrl;
+  }catch(err){
+    console.warn('[ESI cached image restore]', err);
+    return '';
+  }
+}
+
+async function hydrateNotificationImages(){
+  const images = Array.from(document.querySelectorAll('img[data-notification-image-url]'));
+  if(!images.length) return;
+  await Promise.all(images.map(async img=>{
+    const source = img.dataset.notificationImageUrl;
+    if(!source) return;
+    const cachedUrl = await getCachedNotificationImageUrl(source);
+    if(cachedUrl) img.src = cachedUrl;
+  }));
+}
+
+function warmNotificationImageCache(items){
+  const urls = [];
+  Object.values(items || {}).forEach(it=>{
+    if(it?.type === 'image' && it.imageUrl) urls.push(it.imageUrl);
+    if(it?.type === 'poll' && it.poll?.imageUrl) urls.push(it.poll.imageUrl);
+    if(it?.type === 'quiz' && it.quiz?.imageUrl) urls.push(it.quiz.imageUrl);
+  });
+  [...new Set(urls)].slice(0,50).forEach(url=>{ cacheNotificationImageUrl(url); });
+}
+
+/* ============================================================
    UTIL & HELPERS
 ============================================================ */
 function esc(str){
@@ -208,6 +294,7 @@ function saveNotificationCache(items){
       .sort((a,b)=>Number(b.timestamp||0)-Number(a.timestamp||0))
       .slice(0,50);
     localStorage.setItem(NOTIFICATION_CACHE_KEY, JSON.stringify(list));
+    warmNotificationImageCache(items);
   }catch(err){
     console.warn('[ESI notification cache save]', err);
   }
@@ -232,6 +319,7 @@ function restoreNotificationCache(){
     }
     $('skeletonWrap').style.display='none';
     renderFeed();
+    warmNotificationImageCache(restored);
     updateUnreadBadge();
     return true;
   }catch(err){
@@ -490,6 +578,8 @@ function renderFeed(){
     if(p) p.classList.add('show');
   }
   listEl.scrollTop = prevScrollTop;
+  // Restore notification images from the local cache as soon as the cards exist.
+  hydrateNotificationImages();
   if(observer){
     document.querySelectorAll('.notif-card.unread').forEach(el=>observer.observe(el));
     document.querySelectorAll('.notif-card').forEach(el=>observer.observe(el));
@@ -506,14 +596,14 @@ function renderCard(it){
     bodyHtml = `<div class="card-body">${esc(it.text)}</div>`;
   } else if(it.type==='image'){
     bodyHtml = (it.text ? `<div class="card-body">${esc(it.text)}</div>` : '') +
-      `<img class="card-img" src="${esc(it.imageUrl)}" loading="lazy" data-action="lightbox" data-url="${esc(it.imageUrl)}" alt="broadcast image">`;
+      `<img class="card-img" src="${esc(it.imageUrl)}" loading="lazy" data-notification-image-url="${esc(it.imageUrl)}" data-action="lightbox" data-url="${esc(it.imageUrl)}" alt="broadcast image">`;
   } else if(it.type==='poll' && it.poll){
     const votes = it.poll.votes || {};
     const voterEntries = Object.keys(votes).map(dId=>({dId, ...normalizeVote(votes[dId])})).filter(e=>e.choices.length);
     const total = voterEntries.length;
     const myVote = normalizeVote(votes[myUid()]).choices;
     const isMultiple = !!it.poll.allowMultiple;
-    const pollImg = it.poll.imageUrl ? `<img class="card-img" src="${esc(it.poll.imageUrl)}" loading="lazy" data-action="lightbox" data-url="${esc(it.poll.imageUrl)}" alt="poll image">` : '';
+    const pollImg = it.poll.imageUrl ? `<img class="card-img" src="${esc(it.poll.imageUrl)}" loading="lazy" data-notification-image-url="${esc(it.poll.imageUrl)}" data-action="lightbox" data-url="${esc(it.poll.imageUrl)}" alt="poll image">` : '';
     
     bodyHtml = pollImg + `<div class="poll-q" style="margin-top:${pollImg?'8px':'0'}">${esc(it.poll.question)}</div>` +
       it.poll.options.map((opt,idx)=>{
@@ -531,7 +621,7 @@ function renderCard(it){
     const quizVoterEntries = Object.keys(quizVotes).map(dId=>({dId, ...normalizeVote(quizVotes[dId])})).filter(e=>e.choices.length);
     const myQuizAns = normalizeVote(quizVotes[myUid()]).choices[0]; // index chosen by user
     const hasAnswered = myQuizAns !== undefined;
-    const quizImg = it.quiz.imageUrl ? `<img class="card-img" src="${esc(it.quiz.imageUrl)}" loading="lazy" data-action="lightbox" data-url="${esc(it.quiz.imageUrl)}" alt="quiz image">` : '';
+    const quizImg = it.quiz.imageUrl ? `<img class="card-img" src="${esc(it.quiz.imageUrl)}" loading="lazy" data-notification-image-url="${esc(it.quiz.imageUrl)}" data-action="lightbox" data-url="${esc(it.quiz.imageUrl)}" alt="quiz image">` : '';
 
     bodyHtml = quizImg + `<div class="poll-q" style="margin-top:${quizImg?'8px':'0'}">💡 Quiz: ${esc(it.quiz.question)}</div>` +
       it.quiz.options.map((opt, idx) => {
@@ -1066,15 +1156,35 @@ function prepareImageBlob(file){
 async function uploadNotificationImage(file){
   if(!file) throw new Error('No image selected');
   if(!auth.currentUser) throw new Error('Admin authentication required');
+
   const blob = await prepareImageBlob(file);
   const safeName = String(file.name || 'image').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,80);
   const path = 'notification-images/' + auth.currentUser.uid + '/' + Date.now() + '-' + Math.random().toString(36).slice(2,10) + '-' + safeName.replace(/\.[^.]+$/,'') + '.jpg';
   const ref = storage.ref(path);
-  await ref.put(blob, {
-    contentType: 'image/jpeg',
-    cacheControl: 'public,max-age=31536000,immutable'
+
+  await new Promise((resolve,reject)=>{
+    const task = ref.put(blob, {
+      contentType:'image/jpeg',
+      cacheControl:'public,max-age=31536000,immutable'
+    });
+    task.on(firebase.storage.TaskEvent.STATE_CHANGED,
+      snap=>{
+        const pct = snap.totalBytes ? Math.round(snap.bytesTransferred / snap.totalBytes * 100) : 0;
+        const bar = $('uploadProgressBar');
+        const label = $('uploadProgressLabel');
+        if(bar) bar.style.width = pct + '%';
+        if(label) label.textContent = 'Uploading image… ' + pct + '%';
+      },
+      reject,
+      resolve
+    );
   });
-  return await ref.getDownloadURL();
+
+  const imageUrl = await ref.getDownloadURL();
+  // Store the exact processed bytes locally too. This avoids a second network
+  // download and makes the image available after reload/offline.
+  await cacheNotificationImageBlob(imageUrl, blob);
+  return imageUrl;
 }
 
 async function pushNotif(data){
@@ -1086,6 +1196,9 @@ async function pushNotif(data){
 
     const savedTimestamp = typeof data.timestamp === 'number' ? data.timestamp : Date.now();
     cache[ref.key] = { ...data, id: ref.key, timestamp: savedTimestamp };
+    // For URL-based images, build the local offline copy in the background.
+    const pushImageUrl = data.type==='image' ? data.imageUrl : (data.type==='poll' ? data.poll?.imageUrl : (data.type==='quiz' ? data.quiz?.imageUrl : ''));
+    if(pushImageUrl) cacheNotificationImageUrl(pushImageUrl);
     closeCompose();
     renderFeed();
     updateUnreadBadge();
@@ -1418,9 +1531,10 @@ function exportSavedPosts(){
    LIGHTBOX VIEWER
 ============================================================ */
 let activeLightboxUrl = '';
-function openLightbox(url){
+async function openLightbox(url){
   activeLightboxUrl = url;
-  $('lightboxImg').src = url;
+  const cachedUrl = await getCachedNotificationImageUrl(url);
+  $('lightboxImg').src = cachedUrl || url;
   $('lightboxModal').classList.add('show');
 }
 function closeLightbox(){
@@ -1453,6 +1567,7 @@ async function init(){
   // messages/images remain visible even if the device is offline or the page
   // is reopened before Firebase reconnects.
   restoreNotificationCache();
+  warmNotificationImageCache(cache);
 
   await replayMissedBroadcasts();
   subscribe();
