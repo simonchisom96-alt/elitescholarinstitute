@@ -44,19 +44,28 @@
     }
 
     const token = await auth.currentUser.getIdToken(true);
-    const response = await fetch("https://elitescholarinstitute-api.onrender.com/api/onesignal/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + token
-      },
-      credentials: "same-origin",
-      body: JSON.stringify({
-        title: String(payload.title || "Elite Scholar Institute").slice(0, 100),
-        message: String(payload.message || "New announcement").slice(0, 4000),
-        url: String(payload.url || "/notification.html").slice(0, 1000)
-      })
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    let response;
+    try{
+      response = await fetch("https://elitescholarinstitute-api.onrender.com/api/onesignal/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        credentials: "same-origin",
+        signal: controller.signal,
+        body: JSON.stringify({
+          title: String(payload.title || "Elite Scholar Institute").slice(0, 100),
+          message: String(payload.message || "New announcement").slice(0, 4000),
+          imageUrl: String(payload.imageUrl || "").slice(0, 2000),
+          url: String(payload.url || "/notification.html").slice(0, 1000)
+        })
+      });
+    }finally{
+      clearTimeout(timeout);
+    }
 
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
