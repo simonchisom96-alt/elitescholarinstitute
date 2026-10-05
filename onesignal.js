@@ -14,7 +14,8 @@
     try {
       await OneSignal.init({
         appId: APP_ID,
-        allowLocalhostAsSecureOrigin: false
+        allowLocalhostAsSecureOrigin: false,
+        serviceWorkerPath: "/OneSignalSDKWorker.js"
       });
       window.ESIOneSignal = OneSignal;
       readyResolve(OneSignal);
