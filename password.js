@@ -24,6 +24,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
+const storage = firebase.storage();
 
 // Every visitor (admin or not) signs in anonymously the moment the page
 // loads. This gives Firebase Rules something real to check (auth != null)
