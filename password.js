@@ -1152,7 +1152,7 @@ async function sendImage(){
   if(mode==='url'){
     const url = $('composeImgUrl').value.trim();
     if(!url){ toast('Paste an image URL','orange'); return; }
-    if(!/^https?:\\/\\//i.test(url)){ toast('Use a valid HTTPS image URL','orange'); return; }
+    if(!/^https?:\/\//i.test(url)){ toast('Use a valid HTTPS image URL','orange'); return; }
     pushNotif({
       type:'image', imageUrl:url, text:caption, priority, pinned:false,
       authorName: displayName || 'Elite Scholar Institute',
@@ -1209,7 +1209,7 @@ function sendPoll(){
       toast('Poll image upload failed: ' + err.message, 'orange');
     }).finally(()=>{ $('uploadProgressWrap').style.display='none'; });
   } else if(pollImgUrlInput){
-    if(!/^https?:\\/\\//i.test(pollImgUrlInput)){ toast('Use a valid HTTPS image URL','orange'); return; }
+    if(!/^https?:\/\//i.test(pollImgUrlInput)){ toast('Use a valid HTTPS image URL','orange'); return; }
     finalizePoll(pollImgUrlInput);
   } else {
     finalizePoll('');
@@ -1260,7 +1260,7 @@ function sendQuiz(){
       toast('Quiz image upload failed: ' + err.message, 'orange');
     }).finally(()=>{ $('uploadProgressWrap').style.display='none'; });
   } else if(quizImgUrlInput){
-    if(!/^https?:\\/\\//i.test(quizImgUrlInput)){ toast('Use a valid HTTPS image URL','orange'); return; }
+    if(!/^https?:\/\//i.test(quizImgUrlInput)){ toast('Use a valid HTTPS image URL','orange'); return; }
     finalizeQuiz(quizImgUrlInput);
   } else {
     finalizeQuiz('');
