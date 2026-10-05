@@ -1023,17 +1023,37 @@ function fileToDataUrl(file, callback){
 
 async function pushNotif(data){
   try{
-    // Firebase is the source of truth. Save first, close the composer and
-    // render immediately. OneSignal must NEVER hold the ESI feed hostage.
-    const ref = db.ref('notifications').push(data);
-    await ref;
+    // IMPORTANT: push() queues the write locally and gives us the key
+    // immediately. Never await the server commit before updating the UI;
+    // otherwise a slow/offline Firebase connection makes the composer look
+    // permanently stuck on "loading".
+    const ref = db.ref('notifications').push();
+    const optimisticItem = {
+      ...data,
+      id: ref.key,
+      timestamp: Date.now()
+    };
 
-    cache[ref.key] = { ...data, id: ref.key, timestamp: Date.now() };
+    cache[ref.key] = optimisticItem;
     closeCompose();
     renderFeed();
-    toast('Broadcast saved successfully ✓', 'blue');
+    toast('Broadcast sent ✓', 'blue');
 
-    // Web push runs only after the Firebase UI is already updated.
+    // Commit to Firebase in the background. Firebase's realtime client
+    // keeps local changes responsive and synchronizes them when connectivity
+    // returns. If the server rejects the write, remove the optimistic card.
+    ref.set(data).then(()=>{
+      console.log('[ESI notifications] broadcast committed', ref.key);
+    }).catch(writeErr=>{
+      console.error('[ESI notifications] broadcast write failed', writeErr);
+      if(cache[ref.key]){
+        delete cache[ref.key];
+        renderFeed();
+      }
+      toast('Broadcast could not be saved: ' + (writeErr.message || 'Firebase error'), 'orange');
+    });
+
+    // Web push is also completely outside the feed's critical path.
     if(window.sendESIPush){
       const preview =
         data.type === 'poll' && data.poll ? '📊 ' + String(data.poll.question || 'New poll') :
