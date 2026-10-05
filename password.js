@@ -85,6 +85,9 @@ let lastMaxTimestamp = 0;
 let esiWasOffline = !navigator.onLine;
 let dbRefHandle = null, dbRefCb = null;
 let observer = null;
+let initialLoadWatchdog = null;
+let initialLoadAttempt = 0;
+const INITIAL_LOAD_TIMEOUT = 12000;
 
 const ALL_REACTIONS = ['😴','🙇','😂','🥳','📚','😭','🤓','😄','👀', '🧠', '🎓', '⚡', '🏆','🥺','🥶','🥵','👍','❤️', '🔥', '😘', '🎉', '😮', '👏', '💯', '🚀', '💡', '🤔', '🎯', '🙌','💪','📌','🌚','🤭','😁','☺️'];
 
@@ -197,45 +200,107 @@ window.addEventListener('online', ()=>{
   try{ subscribe(); }catch(e){ console.warn('[ESI reconnect]', e); }
 });
 
+function finishInitialLoad(){
+  if(initialLoadWatchdog){
+    clearTimeout(initialLoadWatchdog);
+    initialLoadWatchdog = null;
+  }
+  const skeleton = $('skeletonWrap');
+  if(skeleton) skeleton.style.display = 'none';
+}
+
+function startInitialLoadWatchdog(){
+  if(initialLoadDone) return;
+  if(initialLoadWatchdog) clearTimeout(initialLoadWatchdog);
+  const attempt = ++initialLoadAttempt;
+  initialLoadWatchdog = setTimeout(()=>{
+    if(initialLoadDone || attempt !== initialLoadAttempt) return;
+
+    // Never leave the whole notification page trapped behind skeleton cards.
+    finishInitialLoad();
+    $('emptyState').style.display = 'block';
+    $('emptyMsg').textContent = navigator.onLine
+      ? 'Still connecting to notifications…'
+      : 'You are offline. Your notifications will sync when you reconnect.';
+    console.warn('[ESI notifications] initial Firebase load timed out');
+  }, INITIAL_LOAD_TIMEOUT);
+}
+
 function subscribe(){
   if(dbRefHandle && dbRefCb) dbRefHandle.off('value', dbRefCb);
+
+  startInitialLoadWatchdog();
+
   const ref = db.ref('notifications').orderByChild('timestamp').limitToLast(pageLimit);
   dbRefCb = ref.on('value', processSnapshot, err=>{
-    toast('Connection error: '+err.message, 'orange');
-    $('skeletonWrap').style.display='none';
+    console.error('[ESI notifications] Firebase read error', err);
+    finishInitialLoad();
+    $('emptyState').style.display = 'block';
+    $('emptyMsg').textContent = 'Unable to load notifications: ' + (err.message || 'connection error');
+    toast('Notifications connection error: ' + (err.message || 'unknown error'), 'orange');
   });
   dbRefHandle = ref;
 }
+
 function processSnapshot(snap){
-  const val = snap.val() || {};
-  const ids = Object.keys(val);
-  const newCache = {};
-  let maxTs = 0;
-  ids.forEach(id=>{
-    const item = val[id];
-    item.id = id;
-    newCache[id] = item;
-    if((item.timestamp||0) > maxTs) maxTs = item.timestamp;
-    if(item.views && item.views[myUid()]) viewedIds.add(id);
-  });
-  if(initialLoadDone){
-    const recoveringFromOffline = esiWasOffline;
+  try{
+    const val = snap.val() || {};
+    const ids = Object.keys(val);
+    const newCache = {};
+    let maxTs = 0;
+
     ids.forEach(id=>{
-      const item = newCache[id];
-      if((item.timestamp||0) > lastMaxTimestamp){
-        handleNewItem(item, recoveringFromOffline);
-      }
+      const raw = val[id];
+
+      // Ignore malformed/deleted entries instead of allowing one bad record
+      // to break the entire feed and leave the skeleton visible forever.
+      if(!raw || typeof raw !== 'object' || Array.isArray(raw)) return;
+
+      const item = { ...raw, id };
+      newCache[id] = item;
+
+      const ts = typeof item.timestamp === 'number' ? item.timestamp : 0;
+      if(ts > maxTs) maxTs = ts;
+
+      const uid = myUid();
+      if(item.views && uid && item.views[uid]) viewedIds.add(id);
     });
-    esiWasOffline = false;
+
+    if(initialLoadDone){
+      const recoveringFromOffline = esiWasOffline;
+      Object.keys(newCache).forEach(id=>{
+        const item = newCache[id];
+        const ts = typeof item.timestamp === 'number' ? item.timestamp : 0;
+        if(ts > lastMaxTimestamp){
+          handleNewItem(item, recoveringFromOffline);
+        }
+      });
+      esiWasOffline = false;
+    }
+
+    lastMaxTimestamp = Math.max(lastMaxTimestamp, maxTs);
+    cache = newCache;
+    hasMore = ids.length >= pageLimit;
+    $('loadMoreBtn').style.display = hasMore ? 'block' : 'none';
+
+    finishInitialLoad();
+    initialLoadDone = true;
+
+    try{
+      renderFeed();
+      updateUnreadBadge();
+    }catch(renderErr){
+      console.error('[ESI notifications] feed render error', renderErr);
+      $('emptyState').style.display = 'block';
+      $('emptyMsg').textContent = 'Notifications loaded, but the feed could not be rendered.';
+    }
+  }catch(err){
+    console.error('[ESI notifications] snapshot processing error', err);
+    finishInitialLoad();
+    $('emptyState').style.display = 'block';
+    $('emptyMsg').textContent = 'Notifications could not be displayed. Retrying…';
+    toast('Notification data error — retrying', 'orange');
   }
-  lastMaxTimestamp = Math.max(lastMaxTimestamp, maxTs);
-  cache = newCache;
-  hasMore = ids.length >= pageLimit;
-  $('loadMoreBtn').style.display = hasMore ? 'block' : 'none';
-  $('skeletonWrap').style.display = 'none';
-  initialLoadDone = true;
-  renderFeed();
-  updateUnreadBadge();
 }
 function loadMore(){
   pageLimit += 20;
@@ -976,6 +1041,13 @@ async function pushNotif(data){
         data.type === 'image' ? '🖼️ ' + String(data.text || 'New image announcement') :
         String(data.text || 'New Elite Scholar Institute notification');
 
+      const richImage = String(
+        data.imageUrl ||
+        data.poll?.imageUrl ||
+        data.quiz?.imageUrl ||
+        ''
+      ).trim();
+
       window.sendESIPush({
         title: data.priority === 'urgent' ? '🟠 ESI Urgent Announcement' :
           data.type === 'poll' ? '📊 ESI Poll' :
@@ -983,6 +1055,7 @@ async function pushNotif(data){
           data.type === 'image' ? '🖼️ ESI Image' :
           'Elite Scholar Institute',
         message: preview,
+        imageUrl: /^https:\/\/[^\s]+$/i.test(richImage) ? richImage : '',
         url: '/notification.html'
       }).then(()=>{
         toast('Web push sent ✓', 'blue');
