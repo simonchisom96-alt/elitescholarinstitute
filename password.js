@@ -83,6 +83,7 @@ let pageLimit = 20;
 let hasMore = false;
 let initialLoadDone = false;
 const LAST_BROADCAST_TS_KEY = 'esi_last_broadcast_ts_v1';
+const NOTIFICATION_CACHE_KEY = 'esi_notification_cache_v1';
 let lastMaxTimestamp = Number(localStorage.getItem(LAST_BROADCAST_TS_KEY) || 0);
 let replayOnReconnect = false;
 let dbRefHandle = null, dbRefCb = null;
@@ -201,6 +202,44 @@ function changeFontSize(size, save=true){
 /* ============================================================
    REALTIME SUBSCRIPTION
 ============================================================ */
+function saveNotificationCache(items){
+  try{
+    const list = Object.values(items)
+      .sort((a,b)=>Number(b.timestamp||0)-Number(a.timestamp||0))
+      .slice(0,50);
+    localStorage.setItem(NOTIFICATION_CACHE_KEY, JSON.stringify(list));
+  }catch(err){
+    console.warn('[ESI notification cache save]', err);
+  }
+}
+
+function restoreNotificationCache(){
+  try{
+    const raw = localStorage.getItem(NOTIFICATION_CACHE_KEY);
+    if(!raw) return false;
+    const list = JSON.parse(raw);
+    if(!Array.isArray(list) || !list.length) return false;
+    const restored = {};
+    list.forEach(item=>{
+      if(item && item.id) restored[item.id] = item;
+    });
+    if(!Object.keys(restored).length) return false;
+    cache = restored;
+    const maxTs = Math.max(...Object.values(restored).map(x=>Number(x.timestamp||0)));
+    if(maxTs > lastMaxTimestamp){
+      lastMaxTimestamp = maxTs;
+      localStorage.setItem(LAST_BROADCAST_TS_KEY, String(maxTs));
+    }
+    $('skeletonWrap').style.display='none';
+    renderFeed();
+    updateUnreadBadge();
+    return true;
+  }catch(err){
+    console.warn('[ESI notification cache restore]', err);
+    return false;
+  }
+}
+
 function subscribe(){
   if(dbRefHandle && dbRefCb) dbRefHandle.off('value', dbRefCb);
   const ref = db.ref('notifications').orderByChild('timestamp').limitToLast(pageLimit);
@@ -270,6 +309,7 @@ function processSnapshot(snap){
   replayOnReconnect = false;
 
   cache = newCache;
+  saveNotificationCache(cache);
   hasMore = ids.length >= pageLimit;
   $('loadMoreBtn').style.display = hasMore ? 'block' : 'none';
   $('skeletonWrap').style.display = 'none';
@@ -1408,6 +1448,12 @@ async function init(){
   soundOn = localStorage.getItem('notif_sound_on') !== '0';
   updateAdminUI();
   setupObserver();
+
+  // Restore the last Firebase snapshot immediately so previously loaded
+  // messages/images remain visible even if the device is offline or the page
+  // is reopened before Firebase reconnects.
+  restoreNotificationCache();
+
   await replayMissedBroadcasts();
   subscribe();
 }
