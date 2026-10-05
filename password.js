@@ -81,7 +81,9 @@ let searchQuery = '';
 let pageLimit = 20;
 let hasMore = false;
 let initialLoadDone = false;
-let lastMaxTimestamp = 0;
+const LAST_BROADCAST_TS_KEY = 'esi_last_broadcast_ts_v1';
+let lastMaxTimestamp = Number(localStorage.getItem(LAST_BROADCAST_TS_KEY) || 0);
+let replayOnReconnect = false;
 let dbRefHandle = null, dbRefCb = null;
 let observer = null;
 
@@ -137,8 +139,16 @@ window.addEventListener('scroll', ()=>{
 });
 
 // Offline detection
-window.addEventListener('online', ()=> $('offlineBanner').classList.remove('show'));
-window.addEventListener('offline', ()=> $('offlineBanner').classList.add('show'));
+window.addEventListener('online', ()=>{
+  $('offlineBanner').classList.remove('show');
+  replayOnReconnect = true;
+  // Firebase reconnects automatically; refreshing only this bounded listener
+  // makes a reconnect deterministic without blocking the page.
+  subscribe();
+});
+window.addEventListener('offline', ()=>{
+  $('offlineBanner').classList.add('show');
+});
 
 /* ============================================================
    IDENTITY & LOCALSTORAGE
@@ -204,22 +214,34 @@ function processSnapshot(snap){
   const ids = Object.keys(val);
   const newCache = {};
   let maxTs = 0;
+
   ids.forEach(id=>{
-    const item = val[id];
-    item.id = id;
+    const raw = val[id];
+    const item = raw && typeof raw === 'object' ? { ...raw, id } : { id, text:String(raw || '') };
     newCache[id] = item;
-    if((item.timestamp||0) > maxTs) maxTs = item.timestamp;
+    const ts = Number(item.timestamp || 0);
+    if(ts > maxTs) maxTs = ts;
     if(item.views && item.views[myUid()]) viewedIds.add(id);
   });
+
   if(initialLoadDone){
     ids.forEach(id=>{
       const item = newCache[id];
-      if((item.timestamp||0) > lastMaxTimestamp){
-        handleNewItem(item);
-      }
+      if(Number(item.timestamp || 0) > lastMaxTimestamp) handleNewItem(item);
+    });
+  }else if(replayOnReconnect && lastMaxTimestamp > 0){
+    // Page was offline before the first fresh snapshot: replay only broadcasts
+    // newer than the last timestamp stored on this device.
+    ids.forEach(id=>{
+      const item = newCache[id];
+      if(Number(item.timestamp || 0) > lastMaxTimestamp) handleNewItem(item);
     });
   }
+
   lastMaxTimestamp = Math.max(lastMaxTimestamp, maxTs);
+  if(lastMaxTimestamp > 0) localStorage.setItem(LAST_BROADCAST_TS_KEY, String(lastMaxTimestamp));
+  replayOnReconnect = false;
+
   cache = newCache;
   hasMore = ids.length >= pageLimit;
   $('loadMoreBtn').style.display = hasMore ? 'block' : 'none';
@@ -272,15 +294,53 @@ function playBeep(){
 }
 async function showESIForegroundNotification(preview, item){
   if(!('Notification' in window) || Notification.permission!=='granted') return;
+
   try{
-    const reg = await navigator.serviceWorker.ready;
-    await reg.showNotification('Elite Scholar Institute', {
-      body: preview.slice(0,120),
+    const reg = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((_, reject)=>setTimeout(()=>reject(new Error('service worker timeout')), 5000))
+    ]);
+
+    let title = 'Elite Scholar Institute';
+    let body = String(preview || 'New announcement');
+    let image = '';
+
+    if(item.type === 'poll' && item.poll){
+      title = '📊 ESI Poll';
+      body = String(item.poll.question || 'New poll');
+      if(Array.isArray(item.poll.options) && item.poll.options.length){
+        body += '\n' + item.poll.options.slice(0,4).map((x,i)=>String.fromCharCode(65+i)+'. '+String(x)).join('  ');
+      }
+      image = item.poll.imageUrl || '';
+    }else if(item.type === 'quiz' && item.quiz){
+      title = '💡 ESI Quiz';
+      body = String(item.quiz.question || 'New quiz');
+      if(Array.isArray(item.quiz.options) && item.quiz.options.length){
+        body += '\n' + item.quiz.options.slice(0,4).map((x,i)=>String.fromCharCode(65+i)+'. '+String(x)).join('  ');
+      }
+      image = item.quiz.imageUrl || '';
+    }else if(item.type === 'image'){
+      title = '🖼️ ESI Image';
+      body = String(item.text || 'New image from Elite Scholar Institute');
+      image = item.imageUrl || '';
+    }else if(item.type === 'message'){
+      title = item.priority === 'urgent' ? '🟠 ESI Urgent Announcement' : 'Elite Scholar Institute';
+    }
+
+    const options = {
+      body: body.slice(0, 700),
       icon: '/logo.jpg',
       badge: '/logo.jpg',
       tag: 'esi-broadcast-' + String(item.id || item.timestamp || Date.now()),
-      data: { url: '/notification.html' }
-    });
+      renotify: true,
+      data: { url: '/notification.html', id: item.id || '' }
+    };
+
+    // Web Notification images are optional across browsers. Only pass public
+    // HTTP(S) URLs; local-upload data URLs remain in the ESI feed.
+    if(/^https?:\/\//i.test(String(image))) options.image = String(image);
+
+    await reg.showNotification(title, options);
   }catch(e){
     console.warn('[ESI foreground notification]', e);
   }
@@ -929,41 +989,57 @@ function fileToDataUrl(file, callback){
 
 async function pushNotif(data){
   try{
-    const ref = db.ref('notifications').push(data);
-    await ref;
+    // Firebase is the source of truth. Save and render first; OneSignal is a
+    // separate delivery channel and must never make the feed wait on a gateway.
+    const ref = db.ref('notifications').push();
+    await ref.set(data);
 
-    // Keep the existing Firebase in-app notification system as the source
-    // of truth, then fan the same broadcast out through OneSignal.
-    let pushResult = null;
-    try{
-      if(window.sendESIPush){
-        const preview =
-          data.text ||
-          (data.poll && data.poll.question) ||
-          (data.quiz && data.quiz.question) ||
-          'New Elite Scholar Institute notification';
-
-        pushResult = await window.sendESIPush({
-          title: data.priority === 'urgent' ? '🟠 ESI Urgent Announcement' : 'Elite Scholar Institute',
-          message: preview,
-          url: '/notification.html'
-        });
-      }
-    }catch(pushErr){
-      console.error('[ESI push]', pushErr);
-      toast('Saved in ESI feed, but web push failed: ' + pushErr.message, 'orange');
-    }
-
+    const savedTimestamp = typeof data.timestamp === 'number' ? data.timestamp : Date.now();
+    cache[ref.key] = { ...data, id: ref.key, timestamp: savedTimestamp };
     closeCompose();
-    cache[ref.key] = { ...data, id: ref.key, timestamp: Date.now() };
     renderFeed();
+    updateUnreadBadge();
+    toast('Broadcast saved successfully ✓', 'blue');
 
-    if(pushResult){
-      toast('Broadcast + web push sent successfully ✓', 'blue');
-    }else{
-      toast('Broadcast saved successfully ✓', 'blue');
+    if(window.sendESIPush){
+      const type = data.type || 'message';
+      let title = data.priority === 'urgent' ? '🟠 ESI Urgent Announcement' : 'Elite Scholar Institute';
+      let message = data.text || 'New announcement';
+      let imageUrl = '';
+
+      if(type === 'image'){
+        title = '🖼️ ESI Image';
+        message = data.text || 'New image from Elite Scholar Institute';
+        imageUrl = data.imageUrl || '';
+      }else if(type === 'poll' && data.poll){
+        title = '📊 ESI Poll';
+        message = String(data.poll.question || 'New poll');
+        if(Array.isArray(data.poll.options) && data.poll.options.length){
+          message += '\n' + data.poll.options.slice(0,4).map((x,i)=>String.fromCharCode(65+i)+'. '+String(x)).join('  ');
+        }
+        imageUrl = data.poll.imageUrl || '';
+      }else if(type === 'quiz' && data.quiz){
+        title = '💡 ESI Quiz';
+        message = String(data.quiz.question || 'New quiz');
+        if(Array.isArray(data.quiz.options) && data.quiz.options.length){
+          message += '\n' + data.quiz.options.slice(0,4).map((x,i)=>String.fromCharCode(65+i)+'. '+String(x)).join('  ');
+        }
+        imageUrl = data.quiz.imageUrl || '';
+      }
+
+      const pushPayload = { title, message, url:'/notification.html' };
+      if(/^https?:\/\//i.test(String(imageUrl))) pushPayload.imageUrl = String(imageUrl);
+
+      // Deliberately do not await this: a push outage can never block the feed.
+      window.sendESIPush(pushPayload).then(()=>{
+        console.log('[ESI push] delivered');
+      }).catch(pushErr=>{
+        console.error('[ESI push]', pushErr);
+        toast('Feed saved; web push could not be delivered.', 'orange');
+      });
     }
   }catch(e){
+    console.error('[ESI broadcast save]', e);
     toast('Send failed: ' + e.message, 'orange');
   }
 }
