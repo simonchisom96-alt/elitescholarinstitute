@@ -1,0 +1,12 @@
+{
+  "name": "elite-scholar-institute",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Elite Scholar Institute website and secure notification gateway",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
