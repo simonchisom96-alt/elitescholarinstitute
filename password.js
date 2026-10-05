@@ -270,17 +270,37 @@ function playBeep(){
     o.start(); o.stop(ctx.currentTime+0.5);
   }catch(e){}
 }
+async function showESIForegroundNotification(preview, item){
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    await reg.showNotification('Elite Scholar Institute', {
+      body: preview.slice(0,120),
+      icon: '/logo.jpg',
+      badge: '/logo.jpg',
+      tag: 'esi-broadcast-' + String(item.id || item.timestamp || Date.now()),
+      data: { url: '/notification.html' }
+    });
+  }catch(e){
+    console.warn('[ESI foreground notification]', e);
+  }
+}
 function handleNewItem(item){
   const preview = (item.poll && item.poll.question) || (item.quiz && item.quiz.question) || (item.text||'New announcement');
   const label = item.type==='poll' ? '📊 New poll: ' : item.type==='quiz' ? '💡 New quiz: ' : item.type==='image' ? '🖼️ New image: ' : '💬 Announcement: ';
   toast(label + preview.slice(0,40), item.priority==='urgent' ? 'orange' : 'blue');
   playBeep();
+
   if(document.hidden){
     startFlash();
-    if('Notification' in window && Notification.permission==='granted'){
-      try{ new Notification('Elite Scholar Institute', { body: preview.slice(0,80), icon: 'logo.jpg' }); }catch(e){}
-    }
+    // Background/closed delivery is handled by OneSignal.
+    return;
   }
+
+  // On Android/mobile browsers, the page-level Notification constructor is
+  // unreliable. Use the already-registered ESI service worker so a foreground
+  // announcement produces the same native notification pop-down.
+  showESIForegroundNotification(preview, item);
 }
 
 /* ============================================================
