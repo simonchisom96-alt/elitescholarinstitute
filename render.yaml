@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: elite-scholar-institute
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/onesignal/health
+    envVars:
+      - key: ONESIGNAL_REST_API_KEY
+        sync: false
