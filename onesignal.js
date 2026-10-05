@@ -18,6 +18,19 @@
         serviceWorkerPath: "/OneSignalSDKWorker.js"
       });
       window.ESIOneSignal = OneSignal;
+
+      // OneSignal can receive a push while the ESI tab is in the foreground.
+      // Explicitly display it so the notification still pops up on-screen.
+      if (OneSignal.Notifications?.addEventListener) {
+        OneSignal.Notifications.addEventListener("foregroundWillDisplay", event => {
+          try {
+            event?.notification?.display?.();
+          } catch (e) {
+            console.warn("[ESI OneSignal] foreground display failed", e);
+          }
+        });
+      }
+
       readyResolve(OneSignal);
     } catch (error) {
       console.error("[ESI OneSignal] initialization failed", error);
