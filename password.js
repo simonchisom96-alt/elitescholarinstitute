@@ -907,15 +907,45 @@ function fileToDataUrl(file, callback){
   reader.readAsDataURL(file);
 }
 
-function pushNotif(data){
-  const ref = db.ref('notifications').push(data);
-  ref.then(()=>{
-      closeCompose();
-      toast('Broadcast sent successfully ✓', 'blue');
-      cache[ref.key] = { ...data, id: ref.key, timestamp: Date.now() };
-      renderFeed();
-    })
-    .catch(e=>toast('Send failed: '+e.message,'orange'));
+async function pushNotif(data){
+  try{
+    const ref = db.ref('notifications').push(data);
+    await ref;
+
+    // Keep the existing Firebase in-app notification system as the source
+    // of truth, then fan the same broadcast out through OneSignal.
+    let pushResult = null;
+    try{
+      if(window.sendESIPush){
+        const preview =
+          data.text ||
+          (data.poll && data.poll.question) ||
+          (data.quiz && data.quiz.question) ||
+          'New Elite Scholar Institute notification';
+
+        pushResult = await window.sendESIPush({
+          title: data.priority === 'urgent' ? '🟠 ESI Urgent Announcement' : 'Elite Scholar Institute',
+          message: preview,
+          url: '/notification.html'
+        });
+      }
+    }catch(pushErr){
+      console.error('[ESI push]', pushErr);
+      toast('Saved in ESI feed, but web push failed: ' + pushErr.message, 'orange');
+    }
+
+    closeCompose();
+    cache[ref.key] = { ...data, id: ref.key, timestamp: Date.now() };
+    renderFeed();
+
+    if(pushResult){
+      toast('Broadcast + web push sent successfully ✓', 'blue');
+    }else{
+      toast('Broadcast saved successfully ✓', 'blue');
+    }
+  }catch(e){
+    toast('Send failed: ' + e.message, 'orange');
+  }
 }
 
 function sendMessage(){
@@ -1154,12 +1184,24 @@ function toggleSound(e){
   hecked;
   localStorage.setItem('notif_sound_on', soundOn?'1':'0');
 }
-function requestPush(){
-  if(!('Notification' in window)){ toast('Push not supported','orange'); return; }
-  Notification.requestPermission().then(p=>{
-    if(p==='granted') toast('Push notifications enabled ✓','blue');
-    else toast('Permission denied','orange');
-  });
+async function requestPush(){
+  try{
+    if(!window.requestESIPushPermission){
+      toast('Push system is still loading — try again in a moment','orange');
+      return;
+    }
+    const permission = await window.requestESIPushPermission();
+    if(permission === 'granted'){
+      toast('Push notifications enabled ✓','blue');
+    }else if(permission === 'denied'){
+      toast('Notification permission was denied. Enable it in browser site settings.','orange');
+    }else{
+      toast('Notification permission was not granted','orange');
+    }
+  }catch(e){
+    console.error('[ESI push permission]', e);
+    toast('Push setup failed: ' + e.message, 'orange');
+  }
 }
 function clearReadHistory(){
   readIds = new Set();
