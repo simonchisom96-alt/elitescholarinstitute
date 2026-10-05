@@ -160,6 +160,8 @@ function sendOneSignal(body) {
 
   const requestBody = JSON.stringify({
     app_id: ONE_SIGNAL_APP_ID,
+    target_channel: "push",
+    name: "ESI Announcement",
     included_segments: ["All"],
     headings: { en: body.title },
     contents: { en: body.message },
