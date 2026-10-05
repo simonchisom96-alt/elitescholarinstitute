@@ -1172,8 +1172,8 @@ async function requestPush(){
   try{
     if(!window.ESIOneSignalReady) throw new Error('OneSignal is not initialized');
     const permission=await window.requestESIPushPermission();
-    if(permission!=='granted'){
-      toast('Push permission was not granted: '+permission,'orange');
+    if(permission !== true && permission !== 'granted'){
+      toast('Push permission was not granted: '+String(permission),'orange');
       return permission;
     }
     if(window.ESIOneSignal){
