@@ -15,7 +15,8 @@
       await OneSignal.init({
         appId: APP_ID,
         allowLocalhostAsSecureOrigin: false,
-        serviceWorkerPath: "/OneSignalSDKWorker.js"
+        serviceWorkerPath: "/onesignal/OneSignalSDKWorker.js",
+        serviceWorkerParam: { scope: "/onesignal/" }
       });
       window.ESIOneSignal = OneSignal;
 
