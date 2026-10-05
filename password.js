@@ -1134,7 +1134,7 @@ function prepareImageBlob(file){
       img.onload = () => {
         try{
           let w = img.width, h = img.height;
-          const maxDim = 1200;
+          const maxDim = 1000;
           if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
           else if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
           const canvas = document.createElement('canvas');
@@ -1144,7 +1144,7 @@ function prepareImageBlob(file){
           canvas.toBlob(blob=>{
             if(blob) resolve(blob);
             else reject(new Error('Could not process the image'));
-          }, 'image/jpeg', 0.86);
+          }, 'image/jpeg', 0.80);
         }catch(err){ reject(err); }
       };
       img.src = e.target.result;
@@ -1278,7 +1278,8 @@ async function sendImage(){
   if(!file){ toast('Choose an image file','orange'); return; }
 
   $('uploadProgressWrap').style.display='block';
-  $('uploadProgressLabel').textContent = 'Uploading image...';
+  $('uploadProgressBar').style.width='0%';
+  $('uploadProgressLabel').textContent = 'Preparing image…';
   try{
     const imageUrl = await uploadNotificationImage(file);
     await pushNotif({
