@@ -166,9 +166,14 @@ function sendOneSignal(body) {
     headings: { en: body.title },
     contents: { en: body.message },
     url: body.url,
-    web_url: body.url
+    web_url: body.url,
+    ttl: 2419200,
+    priority: 10
   };
-  if (body.imageUrl) payload.chrome_web_image = body.imageUrl;
+  if (body.imageUrl) {
+    payload.chrome_web_image = body.imageUrl;
+    payload.global_image = body.imageUrl;
+  }
   const requestBody = JSON.stringify(payload);
 
   return new Promise((resolve, reject) => {
