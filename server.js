@@ -21,6 +21,19 @@ const ROOT = __dirname;
 
 let certCache = { expiresAt: 0, certs: {} };
 
+const WEBSITE_ORIGIN = "https://elitescholarinstitute.onrender.com";
+
+function applyCors(req, res) {
+  const origin = req.headers.origin || "";
+  if (origin === WEBSITE_ORIGIN) {
+    res.setHeader("Access-Control-Allow-Origin", WEBSITE_ORIGIN);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Max-Age", "600");
+  }
+}
+
 function json(res, status, data) {
   const body = JSON.stringify(data);
   res.writeHead(status, {
@@ -202,6 +215,11 @@ const MIME = {
 };
 
 async function handle(req, res) {
+  applyCors(req, res);
+  if (req.method === "OPTIONS") {
+    if (req.headers.origin !== WEBSITE_ORIGIN) return json(res, 403, { error: "Origin not allowed" });
+    return json(res, 204, {});
+  }
   const url = new URL(req.url, "http://" + (req.headers.host || "localhost"));
 
   if (req.method === "GET" && url.pathname === "/api/onesignal/health") {
@@ -238,7 +256,8 @@ async function handle(req, res) {
         return json(res, 400, { error: "Notification URL must be a same-site path" });
       }
 
-      const result = await sendOneSignal({ title, message, url: targetUrl });
+      const absoluteUrl = WEBSITE_ORIGIN + targetUrl;
+      const result = await sendOneSignal({ title, message, url: absoluteUrl });
       return json(res, 200, { ok: true, id: result.id || null, recipients: result.recipients ?? null });
     } catch (error) {
       console.error("[OneSignal]", error.message);
