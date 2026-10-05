@@ -209,6 +209,32 @@ function subscribe(){
   });
   dbRefHandle = ref;
 }
+
+async function replayMissedBroadcasts(){
+  const since = Number(localStorage.getItem(LAST_BROADCAST_TS_KEY) || 0);
+  if(!since) return;
+  try{
+    const snap = await db.ref('notifications')
+      .orderByChild('timestamp')
+      .startAt(since + 1)
+      .limitToLast(100)
+      .once('value');
+    const missed = [];
+    snap.forEach(child=>{
+      const raw = child.val();
+      const item = raw && typeof raw === 'object' ? { ...raw, id: child.key } : { id: child.key, text: String(raw || '') };
+      if(Number(item.timestamp || 0) > since) missed.push(item);
+    });
+    missed.sort((a,b)=>Number(a.timestamp||0)-Number(b.timestamp||0));
+    missed.forEach(handleNewItem);
+    if(missed.length){
+      const newest = Math.max(...missed.map(x=>Number(x.timestamp||0)));
+      localStorage.setItem(LAST_BROADCAST_TS_KEY, String(Math.max(since,newest)));
+    }
+  }catch(err){
+    console.warn('[ESI missed broadcast replay]', err);
+  }
+}
 function processSnapshot(snap){
   const val = snap.val() || {};
   const ids = Object.keys(val);
@@ -1342,12 +1368,13 @@ function downloadLightboxImage(){
 /* ============================================================
    INITIALIZATION
 ============================================================ */
-function init(){
+async function init(){
   initIdentity();
   isAdmin = sessionStorage.getItem('notif_is_admin')==='true';
   soundOn = localStorage.getItem('notif_sound_on') !== '0';
   updateAdminUI();
   setupObserver();
+  await replayMissedBroadcasts();
   subscribe();
 }
 window.addEventListener('DOMContentLoaded', init);
