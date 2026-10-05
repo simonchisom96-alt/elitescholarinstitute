@@ -994,24 +994,47 @@ function resetComposeForm(){
   switchComposeTab('message');
 }
 
-function fileToDataUrl(file, callback){
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let w = img.width, h = img.height;
-      const maxDim = 900;
-      if(w > h && w > maxDim){ h *= maxDim/w; w = maxDim; }
-      else if(h > maxDim){ w *= maxDim/h; h = maxDim; }
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-      callback(canvas.toDataURL('image/jpeg', 0.8));
+function prepareImageBlob(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read the image file'));
+    reader.onload = e => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Invalid image file'));
+      img.onload = () => {
+        try{
+          let w = img.width, h = img.height;
+          const maxDim = 1200;
+          if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+          else if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d', {alpha:false});
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(blob=>{
+            if(blob) resolve(blob);
+            else reject(new Error('Could not process the image'));
+          }, 'image/jpeg', 0.86);
+        }catch(err){ reject(err); }
+      };
+      img.src = e.target.result;
     };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadNotificationImage(file){
+  if(!file) throw new Error('No image selected');
+  if(!auth.currentUser) throw new Error('Admin authentication required');
+  const blob = await prepareImageBlob(file);
+  const safeName = String(file.name || 'image').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,80);
+  const path = 'notification-images/' + auth.currentUser.uid + '/' + Date.now() + '-' + Math.random().toString(36).slice(2,10) + '-' + safeName.replace(/\.[^.]+$/,'') + '.jpg';
+  const ref = storage.ref(path);
+  await ref.put(blob, {
+    contentType: 'image/jpeg',
+    cacheControl: 'public,max-age=31536000,immutable'
+  });
+  return await ref.getDownloadURL();
 }
 
 async function pushNotif(data){
@@ -1081,7 +1104,7 @@ function sendMessage(){
   });
 }
 
-function sendImage(){
+async function sendImage(){
   const caption = $('composeImgCaption').value.trim();
   const priority = $('composeImgPriority').value;
   const mode = document.querySelector('input[name=imgMode]:checked').value;
@@ -1089,24 +1112,32 @@ function sendImage(){
   if(mode==='url'){
     const url = $('composeImgUrl').value.trim();
     if(!url){ toast('Paste an image URL','orange'); return; }
+    if(!/^https?:\\/\\//i.test(url)){ toast('Use a valid HTTPS image URL','orange'); return; }
     pushNotif({
       type:'image', imageUrl:url, text:caption, priority, pinned:false,
       authorName: displayName || 'Elite Scholar Institute',
       timestamp: firebase.database.ServerValue.TIMESTAMP, reactions:{}, responses:{}, views:{}
     });
-  } else {
-    const file = $('composeImgFile').files[0];
-    if(!file){ toast('Choose an image file','orange'); return; }
-    $('uploadProgressWrap').style.display='block';
-    $('uploadProgressLabel').textContent = 'Processing image...';
-    fileToDataUrl(file, dataUrl => {
-      pushNotif({
-        type:'image', imageUrl:dataUrl, text:caption, priority, pinned:false,
-        authorName: displayName || 'Elite Scholar Institute',
-        timestamp: firebase.database.ServerValue.TIMESTAMP, reactions:{}, responses:{}, views:{}
-      });
-      $('uploadProgressWrap').style.display='none';
+    return;
+  }
+
+  const file = $('composeImgFile').files[0];
+  if(!file){ toast('Choose an image file','orange'); return; }
+
+  $('uploadProgressWrap').style.display='block';
+  $('uploadProgressLabel').textContent = 'Uploading image...';
+  try{
+    const imageUrl = await uploadNotificationImage(file);
+    await pushNotif({
+      type:'image', imageUrl, text:caption, priority, pinned:false,
+      authorName: displayName || 'Elite Scholar Institute',
+      timestamp: firebase.database.ServerValue.TIMESTAMP, reactions:{}, responses:{}, views:{}
     });
+  }catch(err){
+    console.error('[ESI image upload]', err);
+    toast('Image upload failed: ' + err.message, 'orange');
+  }finally{
+    $('uploadProgressWrap').style.display='none';
   }
 }
 
@@ -1132,12 +1163,13 @@ function sendPoll(){
 
   if(pollImgFile){
     $('uploadProgressWrap').style.display='block';
-    $('uploadProgressLabel').textContent = 'Processing poll image...';
-    fileToDataUrl(pollImgFile, dataUrl => {
-      $('uploadProgressWrap').style.display='none';
-      finalizePoll(dataUrl);
-    });
+    $('uploadProgressLabel').textContent = 'Uploading poll image...';
+    uploadNotificationImage(pollImgFile).then(finalizePoll).catch(err=>{
+      console.error('[ESI poll image upload]', err);
+      toast('Poll image upload failed: ' + err.message, 'orange');
+    }).finally(()=>{ $('uploadProgressWrap').style.display='none'; });
   } else if(pollImgUrlInput){
+    if(!/^https?:\\/\\//i.test(pollImgUrlInput)){ toast('Use a valid HTTPS image URL','orange'); return; }
     finalizePoll(pollImgUrlInput);
   } else {
     finalizePoll('');
@@ -1182,12 +1214,13 @@ function sendQuiz(){
 
   if(quizImgFile){
     $('uploadProgressWrap').style.display='block';
-    $('uploadProgressLabel').textContent = 'Processing quiz image...';
-    fileToDataUrl(quizImgFile, dataUrl => {
-      $('uploadProgressWrap').style.display='none';
-      finalizeQuiz(dataUrl);
-    });
+    $('uploadProgressLabel').textContent = 'Uploading quiz image...';
+    uploadNotificationImage(quizImgFile).then(finalizeQuiz).catch(err=>{
+      console.error('[ESI quiz image upload]', err);
+      toast('Quiz image upload failed: ' + err.message, 'orange');
+    }).finally(()=>{ $('uploadProgressWrap').style.display='none'; });
   } else if(quizImgUrlInput){
+    if(!/^https?:\\/\\//i.test(quizImgUrlInput)){ toast('Use a valid HTTPS image URL','orange'); return; }
     finalizeQuiz(quizImgUrlInput);
   } else {
     finalizeQuiz('');
