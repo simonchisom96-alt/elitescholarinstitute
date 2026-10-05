@@ -158,7 +158,7 @@ function sendOneSignal(body) {
   const apiKey = process.env.ONESIGNAL_REST_API_KEY;
   if (!apiKey) throw new Error("ONESIGNAL_REST_API_KEY is not configured on the server");
 
-  const requestBody = JSON.stringify({
+  const payload = {
     app_id: ONE_SIGNAL_APP_ID,
     target_channel: "push",
     name: "ESI Announcement",
@@ -167,7 +167,13 @@ function sendOneSignal(body) {
     contents: { en: body.message },
     url: body.url,
     web_url: body.url
-  });
+  };
+
+  // OneSignal rich web notifications require a public HTTPS image URL.
+  // Local Firebase data URLs are intentionally not forwarded.
+  if (body.imageUrl) payload.chrome_web_image = body.imageUrl;
+
+  const requestBody = JSON.stringify(payload);
 
   return new Promise((resolve, reject) => {
     const req = https.request("https://api.onesignal.com/notifications", {
@@ -246,10 +252,15 @@ async function handle(req, res) {
       const title = String(body.title || "").trim();
       const message = String(body.message || "").trim();
       const targetUrl = String(body.url || "/notification.html").trim();
+      const imageUrl = String(body.imageUrl || "").trim();
 
       if (!title || !message) return json(res, 400, { error: "Notification title and message are required" });
-      if (title.length > 100 || message.length > 4000 || targetUrl.length > 1000) {
+      if (title.length > 100 || message.length > 4000 || targetUrl.length > 1000 || imageUrl.length > 2000) {
         return json(res, 400, { error: "Notification payload is too large" });
+      }
+
+      if (imageUrl && !/^https:\/\/[^\s]+$/i.test(imageUrl)) {
+        return json(res, 400, { error: "Notification image URL must be a public HTTPS URL" });
       }
 
       // Only allow same-site relative destinations. This prevents the admin
@@ -259,7 +270,12 @@ async function handle(req, res) {
       }
 
       const absoluteUrl = WEBSITE_ORIGIN + targetUrl;
-      const result = await sendOneSignal({ title, message, url: absoluteUrl });
+      const result = await sendOneSignal({
+        title,
+        message,
+        url: absoluteUrl,
+        imageUrl
+      });
       return json(res, 200, { ok: true, id: result.id || null, recipients: result.recipients ?? null });
     } catch (error) {
       console.error("[OneSignal]", error.message);
