@@ -37,7 +37,7 @@
     }
 
     const token = await auth.currentUser.getIdToken(true);
-    const response = await fetch("/api/onesignal/send", {
+    const response = await fetch("https://elitescholarinstitute-api.onrender.com/api/onesignal/send", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
