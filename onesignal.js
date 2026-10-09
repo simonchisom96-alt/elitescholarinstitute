@@ -170,6 +170,8 @@
     // Keep the established endpoint first, then try the hostname declared by
     // render.yaml as a safe fallback if a Render service was renamed.
     const gateways = [
+      // The Node gateway has existed under this Render service name.
+      "https://esi-beams-api.onrender.com",
       "https://elitescholarinstitute-api.onrender.com",
       "https://elite-scholar-institute.onrender.com"
     ];
@@ -190,15 +192,23 @@
           body: requestBody
         });
 
-        const result = await response.json().catch(() => ({}));
-        if (response.ok) return result;
+        const contentType = response.headers.get("content-type") || "";
+        const result = contentType.includes("application/json")
+          ? await response.json().catch(() => ({}))
+          : {};
 
-        const error = new Error(result.error || ("Push delivery failed (HTTP " + response.status + ")"));
+        // A static website can answer an unknown /api path with an HTML page
+        // and HTTP 200. Never mistake that fallback page for a sent push.
+        if (response.ok && result.ok === true) return result;
+
+        const detail = result.error ||
+          (!response.ok ? ("HTTP " + response.status) : "Endpoint did not return a confirmed JSON success response");
+        const error = new Error("Push gateway " + baseUrl + ": " + detail);
         lastError = error;
 
-        // Retry another known service address only for a likely wrong/stale
-        // hostname or a temporarily unavailable Render instance.
-        if (![404, 502, 503, 504].includes(response.status)) throw error;
+        // Try another known hostname when this one is stale, is a static
+        // service, is unavailable, or does not return the gateway success flag.
+        if (!response.ok && ![404, 502, 503, 504].includes(response.status)) throw error;
       } catch (error) {
         lastError = error;
         if (error && error.message && /HTTP \d+/.test(error.message) &&
