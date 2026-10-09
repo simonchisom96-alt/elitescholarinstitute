@@ -1156,6 +1156,34 @@ function fileToDataUrl(file){
   });
 }
 
+// OneSignal requires a publicly reachable HTTPS image URL for background
+// notifications. Uploaded files currently enter the feed as compressed data
+// URLs, so mirror those bytes to Firebase Storage for native push previews.
+// The feed keeps its original image data; a Storage failure must not erase it.
+async function getPushImageUrl(imageUrl){
+  const value = String(imageUrl || '');
+  if(/^https:\/\//i.test(value)) return value;
+  if(!/^data:image\//i.test(value)) return '';
+  try{
+    const response = await fetch(value);
+    const blob = await response.blob();
+    if(!blob.size) throw new Error('Empty image data');
+    const extension = (blob.type.split('/')[1] || 'jpg').replace(/[^a-z0-9]/gi,'').toLowerCase() || 'jpg';
+    const filePath = 'esi-push-images/' + Date.now() + '-' +
+      Math.random().toString(36).slice(2,10) + '.' + extension;
+    const snapshot = await storage.ref(filePath).put(blob, {
+      contentType: blob.type || 'image/jpeg',
+      cacheControl: 'public,max-age=31536000'
+    });
+    const url = await snapshot.ref.getDownloadURL();
+    if(!/^https:\/\//i.test(url)) throw new Error('Storage did not return an HTTPS image URL');
+    return url;
+  }catch(error){
+    console.error('[ESI push image upload] Could not prepare native notification image:', error);
+    return '';
+  }
+}
+
 async function pushNotif(data){
   try{
     // Firebase is the source of truth. Save and render first; OneSignal is a
@@ -1200,9 +1228,13 @@ async function pushNotif(data){
       }
 
       const pushPayload = { title, message, url:'/notification.html' };
-      if(/^https?:\/\//i.test(String(imageUrl))) pushPayload.imageUrl = String(imageUrl);
+      // Uploaded images are data URLs for the in-page feed. Convert them to
+      // a stable HTTPS Firebase Storage URL so OneSignal can attach the image
+      // to the OS notification when Chrome is backgrounded or closed.
+      const nativeImageUrl = await getPushImageUrl(imageUrl);
+      if(nativeImageUrl) pushPayload.imageUrl = nativeImageUrl;
 
-      // Deliberately do not await this: a push outage can never block the feed.
+      // Deliberately do not await delivery: a push outage never rolls back the feed.
       window.sendESIPush(pushPayload).then(()=>{
         console.log('[ESI push] delivered');
       }).catch(pushErr=>{
