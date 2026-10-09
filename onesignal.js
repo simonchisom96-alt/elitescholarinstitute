@@ -3,15 +3,11 @@
 (() => {
   const APP_ID = "c7be3202-494e-43dd-b47d-d969d65dd96f";
 
-  // Verified 2026-10-09:
-  // elitescholarinstitute-api.onrender.com serves /api/onesignal/health
-  // with configured:true and the correct App ID.
-  // esi-beams-api.onrender.com is a different service and returns 404 for
-  // /api/onesignal/send. elite-scholar-institute.onrender.com has no server.
+  // Use only the verified gateway. The other historical hostnames are
+  // not this backend; retrying them masks the first useful network/CORS error
+  // and can turn a real gateway response into a generic "Failed to fetch".
   const PUSH_GATEWAYS = [
-    "https://elitescholarinstitute-api.onrender.com",
-    "https://esi-beams-api.onrender.com",
-    "https://elite-scholar-institute.onrender.com"
+    "https://elitescholarinstitute-api.onrender.com"
   ];
   window.ESI_PUSH_GATEWAYS = PUSH_GATEWAYS.slice();
 
@@ -213,9 +209,14 @@
         if (!response.ok && [404, 502, 503, 504].includes(response.status)) continue;
         if (!response.ok) throw error;
       } catch (error) {
-        lastError = error.name === "AbortError"
-          ? new Error("Push gateway " + baseUrl + " timed out after 55s")
-          : error;
+        if (error.name === "AbortError") {
+          lastError = new Error("Push gateway " + new URL(baseUrl).host + " timed out after 55s");
+        } else if (error instanceof TypeError) {
+          lastError = new Error("Could not reach " + new URL(baseUrl).host +
+            ". Browser fetch failed before an HTTP response (possible CORS/preflight, network, or server connection failure). Check the gateway health result and Render logs.");
+        } else {
+          lastError = error;
+        }
         if (error && error.message && /HTTP \d+/.test(error.message) &&
             !/HTTP (404|502|503|504)/.test(error.message)) throw error;
       } finally {
