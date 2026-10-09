@@ -102,7 +102,7 @@ const notificationImageObjectUrls = new Map();
 
 async function cacheNotificationImageUrl(url){
   url = String(url || '');
-  if(!/^https?:\\/\\//i.test(url) || !('caches' in window)) return false;
+  if(!/^https?:\/\//i.test(url) || !('caches' in window)) return false;
   try{
     const cache = await caches.open(NOTIFICATION_IMAGE_CACHE);
     if(await cache.match(url)) return true;
@@ -139,7 +139,7 @@ async function cacheNotificationImageBlob(url, blob){
 
 async function getCachedNotificationImageUrl(url){
   url = String(url || '');
-  if(!/^https?:\\/\\//i.test(url) || !('caches' in window)) return '';
+  if(!/^https?:\/\//i.test(url) || !('caches' in window)) return '';
   if(notificationImageObjectUrls.has(url)) return notificationImageObjectUrls.get(url);
   try{
     const cache = await caches.open(NOTIFICATION_IMAGE_CACHE);
