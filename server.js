@@ -162,10 +162,11 @@ function sendOneSignal(body) {
     app_id: ONE_SIGNAL_APP_ID,
     target_channel: "push",
     name: "ESI Announcement",
-    included_segments: ["All"],
+    // This gateway sends browser push to subscribed users, not a named
+    // custom segment. Use OneSignal's built-in segment explicitly.
+    included_segments: ["Subscribed Users"],
     headings: { en: body.title },
     contents: { en: body.message },
-    url: body.url,
     web_url: body.url,
     ttl: 2419200,
     priority: 10
@@ -192,8 +193,22 @@ function sendOneSignal(body) {
         let parsed = {};
         try { parsed = data ? JSON.parse(data) : {}; } catch (_) {}
         if (res.statusCode < 200 || res.statusCode >= 300) {
-          const detail = parsed.errors?.[0] || parsed.message || ("OneSignal HTTP " + res.statusCode);
+          const errors = Array.isArray(parsed.errors)
+            ? parsed.errors.join("; ")
+            : (parsed.errors ? JSON.stringify(parsed.errors) : "");
+          const detail = errors || parsed.message || ("OneSignal HTTP " + res.statusCode);
           reject(new Error(String(detail)));
+          return;
+        }
+
+        // OneSignal can return HTTP 200 without creating a notification when
+        // there are no matching subscribed recipients. An empty/missing ID is
+        // a no-send result, not a successful broadcast.
+        if (typeof parsed.id !== "string" || !parsed.id.trim()) {
+          const errors = Array.isArray(parsed.errors)
+            ? parsed.errors.join("; ")
+            : (parsed.errors ? JSON.stringify(parsed.errors) : "");
+          reject(new Error(errors || "OneSignal accepted the request but created no notification ID; check Audience > Subscriptions and the push platform configuration."));
           return;
         }
         resolve(parsed);
