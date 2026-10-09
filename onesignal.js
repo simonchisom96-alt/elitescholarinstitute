@@ -140,6 +140,24 @@
     });
   }
 
+  async function waitForESIPushSubscription(OneSignal, timeoutMs = 20000) {
+    const started = Date.now();
+    let last = { optedIn: false, id: null, token: null };
+    while (Date.now() - started < timeoutMs) {
+      const sub = OneSignal?.User?.PushSubscription;
+      last = {
+        optedIn: !!sub?.optedIn,
+        id: sub?.id || null,
+        token: sub?.token || null
+      };
+      // Permission alone is not enough: OneSignal must have created a real
+      // push subscription and issued its push token before we call this device subscribed.
+      if (last.optedIn && last.id && last.token) return last;
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    return last;
+  }
+
   window.requestESIPushPermission = async function() {
     const OneSignal = await window.ESIOneSignalReady;
     if (!OneSignal.Notifications) throw new Error("OneSignal notifications are unavailable");
@@ -147,7 +165,13 @@
     if (OneSignal.User?.PushSubscription?.optIn) {
       await OneSignal.User.PushSubscription.optIn();
     }
-    return OneSignal.Notifications.permission;
+    const permission = OneSignal.Notifications.permission;
+    if (permission !== true && permission !== "granted") return permission;
+    const status = await waitForESIPushSubscription(OneSignal);
+    if (!status.optedIn || !status.id || !status.token) {
+      throw new Error("Browser permission is granted, but OneSignal has not created an active push subscription/token yet. Keep this ESI page open, check your connection, then tap Re-establish Push Subscription again.");
+    }
+    return permission;
   };
 
   window.getESIPushSubscription = async function() {
@@ -156,7 +180,8 @@
     return {
       permission: OneSignal?.Notifications?.permission || getBrowserPermission(),
       optedIn: !!sub?.optedIn,
-      id: sub?.id || null
+      id: sub?.id || null,
+      token: sub?.token || null
     };
   };
 
