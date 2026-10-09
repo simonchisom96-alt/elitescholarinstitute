@@ -797,7 +797,6 @@ function setupObserver(){
     });
   }, { threshold: 0.5 });
 }
-
 /* ============================================================
    TABS & SEARCH
 ============================================================ */
@@ -1233,13 +1232,16 @@ async function pushNotif(data){
       // to the OS notification when Chrome is backgrounded or closed.
       const nativeImageUrl = await getPushImageUrl(imageUrl);
       if(nativeImageUrl) pushPayload.imageUrl = nativeImageUrl;
+      else if(imageUrl) toast('Feed saved. Image could not be prepared for the system notification, so the text push will still be sent.', 'orange');
 
       // Deliberately do not await delivery: a push outage never rolls back the feed.
-      window.sendESIPush(pushPayload).then(()=>{
-        console.log('[ESI push] delivered');
+      window.sendESIPush(pushPayload).then(result=>{
+        console.log('[ESI push] accepted', result);
+        const count = result && result.recipients != null ? result.recipients : '?';
+        toast('Web push accepted by OneSignal for '+count+' subscription(s). ID '+(result && result.id ? result.id : 'missing')+'.', 'blue');
       }).catch(pushErr=>{
         console.error('[ESI push]', pushErr);
-        toast('Feed saved; web push could not be delivered.', 'orange');
+        toast('Feed saved; web push was not delivered: '+(pushErr && pushErr.message ? pushErr.message : 'unknown error'), 'orange');
       });
     }
   }catch(e){
@@ -1447,12 +1449,12 @@ async function requestPush(){
 }
 
 async function getESIPushStatus(){const out={permission:'unknown',optedIn:false,id:null,token:null};try{const OS=await window.ESIOneSignalReady;out.permission=OS?.Notifications?.permission||('Notification'in window?Notification.permission:'unknown');const sub=OS?.User?.PushSubscription;if(sub){out.optedIn=!!sub.optedIn;out.id=sub.id||null;out.token=sub.token||null;}}catch(e){out.error=e.message;}return out;}
-async function refreshSettingsAdminSection(){const el=$('settingsAdminArea');if(!el)return;if(!isAdmin){el.innerHTML='<div class="admin-panel-title">🔐 ADMIN ACCESS</div><button class="admin-control admin-full" onclick="closeSettings();openAdminLogin()"><strong>Unlock Admin Dashboard</strong><span>Sign in with the ESI admin account to access broadcast and push controls.</span></button>';return;}el.innerHTML='<div class="admin-panel-title">🛡️ ADMIN DASHBOARD · PUSH CONTROL</div><div class="admin-status"><span id="adminPushDot" class="admin-dot"></span><div class="admin-status-text"><strong id="adminPushStatus">Checking OneSignal…</strong><span id="adminPushDetail">Checking permission and subscription.</span></div></div><div class="admin-grid"><button class="admin-control" onclick="adminRefreshPushStatus()"><strong>🔄 Refresh Status</strong><span>Re-check OneSignal connection.</span></button><button class="admin-control" onclick="requestPush()"><strong>🔔 Enable Push</strong><span>Request browser notification permission.</span></button><button class="admin-control" onclick="adminTestGateway()"><strong>🧪 Test Gateway</strong><span>Verify the secure ESI push server.</span></button><button class="admin-control" onclick="adminOpenOneSignal()"><strong>⚙️ OneSignal</strong><span>Open the OneSignal dashboard.</span></button><button class="admin-control admin-full" onclick="adminSyncPush()"><strong>♻️ Re-establish Push Subscription</strong><span>Refresh the SDK and request permission again if the subscription is missing.</span></button><button class="admin-control admin-danger admin-full" onclick="adminLogout()"><strong>🔒 Sign Out Admin Mode</strong><span>End the Firebase admin session on this device.</span></button></div>';await adminRefreshPushStatus();}
-async function adminRefreshPushStatus(){const status=await getESIPushStatus(),dot=$('adminPushDot'),title=$('adminPushStatus'),detail=$('adminPushDetail');if(!dot||!title||!detail)return;const active=(status.permission===true || status.permission==='granted')&&status.optedIn;dot.classList.toggle('off',!active);title.textContent=active?'Push subscription active ✓':'Push subscription not active';detail.textContent='Permission: '+status.permission+' · Subscription: '+(status.optedIn?'active':'inactive')+(status.id?' · ID linked':'');}
+async function refreshSettingsAdminSection(){const el=$('settingsAdminArea');if(!el)return;if(!isAdmin){el.innerHTML='<div class="admin-panel-title">🔐 ADMIN ACCESS</div><button class="admin-control admin-full" onclick="closeSettings();openAdminLogin()"><strong>Unlock Admin Dashboard</strong><span>Sign in with the ESI admin account to access broadcast and push controls.</span></button>';return;}el.innerHTML='<div class="admin-panel-title">🛡️ ADMIN DASHBOARD · PUSH CONTROL</div><div class="admin-status"><span id="adminPushDot" class="admin-dot"></span><div class="admin-status-text"><strong id="adminPushStatus">Checking OneSignal…</strong><span id="adminPushDetail">Checking permission and subscription.</span></div></div><div class="admin-grid"><button class="admin-control" onclick="adminRefreshPushStatus()"><strong>🔄 Refresh Status</strong><span>Re-check OneSignal connection.</span></button><button class="admin-control" onclick="requestPush()"><strong>🔔 Enable Push</strong><span>Request browser notification permission.</span></button><button class="admin-control" onclick="adminTestGateway()"><strong>🧪 Test Gateway</strong><span>Verify the secure ESI push server and deployed version.</span></button><button class="admin-control" onclick="adminSendDeviceTest()"><strong>📱 Test This Device</strong><span>Send a OneSignal push only to this phone. Close Chrome after it is accepted.</span></button><button class="admin-control" onclick="adminOpenOneSignal()"><strong>⚙️ OneSignal</strong><span>Open the OneSignal dashboard.</span></button><button class="admin-control admin-full" onclick="adminSyncPush()"><strong>♻️ Re-establish Push Subscription</strong><span>Refresh the SDK and request permission again if the subscription is missing.</span></button><button class="admin-control admin-danger admin-full" onclick="adminLogout()"><strong>🔒 Sign Out Admin Mode</strong><span>End the Firebase admin session on this device.</span></button></div>';await adminRefreshPushStatus();}
+async function adminRefreshPushStatus(){const status=await getESIPushStatus(),dot=$('adminPushDot'),title=$('adminPushStatus'),detail=$('adminPushDetail');if(!dot||!title||!detail)return;const active=(status.permission===true || status.permission==='granted')&&status.optedIn&&!!status.id;dot.classList.toggle('off',!active);title.textContent=active?'Background push subscription active':'Push subscription not active';detail.textContent='Permission: '+status.permission+' · Opted in: '+(status.optedIn?'yes':'no')+' · Subscription ID: '+(status.id||'none')+'. Permission alone does not mean this phone can receive closed-browser push.';}
 async function adminTestGateway(){
-  const gateways=[
-    'https://esi-beams-api.onrender.com',
+  const gateways=window.ESI_PUSH_GATEWAYS || [
     'https://elitescholarinstitute-api.onrender.com',
+    'https://esi-beams-api.onrender.com',
     'https://elite-scholar-institute.onrender.com'
   ];
   const failures=[];
@@ -1464,11 +1466,11 @@ async function adminTestGateway(){
       if(response.ok&&data?.ok===true){
         const host=new URL(base).host;
         if(data.configured){
-          toast('Push gateway online and API key configured: '+host,'blue');
+          toast('Push gateway online: '+host+' · '+(data.version||'version not deployed yet'),'blue');
         }else{
           toast('Gateway online but ONESIGNAL_REST_API_KEY is missing: '+host,'orange');
         }
-        console.info('[ESI gateway health]',{host,status:response.status,configured:!!data.configured,appId:data.appId,firebaseProject:data.firebaseProject});
+        console.info('[ESI gateway health]',{host,status:response.status,configured:!!data.configured,appId:data.appId,firebaseProject:data.firebaseProject,version:data.version,audience:data.audience});
         return data;
       }
       failures.push(base+': '+(data?.error||('HTTP '+response.status+' / non-JSON response')));
@@ -1477,6 +1479,25 @@ async function adminTestGateway(){
   console.error('[ESI gateway health] all candidates failed',failures);
   toast('No push gateway passed health checks. Open console for endpoint details.','orange');
   throw new Error(failures.join(' | '));
+}
+async function adminSendDeviceTest(){
+  try{
+    const status = await getESIPushStatus();
+    if(!status.optedIn || !status.id){
+      toast('This device has no OneSignal subscription yet. Tap Enable Push, allow notifications, then test again.','orange');
+      return;
+    }
+    const result = await window.sendESIPush({
+      title: 'ESI background test',
+      message: 'Background push test. If this appears in the phone notification shade after Chrome is closed, delivery is working.',
+      url: '/notification.html',
+      subscriptionId: status.id
+    });
+    toast('OneSignal accepted a device-only test. ID '+(result.id||'missing')+' · recipients '+(result.recipients??'?')+'. Close Chrome completely and check the notification shade.','blue');
+  }catch(error){
+    console.error('[ESI device test]', error);
+    toast('Device test was not delivered: '+(error && error.message ? error.message : 'unknown error'),'orange');
+  }
 }
 async function adminSyncPush(){try{const OS=await window.ESIOneSignalReady;if(OS?.User?.PushSubscription?.optIn)await OS.User.PushSubscription.optIn();await requestPush();await adminRefreshPushStatus();}catch(e){toast('Push re-establish failed: '+e.message,'orange');}}
 function adminOpenOneSignal(){window.open('https://dashboard.onesignal.com','_blank','noopener,noreferrer');}
