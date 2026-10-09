@@ -351,7 +351,9 @@ async function replayMissedBroadcasts(){
     snap.forEach(child=>{
       const raw = child.val();
       const item = raw && typeof raw === 'object' ? { ...raw, id: child.key } : { id: child.key, text: String(raw || '') };
-      if(Number(item.timestamp || 0) > since) missed.push(item);
+      // The live snapshot may finish while this recovery query is in flight.
+      // Skip IDs already in the feed so startup cannot show duplicate alerts.
+      if(Number(item.timestamp || 0) > since && !cache[item.id]) missed.push(item);
     });
     missed.sort((a,b)=>Number(a.timestamp||0)-Number(b.timestamp||0));
     missed.forEach(handleNewItem);
