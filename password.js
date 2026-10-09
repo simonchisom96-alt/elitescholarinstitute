@@ -1161,34 +1161,73 @@ function prepareImageBlob(file){
 async function uploadNotificationImage(file){
   if(!file) throw new Error('No image selected');
   if(!auth.currentUser) throw new Error('Admin authentication required');
+  if(!navigator.onLine) throw new Error('You are offline. Reconnect and try again.');
 
+  // Preserve the existing Firebase Database URL workflow: upload the selected
+  // image bytes first, then return a stable HTTPS URL for the notification record.
+  await auth.currentUser.getIdToken(true);
   const blob = await prepareImageBlob(file);
+  if(!blob || !blob.size) throw new Error('Could not prepare this image.');
   const safeName = String(file.name || 'image').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,80);
   const path = 'notification-images/' + auth.currentUser.uid + '/' + Date.now() + '-' + Math.random().toString(36).slice(2,10) + '-' + safeName.replace(/\.[^.]+$/,'') + '.jpg';
   const ref = storage.ref(path);
+  const bar = $('uploadProgressBar');
+  const label = $('uploadProgressLabel');
+  const status = (text, pct) => {
+    if(label) label.textContent = text;
+    if(bar && Number.isFinite(pct)) bar.style.width = Math.max(0,Math.min(100,pct)) + '%';
+  };
+  const task = ref.put(blob, {
+    contentType:'image/jpeg',
+    cacheControl:'public,max-age=31536000,immutable'
+  });
 
   await new Promise((resolve,reject)=>{
-    const task = ref.put(blob, {
-      contentType:'image/jpeg',
-      cacheControl:'public,max-age=31536000,immutable'
-    });
+    let done = false;
+    const finish = (fn,value) => {
+      if(done) return;
+      done = true;
+      clearTimeout(timer);
+      fn(value);
+    };
+    const timer = setTimeout(()=>{
+      try{ task.cancel(); }catch(_){}
+      const err = new Error('Upload stalled for 60 seconds. Please retry.');
+      err.code = 'esi/upload-timeout';
+      finish(reject,err);
+    },60000);
     task.on(firebase.storage.TaskEvent.STATE_CHANGED,
       snap=>{
         const pct = snap.totalBytes ? Math.round(snap.bytesTransferred / snap.totalBytes * 100) : 0;
-        const bar = $('uploadProgressBar');
-        const label = $('uploadProgressLabel');
-        if(bar) bar.style.width = pct + '%';
-        if(label) label.textContent = 'Uploading image… ' + pct + '%';
+        status((snap.state === firebase.storage.TaskState.PAUSED ? 'Paused' : 'Uploading') + ' image… ' + pct + '%',pct);
       },
-      reject,
-      resolve
+      err=>{
+        const code = err && err.code || 'storage/unknown';
+        const known = {
+          'storage/unauthorized':'Firebase Storage rules denied this upload.',
+          'storage/unauthenticated':'Firebase authentication failed; sign in again.',
+          'storage/bucket-not-found':'The configured Firebase Storage bucket was not found.',
+          'storage/no-default-bucket':'No default Firebase Storage bucket is configured.',
+          'storage/project-not-found':'Firebase could not find the configured project.',
+          'storage/quota-exceeded':'Firebase Storage quota or billing blocked this upload.',
+          'storage/retry-limit-exceeded':'Firebase Storage retries were exhausted; check connection and bucket access.',
+          'storage/canceled':'The upload was canceled.',
+          'esi/upload-timeout':'The upload stalled and timed out.'
+        };
+        console.error('[ESI image upload]',{code,message:err && err.message,serverResponse:err && err.serverResponse});
+        const wrapped = new Error((known[code] || (err && err.message) || 'Unknown Firebase Storage error') + ' (' + code + ')');
+        wrapped.code = code;
+        finish(reject,wrapped);
+      },
+      ()=>finish(resolve)
     );
   });
 
+  status('Getting image link…',100);
   const imageUrl = await ref.getDownloadURL();
-  // Store the exact processed bytes locally too. This avoids a second network
-  // download and makes the image available after reload/offline.
-  await cacheNotificationImageBlob(imageUrl, blob);
+  if(!/^https:\/\//i.test(imageUrl)) throw new Error('Firebase returned an invalid image URL.');
+  await cacheNotificationImageBlob(imageUrl,blob);
+  status('Image ready ✓',100);
   return imageUrl;
 }
 
