@@ -18,17 +18,19 @@ const FIREBASE_PROJECT_ID = "elite-notification";
 const ADMIN_EMAIL = "admin@elitescholarinstitute.app";
 const MAX_BODY = 64 * 1024;
 const ROOT = __dirname;
+const GATEWAY_VERSION = "2026-10-09-background-push";
 
 let certCache = { expiresAt: 0, certs: {} };
 
 const WEBSITE_ORIGIN = "https://elitescholarinstitute.onrender.com";
+const WEB_ICON = WEBSITE_ORIGIN + "/logo.jpg";
 
 function applyCors(req, res) {
   const origin = req.headers.origin || "";
   if (origin === WEBSITE_ORIGIN) {
     res.setHeader("Access-Control-Allow-Origin", WEBSITE_ORIGIN);
     res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
     res.setHeader("Access-Control-Max-Age", "600");
   }
@@ -134,33 +136,18 @@ function readBody(req) {
   });
 }
 
-function sendOneSignal(body) {
-  const apiKey = process.env.ONESIGNAL_REST_API_KEY;
-  if (!apiKey) throw new Error("ONESIGNAL_REST_API_KEY is not configured on the server");
-  const payload = {
-    app_id: ONE_SIGNAL_APP_ID,
-    target_channel: "push",
-    name: "ESI Announcement",
-    // "All" is OneSignal's explicit all-subscribers segment shorthand.
-    // This targets every eligible push subscriber in this OneSignal app.
-    included_segments: ["All"],
-    headings: { en: body.title },
-    contents: { en: body.message },
-    web_url: body.url,
-    ttl: 2419200,
-    priority: 10
-  };
-  if (body.imageUrl) {
-    payload.chrome_web_image = body.imageUrl;
-    payload.global_image = body.imageUrl;
-  }
-  const requestBody = JSON.stringify(payload);
+function onesignalError(parsed, statusCode) {
+  const errors = Array.isArray(parsed.errors) ? parsed.errors.join("; ") : (parsed.errors ? JSON.stringify(parsed.errors) : "");
+  return errors || parsed.message || ("OneSignal HTTP " + statusCode);
+}
+
+function postOneSignal(requestBody, authorization) {
   return new Promise((resolve, reject) => {
     const req = https.request("https://api.onesignal.com/notifications", {
       method: "POST",
       headers: {
         "Content-Type": "application/json; charset=utf-8",
-        "Authorization": "Key " + apiKey,
+        "Authorization": authorization,
         "Content-Length": Buffer.byteLength(requestBody)
       }
     }, res => {
@@ -171,17 +158,7 @@ function sendOneSignal(body) {
         let parsed = {};
         try { parsed = data ? JSON.parse(data) : {}; } catch (_) {}
         if (res.statusCode < 200 || res.statusCode >= 300) {
-          const errors = Array.isArray(parsed.errors) ? parsed.errors.join("; ") : (parsed.errors ? JSON.stringify(parsed.errors) : "");
-          reject(new Error(errors || parsed.message || ("OneSignal HTTP " + res.statusCode)));
-          return;
-        }
-        if (typeof parsed.id !== "string" || !parsed.id.trim()) {
-          const errors = Array.isArray(parsed.errors) ? parsed.errors.join("; ") : (parsed.errors ? JSON.stringify(parsed.errors) : "");
-          reject(new Error(errors || "OneSignal created no notification ID; check Audience > Subscriptions and push platform configuration."));
-          return;
-        }
-        if (typeof parsed.recipients === "number" && parsed.recipients < 1) {
-          reject(new Error("OneSignal created the message but matched zero subscribers. Check Audience > Subscriptions and confirm the users are subscribed to this app."));
+          reject(Object.assign(new Error(onesignalError(parsed, res.statusCode)), { statusCode: res.statusCode }));
           return;
         }
         resolve(parsed);
@@ -191,6 +168,63 @@ function sendOneSignal(body) {
     req.write(requestBody);
     req.end();
   });
+}
+
+function buildOneSignalPayload(body) {
+  const payload = {
+    app_id: ONE_SIGNAL_APP_ID,
+    target_channel: "push",
+    name: body.subscriptionId ? "ESI device test" : "ESI Announcement",
+    headings: { en: body.title },
+    contents: { en: body.message },
+    url: body.url,
+    web_url: body.url,
+    ttl: 2419200,
+    priority: 10,
+    chrome_web_icon: WEB_ICON,
+    firefox_icon: WEB_ICON,
+    data: { url: body.url }
+  };
+  if (body.subscriptionId) {
+    // Device tests must not broadcast. This field cannot be combined with segments.
+    payload.include_subscription_ids = [body.subscriptionId];
+  } else {
+    // Official default segment for eligible push subscribers.
+    // "All" is only a shorthand in some SDK docs and is not the documented segment.
+    payload.included_segments = ["Subscribed Users"];
+  }
+  if (body.imageUrl) {
+    payload.chrome_web_image = body.imageUrl;
+    payload.big_picture = body.imageUrl;
+  }
+  return payload;
+}
+
+async function sendOneSignal(body) {
+  const apiKey = process.env.ONESIGNAL_REST_API_KEY;
+  if (!apiKey) throw new Error("ONESIGNAL_REST_API_KEY is not configured on the server");
+  const requestBody = JSON.stringify(buildOneSignalPayload(body));
+  const schemes = /^(Key|Basic)\s+/i.test(apiKey)
+    ? [apiKey]
+    : ["Key " + apiKey, "Basic " + apiKey];
+  let lastError = null;
+  for (const authorization of schemes) {
+    try {
+      const parsed = await postOneSignal(requestBody, authorization);
+      if (typeof parsed.id !== "string" || !parsed.id.trim()) {
+        throw new Error(onesignalError(parsed, 200) || "OneSignal created no notification ID. Check Audience > Subscriptions.");
+      }
+      if (typeof parsed.recipients === "number" && parsed.recipients < 1) {
+        throw new Error("OneSignal accepted the request but matched zero subscriptions. This device is not an eligible push subscriber yet.");
+      }
+      return parsed;
+    } catch (error) {
+      lastError = error;
+      const authFailure = error.statusCode === 401 || error.statusCode === 403 || /unauthorized|invalid api key|access denied/i.test(error.message || "");
+      if (!authFailure || authorization === schemes[schemes.length - 1]) throw error;
+    }
+  }
+  throw lastError || new Error("OneSignal request failed");
 }
 
 function safePath(urlPath) {
@@ -223,7 +257,10 @@ async function handle(req, res) {
       ok: true,
       configured: Boolean(process.env.ONESIGNAL_REST_API_KEY),
       appId: ONE_SIGNAL_APP_ID,
-      firebaseProject: FIREBASE_PROJECT_ID
+      firebaseProject: FIREBASE_PROJECT_ID,
+      version: GATEWAY_VERSION,
+      audience: "Subscribed Users",
+      hostname: req.headers.host || ""
     });
   }
   if (url.pathname === "/api/onesignal/send") {
@@ -237,18 +274,28 @@ async function handle(req, res) {
       const message = String(body.message || "").trim();
       const imageUrl = String(body.imageUrl || "").trim();
       const targetUrl = String(body.url || "/notification.html").trim();
+      const subscriptionId = String(body.subscriptionId || "").trim();
       if (!title || !message) return json(res, 400, { error: "Notification title and message are required" });
       if (title.length > 100 || message.length > 4000 || imageUrl.length > 2000 || targetUrl.length > 1000) {
         return json(res, 400, { error: "Notification payload is too large" });
       }
-      if (imageUrl && !/^https?:\/\//i.test(imageUrl)) return json(res, 400, { error: "Notification image URL must be HTTP(S)" });
+      if (imageUrl && !/^https:\/\//i.test(imageUrl)) return json(res, 400, { error: "Notification image URL must be public HTTPS" });
       if (!targetUrl.startsWith("/") || targetUrl.startsWith("//")) return json(res, 400, { error: "Notification URL must be a same-site path" });
+      if (subscriptionId && !/^[0-9a-f-]{16,80}$/i.test(subscriptionId)) {
+        return json(res, 400, { error: "Invalid OneSignal subscription id" });
+      }
       const absoluteUrl = WEBSITE_ORIGIN + targetUrl;
-      const result = await sendOneSignal({ title, message, imageUrl, url: absoluteUrl });
-      return json(res, 200, { ok: true, id: result.id || null, recipients: result.recipients ?? null });
+      const result = await sendOneSignal({ title, message, imageUrl, url: absoluteUrl, subscriptionId });
+      return json(res, 200, {
+        ok: true,
+        id: result.id,
+        recipients: result.recipients ?? null,
+        targeted: subscriptionId ? "subscription" : "Subscribed Users",
+        imageAttached: Boolean(imageUrl)
+      });
     } catch (error) {
       console.error("[OneSignal]", error.message);
-      return json(res, error.statusCode || 500, { error: error.message || "Push delivery failed" });
+      return json(res, error.statusCode && error.statusCode < 500 ? error.statusCode : 502, { error: error.message || "Push delivery failed" });
     }
   }
   if (req.method !== "GET" && req.method !== "HEAD") return json(res, 404, { error: "Not found" });
