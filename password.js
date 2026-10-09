@@ -1131,30 +1131,45 @@ function resetComposeForm(){
 
 function prepareImageBlob(file){
   return new Promise((resolve,reject)=>{
+    let settled = false;
+    const finish = (fn,value) => {
+      if(settled) return;
+      settled = true;
+      clearTimeout(timer);
+      fn(value);
+    };
+    const timer = setTimeout(()=>{
+      try{ reader.abort(); }catch(_){}
+      finish(reject,new Error('Image preparation timed out. Choose the image again or try a smaller image.'));
+    },20000);
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Could not read the image file'));
+    reader.onerror = () => finish(reject, new Error('Could not read the image file.'));
+    reader.onabort = () => finish(reject, new Error('Image reading was cancelled.'));
     reader.onload = e => {
       const img = new Image();
-      img.onerror = () => reject(new Error('Invalid image file'));
+      img.onerror = () => finish(reject, new Error('Invalid image file or unsupported image format.'));
       img.onload = () => {
         try{
           let w = img.width, h = img.height;
+          if(!w || !h) throw new Error('The selected image has invalid dimensions.');
           const maxDim = 1000;
           if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
           else if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
           const canvas = document.createElement('canvas');
           canvas.width = w; canvas.height = h;
           const ctx = canvas.getContext('2d', {alpha:false});
+          if(!ctx) throw new Error('This browser could not prepare the image canvas.');
           ctx.drawImage(img, 0, 0, w, h);
           canvas.toBlob(blob=>{
-            if(blob) resolve(blob);
-            else reject(new Error('Could not process the image'));
+            if(blob && blob.size) finish(resolve,blob);
+            else finish(reject,new Error('The browser could not convert this image.'));
           }, 'image/jpeg', 0.80);
-        }catch(err){ reject(err); }
+        }catch(err){ finish(reject,err); }
       };
       img.src = e.target.result;
     };
-    reader.readAsDataURL(file);
+    try{ reader.readAsDataURL(file); }
+    catch(err){ finish(reject,err); }
   });
 }
 
@@ -1163,20 +1178,25 @@ async function uploadNotificationImage(file){
   if(!auth.currentUser) throw new Error('Admin authentication required');
   if(!navigator.onLine) throw new Error('You are offline. Reconnect and try again.');
 
-  // Preserve the existing Firebase Database URL workflow: upload the selected
-  // image bytes first, then return a stable HTTPS URL for the notification record.
-  await auth.currentUser.getIdToken(true);
-  const blob = await prepareImageBlob(file);
-  if(!blob || !blob.size) throw new Error('Could not prepare this image.');
-  const safeName = String(file.name || 'image').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,80);
-  const path = 'notification-images/' + auth.currentUser.uid + '/' + Date.now() + '-' + Math.random().toString(36).slice(2,10) + '-' + safeName.replace(/\.[^.]+$/,'') + '.jpg';
-  const ref = storage.ref(path);
   const bar = $('uploadProgressBar');
   const label = $('uploadProgressLabel');
   const status = (text, pct) => {
     if(label) label.textContent = text;
     if(bar && Number.isFinite(pct)) bar.style.width = Math.max(0,Math.min(100,pct)) + '%';
   };
+
+  // Update the visible stage BEFORE every awaited operation. Previously the
+  // label stayed at “Preparing image…” while image decoding/canvas conversion
+  // could hang without any timeout or useful feedback.
+  status('Checking admin sign-in…',0);
+  await auth.currentUser.getIdToken(true);
+  status('Preparing image…',0);
+  const blob = await prepareImageBlob(file);
+  if(!blob || !blob.size) throw new Error('Could not prepare this image.');
+  status('Connecting to Firebase upload…',0);
+  const safeName = String(file.name || 'image').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,80);
+  const path = 'notification-images/' + auth.currentUser.uid + '/' + Date.now() + '-' + Math.random().toString(36).slice(2,10) + '-' + safeName.replace(/\.[^.]+$/,'') + '.jpg';
+  const ref = storage.ref(path);
   const task = ref.put(blob, {
     contentType:'image/jpeg',
     cacheControl:'public,max-age=31536000,immutable'
