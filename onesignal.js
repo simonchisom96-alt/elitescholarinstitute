@@ -160,33 +160,54 @@
     }
 
     const token = await auth.currentUser.getIdToken(true);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    let response;
-    try{
-      response = await fetch("https://elitescholarinstitute-api.onrender.com/api/onesignal/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + token
-        },
-        credentials: "same-origin",
-        signal: controller.signal,
-        body: JSON.stringify({
-          title: String(payload.title || "Elite Scholar Institute").slice(0, 100),
-          message: String(payload.message || "New announcement").slice(0, 4000),
-          imageUrl: String(payload.imageUrl || "").slice(0, 2000),
-          url: String(payload.url || "/notification.html").slice(0, 1000)
-        })
-      });
-    }finally{
-      clearTimeout(timeout);
+    const requestBody = JSON.stringify({
+      title: String(payload.title || "Elite Scholar Institute").slice(0, 100),
+      message: String(payload.message || "New announcement").slice(0, 4000),
+      imageUrl: String(payload.imageUrl || "").slice(0, 2000),
+      url: String(payload.url || "/notification.html").slice(0, 1000)
+    });
+
+    // Keep the established endpoint first, then try the hostname declared by
+    // render.yaml as a safe fallback if a Render service was renamed.
+    const gateways = [
+      "https://elitescholarinstitute-api.onrender.com",
+      "https://elite-scholar-institute.onrender.com"
+    ];
+    let lastError = null;
+
+    for (const baseUrl of gateways) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      try {
+        const response = await fetch(baseUrl + "/api/onesignal/send", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+          },
+          credentials: "omit",
+          signal: controller.signal,
+          body: requestBody
+        });
+
+        const result = await response.json().catch(() => ({}));
+        if (response.ok) return result;
+
+        const error = new Error(result.error || ("Push delivery failed (HTTP " + response.status + ")"));
+        lastError = error;
+
+        // Retry another known service address only for a likely wrong/stale
+        // hostname or a temporarily unavailable Render instance.
+        if (![404, 502, 503, 504].includes(response.status)) throw error;
+      } catch (error) {
+        lastError = error;
+        if (error && error.message && /HTTP \d+/.test(error.message) &&
+            !/HTTP (404|502|503|504)/.test(error.message)) throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
     }
 
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(result.error || "Push delivery failed");
-    }
-    return result;
+    throw lastError || new Error("Push gateway is unreachable");
   };
 })();
