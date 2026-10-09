@@ -194,9 +194,9 @@ function buildOneSignalPayload(body) {
     // Device tests must not broadcast. This field cannot be combined with segments.
     payload.include_subscription_ids = [body.subscriptionId];
   } else {
-    // Official default segment for eligible push subscribers.
-    // "All" is only a shorthand in some SDK docs and is not the documented segment.
-    payload.included_segments = ["Subscribed Users"];
+    // OneSignal's documented "All" shorthand targets all currently subscribed
+    // push subscriptions. Do not use a possibly renamed/custom segment label.
+    payload.included_segments = ["All"];
   }
   if (body.imageUrl) {
     payload.chrome_web_image = body.imageUrl;
