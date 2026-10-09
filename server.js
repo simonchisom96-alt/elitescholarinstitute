@@ -181,7 +181,8 @@ function buildOneSignalPayload(body) {
     name: body.subscriptionId ? "ESI device test" : "ESI Announcement",
     headings: { en: body.title },
     contents: { en: body.message },
-    url: body.url,
+    // OneSignal rejects requests that combine the legacy "url" field with
+    // "web_url". Use web_url for web-push click-through navigation.
     web_url: body.url,
     ttl: 2419200,
     priority: 10,
