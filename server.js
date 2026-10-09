@@ -86,49 +86,29 @@ async function getGoogleCerts() {
   if (Date.now() < certCache.expiresAt && Object.keys(certCache.certs).length) {
     return certCache.certs;
   }
-
   const certUrl = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
   const certs = await httpsGetJson(certUrl);
-
-  let maxAge = 3600;
-  try {
-    // The certificate endpoint normally supplies Cache-Control:max-age.
-    // A conservative fallback is used if the header is unavailable.
-    maxAge = 3600;
-  } catch (_) {}
-
-  certCache = {
-    certs,
-    expiresAt: Date.now() + Math.min(maxAge, 21600) * 1000
-  };
+  certCache = { certs, expiresAt: Date.now() + 3600 * 1000 };
   return certs;
 }
 
 async function verifyFirebaseAdminToken(token) {
   const { header, payload, signingInput, signature } = parseJwt(token);
-
   if (header.alg !== "RS256" || !header.kid) throw new Error("Invalid token algorithm");
   if (payload.aud !== FIREBASE_PROJECT_ID) throw new Error("Invalid token audience");
   if (payload.iss !== "https://securetoken.google.com/" + FIREBASE_PROJECT_ID) throw new Error("Invalid token issuer");
   if (!payload.sub || typeof payload.sub !== "string" || payload.sub.length > 128) throw new Error("Invalid token subject");
-
   const now = Math.floor(Date.now() / 1000);
   if (typeof payload.exp !== "number" || payload.exp <= now) throw new Error("Token expired");
   if (typeof payload.iat !== "number" || payload.iat > now + 300) throw new Error("Invalid token issue time");
-
   const certs = await getGoogleCerts();
   const cert = certs[header.kid];
   if (!cert) throw new Error("Unknown token signing key");
-
   const verifier = crypto.createVerify("RSA-SHA256");
   verifier.update(signingInput);
   verifier.end();
-
   if (!verifier.verify(cert, signature)) throw new Error("Invalid token signature");
-  if (payload.email !== ADMIN_EMAIL || payload.email_verified !== true) {
-    throw new Error("Admin account required");
-  }
-
+  if (payload.email !== ADMIN_EMAIL || payload.email_verified !== true) throw new Error("Admin account required");
   return payload;
 }
 
@@ -157,14 +137,13 @@ function readBody(req) {
 function sendOneSignal(body) {
   const apiKey = process.env.ONESIGNAL_REST_API_KEY;
   if (!apiKey) throw new Error("ONESIGNAL_REST_API_KEY is not configured on the server");
-
   const payload = {
     app_id: ONE_SIGNAL_APP_ID,
     target_channel: "push",
     name: "ESI Announcement",
-    // This gateway sends browser push to subscribed users, not a named
-    // custom segment. Use OneSignal's built-in segment explicitly.
-    included_segments: ["Subscribed Users"],
+    // "All" is OneSignal's explicit all-subscribers segment shorthand.
+    // This targets every eligible push subscriber in this OneSignal app.
+    included_segments: ["All"],
     headings: { en: body.title },
     contents: { en: body.message },
     web_url: body.url,
@@ -176,7 +155,6 @@ function sendOneSignal(body) {
     payload.global_image = body.imageUrl;
   }
   const requestBody = JSON.stringify(payload);
-
   return new Promise((resolve, reject) => {
     const req = https.request("https://api.onesignal.com/notifications", {
       method: "POST",
@@ -193,22 +171,17 @@ function sendOneSignal(body) {
         let parsed = {};
         try { parsed = data ? JSON.parse(data) : {}; } catch (_) {}
         if (res.statusCode < 200 || res.statusCode >= 300) {
-          const errors = Array.isArray(parsed.errors)
-            ? parsed.errors.join("; ")
-            : (parsed.errors ? JSON.stringify(parsed.errors) : "");
-          const detail = errors || parsed.message || ("OneSignal HTTP " + res.statusCode);
-          reject(new Error(String(detail)));
+          const errors = Array.isArray(parsed.errors) ? parsed.errors.join("; ") : (parsed.errors ? JSON.stringify(parsed.errors) : "");
+          reject(new Error(errors || parsed.message || ("OneSignal HTTP " + res.statusCode)));
           return;
         }
-
-        // OneSignal can return HTTP 200 without creating a notification when
-        // there are no matching subscribed recipients. An empty/missing ID is
-        // a no-send result, not a successful broadcast.
         if (typeof parsed.id !== "string" || !parsed.id.trim()) {
-          const errors = Array.isArray(parsed.errors)
-            ? parsed.errors.join("; ")
-            : (parsed.errors ? JSON.stringify(parsed.errors) : "");
-          reject(new Error(errors || "OneSignal accepted the request but created no notification ID; check Audience > Subscriptions and the push platform configuration."));
+          const errors = Array.isArray(parsed.errors) ? parsed.errors.join("; ") : (parsed.errors ? JSON.stringify(parsed.errors) : "");
+          reject(new Error(errors || "OneSignal created no notification ID; check Audience > Subscriptions and push platform configuration."));
+          return;
+        }
+        if (typeof parsed.recipients === "number" && parsed.recipients < 1) {
+          reject(new Error("OneSignal created the message but matched zero subscribers. Check Audience > Subscriptions and confirm the users are subscribed to this app."));
           return;
         }
         resolve(parsed);
@@ -245,7 +218,6 @@ async function handle(req, res) {
     return json(res, 204, {});
   }
   const url = new URL(req.url, "http://" + (req.headers.host || "localhost"));
-
   if (req.method === "GET" && url.pathname === "/api/onesignal/health") {
     return json(res, 200, {
       ok: true,
@@ -254,58 +226,36 @@ async function handle(req, res) {
       firebaseProject: FIREBASE_PROJECT_ID
     });
   }
-
   if (url.pathname === "/api/onesignal/send") {
     if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
-
     try {
       const token = getBearer(req);
       if (!token) return json(res, 401, { error: "Missing Firebase authorization" });
-
       await verifyFirebaseAdminToken(token);
       const body = await readBody(req);
-
       const title = String(body.title || "").trim();
       const message = String(body.message || "").trim();
       const imageUrl = String(body.imageUrl || "").trim();
       const targetUrl = String(body.url || "/notification.html").trim();
-
       if (!title || !message) return json(res, 400, { error: "Notification title and message are required" });
       if (title.length > 100 || message.length > 4000 || imageUrl.length > 2000 || targetUrl.length > 1000) {
         return json(res, 400, { error: "Notification payload is too large" });
       }
-      if (imageUrl && !/^https?:\/\//i.test(imageUrl)) {
-        return json(res, 400, { error: "Notification image URL must be HTTP(S)" });
-      }
-
-      // Only allow same-site relative destinations. This prevents the admin
-      // broadcast endpoint from becoming a general external-link sender.
-      if (!targetUrl.startsWith("/") || targetUrl.startsWith("//")) {
-        return json(res, 400, { error: "Notification URL must be a same-site path" });
-      }
-
+      if (imageUrl && !/^https?:\/\//i.test(imageUrl)) return json(res, 400, { error: "Notification image URL must be HTTP(S)" });
+      if (!targetUrl.startsWith("/") || targetUrl.startsWith("//")) return json(res, 400, { error: "Notification URL must be a same-site path" });
       const absoluteUrl = WEBSITE_ORIGIN + targetUrl;
       const result = await sendOneSignal({ title, message, imageUrl, url: absoluteUrl });
       return json(res, 200, { ok: true, id: result.id || null, recipients: result.recipients ?? null });
     } catch (error) {
       console.error("[OneSignal]", error.message);
-      return json(res, error.statusCode || 500, {
-        error: error.message || "Push delivery failed"
-      });
+      return json(res, error.statusCode || 500, { error: error.message || "Push delivery failed" });
     }
   }
-
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    return json(res, 404, { error: "Not found" });
-  }
-
+  if (req.method !== "GET" && req.method !== "HEAD") return json(res, 404, { error: "Not found" });
   const file = safePath(url.pathname);
   if (!file) return json(res, 400, { error: "Bad path" });
-
   fs.stat(file, (statErr, stat) => {
-    if (statErr || !stat.isFile()) {
-      return json(res, 404, { error: "File not found" });
-    }
+    if (statErr || !stat.isFile()) return json(res, 404, { error: "File not found" });
     const headers = {
       "Content-Type": MIME[path.extname(file).toLowerCase()] || "application/octet-stream",
       "X-Content-Type-Options": "nosniff"
@@ -323,7 +273,4 @@ const server = http.createServer((req, res) => {
     else res.end();
   });
 });
-
-server.listen(PORT, HOST, () => {
-  console.log("ESI server listening on " + HOST + ":" + PORT);
-});
+server.listen(PORT, HOST, () => console.log("ESI server listening on " + HOST + ":" + PORT));
