@@ -345,7 +345,6 @@ async function replayMissedBroadcasts(){
     const snap = await db.ref('notifications')
       .orderByChild('timestamp')
       .startAt(since + 1)
-      .limitToLast(100)
       .once('value');
     const missed = [];
     snap.forEach(child=>{
