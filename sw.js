@@ -1,5 +1,5 @@
 /* Elite Scholar Institute service worker — offline shell + runtime cache */
-const CACHE_VERSION = 'esi-cache-36.2401';
+const CACHE_VERSION = 'esi-cache-36.2402';
 const APP_SHELL = [
   '/', '/index.html', '/logo.jpg', '/advert.png', '/esi.jpg', '/founder.jpg',
   '/manifest.json', '/offline.html', '/app.js', '/downloader.js',
@@ -34,6 +34,23 @@ self.addEventListener('activate', event => {
   event.waitUntil((async () => { const keys = await caches.keys(); await Promise.all(keys.filter(key => key.startsWith('esi-cache-') && key !== CACHE_VERSION).map(key => caches.delete(key))); await self.clients.claim(); })());
 });
 self.addEventListener('message', event => { if (event.data === 'SKIP_WAITING') self.skipWaiting(); });
+
+// Make notifications created by the ESI foreground feed open the right page
+// when tapped, reusing an existing ESI tab where possible.
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const path = event.notification.data && event.notification.data.url || '/notification.html';
+  const target = new URL(path, self.location.origin).href;
+  event.waitUntil((async () => {
+    const openClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of openClients) {
+      if (new URL(client.url).origin !== self.location.origin) continue;
+      if (client.url !== target && typeof client.navigate === 'function') await client.navigate(target);
+      return client.focus();
+    }
+    return self.clients.openWindow(target);
+  })());
+});
 self.addEventListener('fetch', event => {
   const { request } = event;
   if (!isGet(request) || !isSameOrigin(request)) return;
