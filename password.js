@@ -1226,7 +1226,7 @@ function sendMessage(){
   });
 }
 
-async async function sendImage(){
+async function sendImage(){
   const caption=$('composeImgCaption').value.trim();
   const priority=$('composeImgPriority').value;
   const mode=document.querySelector('input[name=imgMode]:checked').value;
