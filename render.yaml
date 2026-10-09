@@ -1,6 +1,9 @@
+# The live Node gateway is elitescholarinstitute-api.onrender.com.
+# elite-scholar-institute.onrender.com currently has no Render server.
+# esi-beams-api.onrender.com is a different service and does not expose /api/onesignal/send.
 services:
   - type: web
-    name: elite-scholar-institute
+    name: elitescholarinstitute-api
     runtime: node
     buildCommand: npm install
     startCommand: npm start
