@@ -413,7 +413,11 @@ function manualRefresh(){
   const btn = $('refreshBtn');
   btn.classList.add('spin');
   setTimeout(()=>btn.classList.remove('spin'), 600);
-  toast('Refreshed', 'blue');
+  // Actually refresh the Firebase listener; the previous version only
+  // animated the button and showed a toast without requesting new data.
+  subscribe();
+  replayMissedBroadcasts();
+  toast('Refreshing notifications…', 'blue');
 }
 
 /* ============================================================
@@ -1570,7 +1574,21 @@ async function init(){
   restoreNotificationCache();
   warmNotificationImageCache(cache);
 
-  await replayMissedBroadcasts();
+  // Start the live Firebase listener immediately. Missed-message recovery
+  // must never hold the feed hostage while a one-time read is waiting.
   subscribe();
+  void replayMissedBroadcasts();
+
+  // If Firebase never emits a value/error (for example, a stalled connection),
+  // release the skeleton and leave the listener active for a later recovery.
+  setTimeout(()=>{
+    const skeleton = $('skeletonWrap');
+    if(skeleton && getComputedStyle(skeleton).display !== 'none'){
+      skeleton.style.display = 'none';
+      if(!Object.keys(cache).length){
+        toast('Notifications are taking too long to load. Check your connection and tap refresh.', 'orange');
+      }
+    }
+  }, 10000);
 }
 window.addEventListener('DOMContentLoaded', init);
