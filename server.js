@@ -110,9 +110,8 @@ async function verifyFirebaseAdminToken(token) {
   verifier.update(signingInput);
   verifier.end();
   if (!verifier.verify(cert, signature)) throw new Error("Invalid token signature");
-  // Admin access is restricted to the exact configured Firebase email. Do not require
-  // Firebase email_verified here: this project uses the admin account for push control,
-  // and verification status was causing a generic rejection even after successful login.
+  // Keep authorization restricted to the exact configured Firebase email.
+  // Email verification is intentionally not required for this admin account.
   if (payload.email !== ADMIN_EMAIL) {
     throw Object.assign(new Error("Admin account required: sign in with the configured ESI admin email."), { statusCode: 403 });
   }
