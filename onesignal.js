@@ -3,6 +3,18 @@
 (() => {
   const APP_ID = "c7be3202-494e-43dd-b47d-d969d65dd96f";
 
+  // Verified 2026-10-09:
+  // elitescholarinstitute-api.onrender.com serves /api/onesignal/health
+  // with configured:true and the correct App ID.
+  // esi-beams-api.onrender.com is a different service and returns 404 for
+  // /api/onesignal/send. elite-scholar-institute.onrender.com has no server.
+  const PUSH_GATEWAYS = [
+    "https://elitescholarinstitute-api.onrender.com",
+    "https://esi-beams-api.onrender.com",
+    "https://elite-scholar-institute.onrender.com"
+  ];
+  window.ESI_PUSH_GATEWAYS = PUSH_GATEWAYS.slice();
+
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   let readyResolve, readyReject;
   window.ESIOneSignalReady = new Promise((resolve, reject) => {
@@ -15,15 +27,12 @@
       await OneSignal.init({
         appId: APP_ID,
         allowLocalhostAsSecureOrigin: false,
+        // Subdirectory scope so this worker does not replace the PWA worker
+        // registered at "/". Official v16 custom-path setup.
         serviceWorkerPath: "onesignal/OneSignalSDKWorker.js",
         serviceWorkerParam: { scope: "/onesignal/" }
       });
       window.ESIOneSignal = OneSignal;
-
-      // Foreground pop-downs are handled by ESI's own service worker in
-      // password.js so Android/mobile browsers get a reliable native alert.
-      // OneSignal remains responsible for background/closed-tab push delivery.
-
       readyResolve(OneSignal);
       scheduleESIPushReminderCheck();
     } catch (error) {
@@ -32,9 +41,6 @@
     }
   });
 
-  // Show a lightweight ESI reminder whenever push is not active.
-  // The native browser permission prompt is requested only from the user's
-  // click, because browsers can block unsolicited permission requests.
   function getBrowserPermission() {
     return ("Notification" in window) ? Notification.permission : "unsupported";
   }
@@ -69,20 +75,17 @@
       "color:#1a0e00;font:800 11px Poppins,Arial,sans-serif;white-space:nowrap;";
 
     if (permission === "denied") {
-      text.textContent = "🔔 ESI notifications are blocked by your browser.";
+      text.textContent = "ESI notifications are blocked by your browser.";
       button.textContent = "Settings";
       button.addEventListener("click", () => {
         alert("Notifications are blocked for ESI. Re-enable Notifications for this site in your browser settings, then return to ESI.");
       });
     } else if (permission === "granted" && !optedIn) {
-      // The browser permission is already granted. In this case there is
-      // normally no browser permission popup to show; OneSignal can simply
-      // opt the existing permission back in.
-      text.textContent = "🔔 ESI notifications are turned off. Turn them back on?";
-      button.textContent = "Enable";
+      text.textContent = "Browser permission is on, but this device is not subscribed for background push.";
+      button.textContent = "Subscribe";
       button.addEventListener("click", async () => {
         button.disabled = true;
-        button.textContent = "Enabling…";
+        button.textContent = "Subscribing…";
         try {
           const OneSignal = await window.ESIOneSignalReady;
           if (OneSignal?.User?.PushSubscription?.optIn) {
@@ -92,11 +95,11 @@
         } catch (error) {
           console.error("[ESI OneSignal] re-subscribe failed", error);
           button.disabled = false;
-          button.textContent = "Enable";
+          button.textContent = "Subscribe";
         }
       });
     } else {
-      text.textContent = "🔔 Turn on ESI notifications so you don't miss announcements.";
+      text.textContent = "Turn on ESI notifications so announcements can arrive when the site is closed.";
       button.textContent = "Enable";
       button.addEventListener("click", async () => {
         button.disabled = true;
@@ -126,20 +129,14 @@
       const OneSignal = await window.ESIOneSignalReady;
       const browserPermission = getBrowserPermission();
       const optedIn = !!OneSignal?.User?.PushSubscription?.optedIn;
-
-      if (browserPermission === "granted" && optedIn) {
-        removeESIPushReminder();
-      } else {
-        showESIPushReminder(browserPermission, optedIn);
-      }
+      if (browserPermission === "granted" && optedIn) removeESIPushReminder();
+      else showESIPushReminder(browserPermission, optedIn);
     } catch (error) {
       console.warn("[ESI OneSignal] push status check failed", error);
     }
   }
 
   function scheduleESIPushReminderCheck() {
-    // Do not request permission automatically. Just re-check whenever the
-    // user returns to/refreshes the page and offer a user-initiated prompt.
     setTimeout(refreshESIPushReminder, 1200);
     window.addEventListener("pageshow", refreshESIPushReminder);
     document.addEventListener("visibilitychange", () => {
@@ -151,7 +148,20 @@
     const OneSignal = await window.ESIOneSignalReady;
     if (!OneSignal.Notifications) throw new Error("OneSignal notifications are unavailable");
     await OneSignal.Notifications.requestPermission();
+    if (OneSignal.User?.PushSubscription?.optIn) {
+      await OneSignal.User.PushSubscription.optIn();
+    }
     return OneSignal.Notifications.permission;
+  };
+
+  window.getESIPushSubscription = async function() {
+    const OneSignal = await window.ESIOneSignalReady;
+    const sub = OneSignal?.User?.PushSubscription;
+    return {
+      permission: OneSignal?.Notifications?.permission || getBrowserPermission(),
+      optedIn: !!sub?.optedIn,
+      id: sub?.id || null
+    };
   };
 
   window.sendESIPush = async function(payload = {}) {
@@ -164,22 +174,16 @@
       title: String(payload.title || "Elite Scholar Institute").slice(0, 100),
       message: String(payload.message || "New announcement").slice(0, 4000),
       imageUrl: String(payload.imageUrl || "").slice(0, 2000),
-      url: String(payload.url || "/notification.html").slice(0, 1000)
+      url: String(payload.url || "/notification.html").slice(0, 1000),
+      subscriptionId: String(payload.subscriptionId || "").slice(0, 80)
     });
 
-    // Keep the established endpoint first, then try the hostname declared by
-    // render.yaml as a safe fallback if a Render service was renamed.
-    const gateways = [
-      // The Node gateway has existed under this Render service name.
-      "https://esi-beams-api.onrender.com",
-      "https://elitescholarinstitute-api.onrender.com",
-      "https://elite-scholar-institute.onrender.com"
-    ];
     let lastError = null;
-
-    for (const baseUrl of gateways) {
+    for (const baseUrl of PUSH_GATEWAYS) {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
+      // Render free-tier cold starts often exceed 8 seconds. Aborting early
+      // made the feed look successful while OneSignal was never called.
+      const timeout = setTimeout(() => controller.abort(), 55000);
       try {
         const response = await fetch(baseUrl + "/api/onesignal/send", {
           method: "POST",
@@ -197,20 +201,21 @@
           ? await response.json().catch(() => ({}))
           : {};
 
-        // A static website can answer an unknown /api path with an HTML page
-        // and HTTP 200. Never mistake that fallback page for a sent push.
-        if (response.ok && result.ok === true) return result;
+        if (response.ok && result.ok === true && result.id) {
+          result.gateway = new URL(baseUrl).host;
+          return result;
+        }
 
         const detail = result.error ||
-          (!response.ok ? ("HTTP " + response.status) : "Endpoint did not return a confirmed JSON success response");
+          (!response.ok ? ("HTTP " + response.status) : "Endpoint did not return a OneSignal notification id");
         const error = new Error("Push gateway " + baseUrl + ": " + detail);
         lastError = error;
-
-        // Try another known hostname when this one is stale, is a static
-        // service, is unavailable, or does not return the gateway success flag.
-        if (!response.ok && ![404, 502, 503, 504].includes(response.status)) throw error;
+        if (!response.ok && [404, 502, 503, 504].includes(response.status)) continue;
+        if (!response.ok) throw error;
       } catch (error) {
-        lastError = error;
+        lastError = error.name === "AbortError"
+          ? new Error("Push gateway " + baseUrl + " timed out after 55s")
+          : error;
         if (error && error.message && /HTTP \d+/.test(error.message) &&
             !/HTTP (404|502|503|504)/.test(error.message)) throw error;
       } finally {
