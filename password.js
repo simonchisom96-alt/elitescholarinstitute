@@ -24,6 +24,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
+// Share the same Firebase Auth instance with onesignal.js, which runs in a
+// separate script scope and needs the signed-in admin's ID token for push sends.
+window.auth = auth;
 const storage = firebase.storage();
 
 // Every visitor (admin or not) signs in anonymously the moment the page
