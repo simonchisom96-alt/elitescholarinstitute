@@ -1129,96 +1129,31 @@ function resetComposeForm(){
   switchComposeTab('message');
 }
 
-function prepareImageBlob(file){
+function fileToDataUrl(file){
   return new Promise((resolve,reject)=>{
-    let settled = false;
-    const finish = (fn,value) => {
-      if(settled) return;
-      settled = true;
-      clearTimeout(timer);
-      fn(value);
-    };
-    const timer = setTimeout(()=>{
-      try{ reader.abort(); }catch(_){}
-      finish(reject,new Error('Image preparation timed out. Choose the image again or try a smaller image.'));
-    },20000);
-    const reader = new FileReader();
-    reader.onerror = () => finish(reject, new Error('Could not read the image file.'));
-    reader.onabort = () => finish(reject, new Error('Image reading was cancelled.'));
-    reader.onload = e => {
-      const img = new Image();
-      img.onerror = () => finish(reject, new Error('Invalid image file or unsupported image format.'));
-      img.onload = () => {
+    const reader=new FileReader();
+    reader.onerror=()=>reject(new Error('Could not read the selected image.'));
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('The selected file is not a supported image.'));
+      img.onload=()=>{
         try{
-          let w = img.width, h = img.height;
-          if(!w || !h) throw new Error('The selected image has invalid dimensions.');
-          const maxDim = 1000;
-          if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
-          else if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
-          const canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          const ctx = canvas.getContext('2d', {alpha:false});
-          if(!ctx) throw new Error('This browser could not prepare the image canvas.');
-          ctx.drawImage(img, 0, 0, w, h);
-          canvas.toBlob(blob=>{
-            if(blob && blob.size) finish(resolve,blob);
-            else finish(reject,new Error('The browser could not convert this image.'));
-          }, 'image/jpeg', 0.80);
-        }catch(err){ finish(reject,err); }
+          let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+          const maxDim=900;
+          if(w>h&&w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}
+          else if(h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}
+          const canvas=document.createElement('canvas');
+          canvas.width=w;canvas.height=h;
+          const ctx=canvas.getContext('2d');
+          if(!ctx)throw new Error('Image processing is not supported by this browser.');
+          ctx.drawImage(img,0,0,w,h);
+          resolve(canvas.toDataURL('image/jpeg',0.8));
+        }catch(e){reject(e);}
       };
-      img.src = e.target.result;
+      img.src=reader.result;
     };
-    try{ reader.readAsDataURL(file); }
-    catch(err){ finish(reject,err); }
+    try{reader.readAsDataURL(file);}catch(e){reject(e);}
   });
-}
-
-async function uploadNotificationImage(file){
-  if(!file) throw new Error('No image selected');
-  if(!auth.currentUser) throw new Error('Admin authentication required');
-  if(!navigator.onLine) throw new Error('You are offline. Reconnect and try again.');
-  if(file.type && !file.type.startsWith('image/')) throw new Error('Choose an image file.');
-  if(file.size > 10*1024*1024) throw new Error('Image is larger than 10 MB. Choose a smaller image.');
-  const bar=$('uploadProgressBar'), label=$('uploadProgressLabel');
-  const status=(s,p)=>{if(label)label.textContent=s;if(bar&&Number.isFinite(p))bar.style.width=Math.max(0,Math.min(100,p))+'%';};
-  let user=auth.currentUser;
-  status('Refreshing admin authentication…',0);
-  try {
-    await Promise.race([user.getIdToken(true),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Firebase sign-in refresh timed out. Sign in again.')),10000))]);
-  } catch(e) { console.error('[ESI upload auth]',e); throw new Error((e.message||'Firebase sign-in refresh failed')+(e.code?' ('+e.code+')':'')); }
-  user=auth.currentUser;
-  if(!user)throw new Error('Admin session expired. Sign in again.');
-  // Use the proven image-preparation approach from the supplied password-10.js,
-  // but upload the compressed JPEG to Storage (not Base64 into Realtime Database).
-  // This keeps uploads small while producing a stable HTTPS URL for OneSignal.
-  status('Preparing image…',0);
-  const uploadBlob = await prepareImageBlob(file);
-  if(!uploadBlob || !uploadBlob.size) throw new Error('Image preparation returned an empty file.');
-  status('Connecting to Firebase Storage…',0);
-  const ref=storage.ref('notification-images/'+user.uid+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,10)+'.jpg');
-  const task=ref.put(uploadBlob,{contentType:'image/jpeg',cacheControl:'public,max-age=31536000,immutable'});
-  await new Promise((resolve,reject)=>{
-    let settled=false;
-    const finish=(fn,v)=>{if(settled)return;settled=true;clearTimeout(timer);fn(v);};
-    const timer=setTimeout(()=>{try{task.cancel();}catch(_){}const e=new Error('Firebase Storage upload timed out. Check network, bucket, and Storage rules.');e.code='esi/upload-timeout';finish(reject,e);},45000);
-    task.on(firebase.storage.TaskEvent.STATE_CHANGED,snap=>{
-      const pct=snap.totalBytes?Math.round(snap.bytesTransferred/snap.totalBytes*100):0;
-      status('Uploading image… '+pct+'%',pct);
-    },err=>{
-      const code=err&&err.code||'storage/unknown';
-      const messages={'storage/unauthorized':'Firebase Storage rules denied this upload.','storage/unauthenticated':'Firebase authentication failed; sign in again.','storage/bucket-not-found':'Firebase Storage bucket was not found.','storage/no-default-bucket':'No Firebase Storage bucket is configured.','storage/quota-exceeded':'Firebase Storage quota or billing blocked the upload.','storage/retry-limit-exceeded':'Firebase Storage retries exhausted; check network and bucket access.','storage/canceled':'Upload canceled.','esi/upload-timeout':'Firebase Storage upload timed out.'};
-      console.error('[ESI image upload]',{code,message:err&&err.message,serverResponse:err&&err.serverResponse});
-      const e=new Error((messages[code]||(err&&err.message)||'Unknown Firebase Storage error')+' ('+code+')');e.code=code;finish(reject,e);
-    },()=>finish(resolve));
-  });
-  status('Retrieving image link…',100);
-  let url;
-  try { url=await Promise.race([ref.getDownloadURL(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Upload finished, but the image link request timed out.')),10000))]); }
-  catch(e){console.error('[ESI download URL]',e);throw new Error((e.message||'Could not retrieve Firebase image URL')+(e.code?' ('+e.code+')':''));}
-  if(!/^https:\/\//i.test(url))throw new Error('Firebase returned an invalid HTTPS image URL.');
-  await cacheNotificationImageBlob(url,uploadBlob);
-  status('Image ready ✓',100);
-  return url;
 }
 
 async function pushNotif(data){
@@ -1292,127 +1227,72 @@ function sendMessage(){
 }
 
 async async function sendImage(){
-  const caption = $('composeImgCaption').value.trim();
-  const priority = $('composeImgPriority').value;
-  const mode = document.querySelector('input[name=imgMode]:checked').value;
-
+  const caption=$('composeImgCaption').value.trim();
+  const priority=$('composeImgPriority').value;
+  const mode=document.querySelector('input[name=imgMode]:checked').value;
   if(mode==='url'){
-    const url = $('composeImgUrl').value.trim();
-    if(!url){ toast('Paste an image URL','orange'); return; }
-    if(!/^https?:\/\//i.test(url)){ toast('Use a valid HTTPS image URL','orange'); return; }
-    pushNotif({
-      type:'image', imageUrl:url, text:caption, priority, pinned:false,
-      authorName: displayName || 'Elite Scholar Institute',
-      timestamp: firebase.database.ServerValue.TIMESTAMP, reactions:{}, responses:{}, views:{}
-    });
+    const url=$('composeImgUrl').value.trim();
+    if(!url){toast('Paste an image URL','orange');return;}
+    if(!/^https?:\/\//i.test(url)){toast('Use a valid HTTPS image URL','orange');return;}
+    await pushNotif({type:'image',imageUrl:url,text:caption,priority,pinned:false,authorName:displayName||'Elite Scholar Institute',timestamp:firebase.database.ServerValue.TIMESTAMP,reactions:{},responses:{},views:{}});
     return;
   }
-
-  const file = $('composeImgFile').files[0];
-  if(!file){ toast('Choose an image file','orange'); return; }
-
+  const file=$('composeImgFile').files[0];
+  if(!file){toast('Choose an image file','orange');return;}
   $('uploadProgressWrap').style.display='block';
   $('uploadProgressBar').style.width='0%';
-  $('uploadProgressLabel').textContent = 'Preparing image…';
+  $('uploadProgressLabel').textContent='Processing image...';
   try{
-    const imageUrl = await uploadNotificationImage(file);
-    await pushNotif({
-      type:'image', imageUrl, text:caption, priority, pinned:false,
-      authorName: displayName || 'Elite Scholar Institute',
-      timestamp: firebase.database.ServerValue.TIMESTAMP, reactions:{}, responses:{}, views:{}
-    });
-  }catch(err){
-    console.error('[ESI image upload]', err);
-    toast('Image upload failed: ' + err.message, 'orange');
-  }finally{
-    $('uploadProgressWrap').style.display='none';
-  }
+    const dataUrl=await fileToDataUrl(file);
+    await pushNotif({type:'image',imageUrl:dataUrl,text:caption,priority,pinned:false,authorName:displayName||'Elite Scholar Institute',timestamp:firebase.database.ServerValue.TIMESTAMP,reactions:{},responses:{},views:{}});
+  }catch(err){console.error('[ESI image]',err);}
+  finally{$('uploadProgressWrap').style.display='none';}
 }
 
-function sendPoll(){
-  const question = $('composePollQ').value.trim();
-  const options = Array.from(document.querySelectorAll('.pollOptionInput')).map(i=>i.value.trim()).filter(Boolean);
-  const priority = $('composePollPriority').value;
-  const allowMultiple = $('composePollMultiple').checked;
-
-  if(!question){ toast('Add a poll question','orange'); return; }
-  if(options.length<2){ toast('Add at least 2 options','orange'); return; }
-
-  const pollImgFile = $('composePollImgFile').files[0];
-  const pollImgUrlInput = $('composePollImgUrl').value.trim();
-
-  const finalizePoll = (imgUrl = '') => {
-    pushNotif({
-      type:'poll', poll:{ question, options, allowMultiple, imageUrl: imgUrl, votes:{} }, priority, pinned:false,
-      authorName: displayName || 'Elite Scholar Institute',
-      timestamp: firebase.database.ServerValue.TIMESTAMP, reactions:{}, responses:{}, views:{}
-    });
-  };
-
-  if(pollImgFile){
+async function sendPoll(){
+  const question=$('composePollQ').value.trim();
+  const options=Array.from(document.querySelectorAll('.pollOptionInput')).map(i=>i.value.trim()).filter(Boolean);
+  const priority=$('composePollPriority').value;
+  const allowMultiple=$('composePollMultiple').checked;
+  if(!question){toast('Add a poll question','orange');return;}
+  if(options.length<2){toast('Add at least 2 options','orange');return;}
+  const file=$('composePollImgFile').files[0];
+  const urlInput=$('composePollImgUrl').value.trim();
+  const finalize=imgUrl=>pushNotif({type:'poll',poll:{question,options,allowMultiple,imageUrl:imgUrl||'',votes:{}},priority,pinned:false,authorName:displayName||'Elite Scholar Institute',timestamp:firebase.database.ServerValue.TIMESTAMP,reactions:{},responses:{},views:{}});
+  if(file){
     $('uploadProgressWrap').style.display='block';
-    $('uploadProgressLabel').textContent = 'Uploading poll image...';
-    uploadNotificationImage(pollImgFile).then(finalizePoll).catch(err=>{
-      console.error('[ESI poll image upload]', err);
-      toast('Poll image upload failed: ' + err.message, 'orange');
-    }).finally(()=>{ $('uploadProgressWrap').style.display='none'; });
-  } else if(pollImgUrlInput){
-    if(!/^https?:\/\//i.test(pollImgUrlInput)){ toast('Use a valid HTTPS image URL','orange'); return; }
-    finalizePoll(pollImgUrlInput);
-  } else {
-    finalizePoll('');
-  }
+    $('uploadProgressLabel').textContent='Processing poll image...';
+    try{await finalize(await fileToDataUrl(file));}catch(err){console.error('[ESI poll image]',err);}
+    finally{$('uploadProgressWrap').style.display='none';}
+  }else if(urlInput){if(!/^https?:\/\//i.test(urlInput)){toast('Use a valid HTTPS image URL','orange');return;}await finalize(urlInput);}
+  else await finalize('');
 }
 
-function sendQuiz(){
-  const question = $('composeQuizQ').value.trim();
-  const explanation = $('composeQuizExplanation').value.trim();
-  const optionRows = Array.from(document.querySelectorAll('#quizOptionsContainer .poll-opt-row'));
-  const options = [];
-  let correctIndex = -1;
-
-  optionRows.forEach((row, idx) => {
-    const val = row.querySelector('.quizOptionInput').value.trim();
-    const isCorrect = row.querySelector('.quizCorrectSelect').value === 'correct';
-    if(val){
-      options.push(val);
-      if(isCorrect) correctIndex = idx;
-    }
+async function sendQuiz(){
+  const question=$('composeQuizQ').value.trim();
+  const explanation=$('composeQuizExplanation').value.trim();
+  const rows=Array.from(document.querySelectorAll('#quizOptionsContainer .poll-opt-row'));
+  const options=[];
+  let correctIndex=-1;
+  rows.forEach((row,idx)=>{
+    const value=row.querySelector('.quizOptionInput').value.trim();
+    if(value){options.push(value);if(row.querySelector('.quizCorrectSelect').value==='correct')correctIndex=options.length-1;}
   });
-
-  const priority = $('composeQuizPriority').value;
-  if(!question){ toast('Add a quiz question','orange'); return; }
-  if(options.length < 2){ toast('Add at least 2 options','orange'); return; }
-  if(correctIndex === -1){ toast('Please mark at least one correct option','orange'); return; }
-  if(!explanation){ toast('Provide an explanation','orange'); return; }
-
-  const quizImgFile = $('composeQuizImgFile').files[0];
-  const quizImgUrlInput = $('composeQuizImgUrl').value.trim();
-
-  const finalizeQuiz = (imgUrl = '') => {
-    pushNotif({
-      type:'quiz',
-      quiz: { question, options, correctIndex, explanation, imageUrl: imgUrl, votes: {} },
-      priority, pinned: false,
-      authorName: displayName || 'Elite Scholar Institute',
-      timestamp: firebase.database.ServerValue.TIMESTAMP,
-      reactions: {}, responses: {}, views: {}
-    });
-  };
-
-  if(quizImgFile){
+  const priority=$('composeQuizPriority').value;
+  if(!question){toast('Add a quiz question','orange');return;}
+  if(options.length<2){toast('Add at least 2 options','orange');return;}
+  if(correctIndex===-1){toast('Please mark at least one correct option','orange');return;}
+  if(!explanation){toast('Provide an explanation','orange');return;}
+  const file=$('composeQuizImgFile').files[0];
+  const urlInput=$('composeQuizImgUrl').value.trim();
+  const finalize=imgUrl=>pushNotif({type:'quiz',quiz:{question,options,correctIndex,explanation,imageUrl:imgUrl||'',votes:{}},priority,pinned:false,authorName:displayName||'Elite Scholar Institute',timestamp:firebase.database.ServerValue.TIMESTAMP,reactions:{},responses:{},views:{}});
+  if(file){
     $('uploadProgressWrap').style.display='block';
-    $('uploadProgressLabel').textContent = 'Uploading quiz image...';
-    uploadNotificationImage(quizImgFile).then(finalizeQuiz).catch(err=>{
-      console.error('[ESI quiz image upload]', err);
-      toast('Quiz image upload failed: ' + err.message, 'orange');
-    }).finally(()=>{ $('uploadProgressWrap').style.display='none'; });
-  } else if(quizImgUrlInput){
-    if(!/^https?:\/\//i.test(quizImgUrlInput)){ toast('Use a valid HTTPS image URL','orange'); return; }
-    finalizeQuiz(quizImgUrlInput);
-  } else {
-    finalizeQuiz('');
-  }
+    $('uploadProgressLabel').textContent='Processing quiz image...';
+    try{await finalize(await fileToDataUrl(file));}catch(err){console.error('[ESI quiz image]',err);}
+    finally{$('uploadProgressWrap').style.display='none';}
+  }else if(urlInput){if(!/^https?:\/\//i.test(urlInput)){toast('Use a valid HTTPS image URL','orange');return;}await finalize(urlInput);}
+  else await finalize('');
 }
 
 /* ============================================================
