@@ -1188,12 +1188,15 @@ async function uploadNotificationImage(file){
   } catch(e) { console.error('[ESI upload auth]',e); throw new Error((e.message||'Firebase sign-in refresh failed')+(e.code?' ('+e.code+')':'')); }
   user=auth.currentUser;
   if(!user)throw new Error('Admin session expired. Sign in again.');
+  // Use the proven image-preparation approach from the supplied password-10.js,
+  // but upload the compressed JPEG to Storage (not Base64 into Realtime Database).
+  // This keeps uploads small while producing a stable HTTPS URL for OneSignal.
+  status('Preparing image…',0);
+  const uploadBlob = await prepareImageBlob(file);
+  if(!uploadBlob || !uploadBlob.size) throw new Error('Image preparation returned an empty file.');
   status('Connecting to Firebase Storage…',0);
-  const name=String(file.name||'image').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,80);
-  const ext=(name.match(/\.(jpg|jpeg|png|webp|gif|avif)$/i)||[])[1]||'jpg';
-  const mime=file.type&&file.type.startsWith('image/')?file.type:'image/jpeg';
-  const ref=storage.ref('notification-images/'+user.uid+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,10)+'.'+ext);
-  const task=ref.put(file,{contentType:mime,cacheControl:'public,max-age=31536000,immutable'});
+  const ref=storage.ref('notification-images/'+user.uid+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,10)+'.jpg');
+  const task=ref.put(uploadBlob,{contentType:'image/jpeg',cacheControl:'public,max-age=31536000,immutable'});
   await new Promise((resolve,reject)=>{
     let settled=false;
     const finish=(fn,v)=>{if(settled)return;settled=true;clearTimeout(timer);fn(v);};
@@ -1213,7 +1216,7 @@ async function uploadNotificationImage(file){
   try { url=await Promise.race([ref.getDownloadURL(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Upload finished, but the image link request timed out.')),10000))]); }
   catch(e){console.error('[ESI download URL]',e);throw new Error((e.message||'Could not retrieve Firebase image URL')+(e.code?' ('+e.code+')':''));}
   if(!/^https:\/\//i.test(url))throw new Error('Firebase returned an invalid HTTPS image URL.');
-  await cacheNotificationImageBlob(url,file);
+  await cacheNotificationImageBlob(url,uploadBlob);
   status('Image ready ✓',100);
   return url;
 }
