@@ -1177,78 +1177,45 @@ async function uploadNotificationImage(file){
   if(!file) throw new Error('No image selected');
   if(!auth.currentUser) throw new Error('Admin authentication required');
   if(!navigator.onLine) throw new Error('You are offline. Reconnect and try again.');
-
-  const bar = $('uploadProgressBar');
-  const label = $('uploadProgressLabel');
-  const status = (text, pct) => {
-    if(label) label.textContent = text;
-    if(bar && Number.isFinite(pct)) bar.style.width = Math.max(0,Math.min(100,pct)) + '%';
-  };
-
-  // Update the visible stage BEFORE every awaited operation. Previously the
-  // label stayed at “Preparing image…” while image decoding/canvas conversion
-  // could hang without any timeout or useful feedback.
-  status('Checking admin sign-in…',0);
-  await auth.currentUser.getIdToken(true);
-  status('Preparing image…',0);
-  const blob = await prepareImageBlob(file);
-  if(!blob || !blob.size) throw new Error('Could not prepare this image.');
-  status('Connecting to Firebase upload…',0);
-  const safeName = String(file.name || 'image').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,80);
-  const path = 'notification-images/' + auth.currentUser.uid + '/' + Date.now() + '-' + Math.random().toString(36).slice(2,10) + '-' + safeName.replace(/\.[^.]+$/,'') + '.jpg';
-  const ref = storage.ref(path);
-  const task = ref.put(blob, {
-    contentType:'image/jpeg',
-    cacheControl:'public,max-age=31536000,immutable'
-  });
-
+  if(file.type && !file.type.startsWith('image/')) throw new Error('Choose an image file.');
+  if(file.size > 10*1024*1024) throw new Error('Image is larger than 10 MB. Choose a smaller image.');
+  const bar=$('uploadProgressBar'), label=$('uploadProgressLabel');
+  const status=(s,p)=>{if(label)label.textContent=s;if(bar&&Number.isFinite(p))bar.style.width=Math.max(0,Math.min(100,p))+'%';};
+  let user=auth.currentUser;
+  status('Refreshing admin authentication…',0);
+  try {
+    await Promise.race([user.getIdToken(true),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Firebase sign-in refresh timed out. Sign in again.')),10000))]);
+  } catch(e) { console.error('[ESI upload auth]',e); throw new Error((e.message||'Firebase sign-in refresh failed')+(e.code?' ('+e.code+')':'')); }
+  user=auth.currentUser;
+  if(!user)throw new Error('Admin session expired. Sign in again.');
+  status('Connecting to Firebase Storage…',0);
+  const name=String(file.name||'image').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,80);
+  const ext=(name.match(/\.(jpg|jpeg|png|webp|gif|avif)$/i)||[])[1]||'jpg';
+  const mime=file.type&&file.type.startsWith('image/')?file.type:'image/jpeg';
+  const ref=storage.ref('notification-images/'+user.uid+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,10)+'.'+ext);
+  const task=ref.put(file,{contentType:mime,cacheControl:'public,max-age=31536000,immutable'});
   await new Promise((resolve,reject)=>{
-    let done = false;
-    const finish = (fn,value) => {
-      if(done) return;
-      done = true;
-      clearTimeout(timer);
-      fn(value);
-    };
-    const timer = setTimeout(()=>{
-      try{ task.cancel(); }catch(_){}
-      const err = new Error('Upload stalled for 60 seconds. Please retry.');
-      err.code = 'esi/upload-timeout';
-      finish(reject,err);
-    },60000);
-    task.on(firebase.storage.TaskEvent.STATE_CHANGED,
-      snap=>{
-        const pct = snap.totalBytes ? Math.round(snap.bytesTransferred / snap.totalBytes * 100) : 0;
-        status((snap.state === firebase.storage.TaskState.PAUSED ? 'Paused' : 'Uploading') + ' image… ' + pct + '%',pct);
-      },
-      err=>{
-        const code = err && err.code || 'storage/unknown';
-        const known = {
-          'storage/unauthorized':'Firebase Storage rules denied this upload.',
-          'storage/unauthenticated':'Firebase authentication failed; sign in again.',
-          'storage/bucket-not-found':'The configured Firebase Storage bucket was not found.',
-          'storage/no-default-bucket':'No default Firebase Storage bucket is configured.',
-          'storage/project-not-found':'Firebase could not find the configured project.',
-          'storage/quota-exceeded':'Firebase Storage quota or billing blocked this upload.',
-          'storage/retry-limit-exceeded':'Firebase Storage retries were exhausted; check connection and bucket access.',
-          'storage/canceled':'The upload was canceled.',
-          'esi/upload-timeout':'The upload stalled and timed out.'
-        };
-        console.error('[ESI image upload]',{code,message:err && err.message,serverResponse:err && err.serverResponse});
-        const wrapped = new Error((known[code] || (err && err.message) || 'Unknown Firebase Storage error') + ' (' + code + ')');
-        wrapped.code = code;
-        finish(reject,wrapped);
-      },
-      ()=>finish(resolve)
-    );
+    let settled=false;
+    const finish=(fn,v)=>{if(settled)return;settled=true;clearTimeout(timer);fn(v);};
+    const timer=setTimeout(()=>{try{task.cancel();}catch(_){}const e=new Error('Firebase Storage upload timed out. Check network, bucket, and Storage rules.');e.code='esi/upload-timeout';finish(reject,e);},45000);
+    task.on(firebase.storage.TaskEvent.STATE_CHANGED,snap=>{
+      const pct=snap.totalBytes?Math.round(snap.bytesTransferred/snap.totalBytes*100):0;
+      status('Uploading image… '+pct+'%',pct);
+    },err=>{
+      const code=err&&err.code||'storage/unknown';
+      const messages={'storage/unauthorized':'Firebase Storage rules denied this upload.','storage/unauthenticated':'Firebase authentication failed; sign in again.','storage/bucket-not-found':'Firebase Storage bucket was not found.','storage/no-default-bucket':'No Firebase Storage bucket is configured.','storage/quota-exceeded':'Firebase Storage quota or billing blocked the upload.','storage/retry-limit-exceeded':'Firebase Storage retries exhausted; check network and bucket access.','storage/canceled':'Upload canceled.','esi/upload-timeout':'Firebase Storage upload timed out.'};
+      console.error('[ESI image upload]',{code,message:err&&err.message,serverResponse:err&&err.serverResponse});
+      const e=new Error((messages[code]||(err&&err.message)||'Unknown Firebase Storage error')+' ('+code+')');e.code=code;finish(reject,e);
+    },()=>finish(resolve));
   });
-
-  status('Getting image link…',100);
-  const imageUrl = await ref.getDownloadURL();
-  if(!/^https:\/\//i.test(imageUrl)) throw new Error('Firebase returned an invalid image URL.');
-  await cacheNotificationImageBlob(imageUrl,blob);
+  status('Retrieving image link…',100);
+  let url;
+  try { url=await Promise.race([ref.getDownloadURL(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Upload finished, but the image link request timed out.')),10000))]); }
+  catch(e){console.error('[ESI download URL]',e);throw new Error((e.message||'Could not retrieve Firebase image URL')+(e.code?' ('+e.code+')':''));}
+  if(!/^https:\/\//i.test(url))throw new Error('Firebase returned an invalid HTTPS image URL.');
+  await cacheNotificationImageBlob(url,file);
   status('Image ready ✓',100);
-  return imageUrl;
+  return url;
 }
 
 async function pushNotif(data){
