@@ -22,6 +22,7 @@
     try {
       await OneSignal.init({
         appId: APP_ID,
+        autoResubscribe: true,
         allowLocalhostAsSecureOrigin: false,
         // Subdirectory scope so this worker does not replace the PWA worker
         // registered at "/". Official v16 custom-path setup.
