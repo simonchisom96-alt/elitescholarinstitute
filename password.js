@@ -89,6 +89,7 @@ const LAST_BROADCAST_TS_KEY = 'esi_last_broadcast_ts_v1';
 const NOTIFICATION_CACHE_KEY = 'esi_notification_cache_v1';
 let lastMaxTimestamp = Number(localStorage.getItem(LAST_BROADCAST_TS_KEY) || 0);
 let replayOnReconnect = false;
+const announcedNotificationIds = new Set();
 let dbRefHandle = null, dbRefCb = null;
 let observer = null;
 
@@ -357,7 +358,7 @@ async function replayMissedBroadcasts(){
     snap.forEach(child=>{
       const raw = child.val();
       const item = raw && typeof raw === 'object' ? { ...raw, id: child.key } : { id: child.key, text: String(raw || '') };
-      if(Number(item.timestamp || 0) > since && !cache[item.id]) missed.push(item);
+      if(Number(item.timestamp || 0) > since) missed.push(item);
     });
     missed.sort((a,b)=>Number(a.timestamp||0)-Number(b.timestamp||0));
     if(!missed.length) return;
@@ -415,7 +416,10 @@ function processSnapshot(snap){
   if(lastMaxTimestamp > 0) localStorage.setItem(LAST_BROADCAST_TS_KEY, String(lastMaxTimestamp));
   replayOnReconnect = false;
 
-  cache = newCache;
+  const mergedCache = { ...cache, ...newCache };
+  const mergedItems = Object.values(mergedCache).sort((a,b)=>Number(b.timestamp||0)-Number(a.timestamp||0)).slice(0, Math.max(50, pageLimit));
+  cache = {};
+  mergedItems.forEach(item=>{ if(item && item.id) cache[item.id] = item; });
   saveNotificationCache(cache);
   hasMore = ids.length >= pageLimit;
   $('loadMoreBtn').style.display = hasMore ? 'block' : 'none';
@@ -524,6 +528,9 @@ async function showESIForegroundNotification(preview, item){
   }
 }
 function handleNewItem(item){
+  const itemId = String(item && item.id || '');
+  if(itemId && announcedNotificationIds.has(itemId)) return;
+  if(itemId) announcedNotificationIds.add(itemId);
   const preview = (item.poll && item.poll.question) || (item.quiz && item.quiz.question) || (item.text||'New announcement');
   const label = item.type==='poll' ? '📊 New poll: ' : item.type==='quiz' ? '💡 New quiz: ' : item.type==='image' ? '🖼️ New image: ' : '💬 Announcement: ';
   toast(label + preview.slice(0,40), item.priority==='urgent' ? 'orange' : 'blue');
