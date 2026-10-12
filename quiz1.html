@@ -277,6 +277,46 @@
         body *{box-sizing:border-box}
         body{-webkit-user-select:none;user-select:none}
     </style>
+    <style>
+
+    /* Setup and history clarity only: preserve quiz timer, metrics, questions and results. */
+    #setup { padding:clamp(14px,2.5vw,22px); margin-top:14px; border-radius:18px; }
+    #setup h2, #historyWrap h2 { font-size:clamp(15px,2vw,18px); line-height:1.5; text-transform:none; letter-spacing:.1px; margin-bottom:14px; }
+    #setup .select-btn { min-height:48px; padding:12px 13px; gap:10px; font-size:13px; border-width:1.5px; line-height:1.5; }
+    #setup .select-btn > span:first-child { font-size:12px; line-height:1.5; color:var(--text) !important; }
+    #selTxt { font-size:12px !important; text-align:right; }
+    #mini { display:flex; flex-wrap:wrap; gap:6px; margin:9px 0 12px; }
+    #mini .chip-mini { font-size:10px; line-height:1.45; padding:6px 9px; }
+    #topicPickWrap { gap:8px; margin:10px 0 16px; }
+    #topicPickWrap .esi-topic-dd-btn { min-height:44px; padding:10px 12px !important; font-size:12px !important; line-height:1.5; }
+    #setup .mode-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin:10px 0 18px; }
+    #setup .mode-card { min-width:0; min-height:94px; padding:13px 10px; border-radius:12px; display:flex; flex-direction:column; justify-content:center; gap:6px; }
+    #setup .mode-card b { font-size:12px; line-height:1.45; }
+    #setup .mode-card span { font-size:10px; line-height:1.55; }
+    #setup label { display:block; font-size:12px; line-height:1.5; margin:0 0 7px; font-weight:700; color:var(--text); }
+    #submodeWrapper { display:flex; flex-wrap:wrap; gap:7px; overflow:visible; margin:8px 0 16px; }
+    #setup .submode-chip { min-height:36px; padding:8px 10px; font-size:11px; line-height:1.45; white-space:normal; text-align:left; }
+    #setup .row { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:14px !important; align-items:start; }
+    #setup .row > div { min-width:0; }
+    #setup input:not([type="checkbox"]), #setup select { min-height:43px; padding:9px 10px; font-size:13px; }
+    #setup .input-hint { font-size:10px; line-height:1.5; margin-top:5px; }
+    #go { min-height:48px; margin-top:18px !important; font-size:13px; border-radius:11px; }
+    #stat { font-size:11px !important; line-height:1.5; }
+    #historyWrap { padding:clamp(14px,2.5vw,22px); margin-top:14px; border-radius:18px; }
+    #historyWrap details { padding:12px !important; margin-top:10px !important; border-radius:12px !important; }
+    #historyWrap summary { font-size:12px !important; line-height:1.6; padding:3px 0; }
+    #historyWrap #s_spak, #historyWrap #s_speed, #historyWrap #s_free, #historyWrap #h_spak, #historyWrap #h_speed, #historyWrap #h_free, #historyWrap #h_flag { font-size:11px !important; line-height:1.7; overflow-wrap:anywhere; }
+    #historyWrap button { min-height:42px; font-size:11px !important; }
+    @media (max-width:600px) {
+      #setup, #historyWrap { padding:13px; border-radius:15px; }
+      #setup .mode-row { grid-template-columns:1fr; gap:8px; }
+      #setup .mode-card { min-height:70px; padding:12px; }
+      #setup .mode-card b { font-size:12px; }
+      #setup .row { gap:10px; }
+      #setup .submode-chip { flex:1 1 44%; }
+    }
+    @media (max-width:360px) { #setup .row { grid-template-columns:1fr; } }
+    </style>
 
 </head>
 <body>
@@ -298,7 +338,7 @@
     <div class="card" id="setup">
         <h2>CBT Setup Panel</h2>
         <div class="select-btn" onclick="openDrawer()" style="margin-top:6px">
-            <span style="color:var(--muted)">SELECT YOUR SUBJECTS</span>
+            <span style="color:var(--muted)">(SELECT YOUR SUBJECTS)</span>
             <b id="selTxt" style="font-size:9.5px;color:var(--accent)">Choose Subject</b>
         </div>
         <div id="mini" class="mini"></div>
