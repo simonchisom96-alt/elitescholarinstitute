@@ -32,6 +32,41 @@
       window.ESIOneSignal = OneSignal;
       readyResolve(OneSignal);
       scheduleESIPushReminderCheck();
+
+      // HaniLearn pattern adapted to ESI's Firebase Auth: keep OneSignal's
+      // external identity aligned with the currently signed-in Firebase user.
+      // No HaniLearn app IDs, credentials, APIs, or backend are used here.
+      const syncESIOneSignalIdentity = async user => {
+        try {
+          if (!user) {
+            if (OneSignal.User?.externalId && typeof OneSignal.logout === "function") {
+              await OneSignal.logout();
+            }
+            return;
+          }
+          const externalId = String(user.uid || "");
+          if (externalId && OneSignal.User?.externalId !== externalId &&
+              typeof OneSignal.login === "function") {
+            await OneSignal.login(externalId);
+          }
+        } catch (identityError) {
+          console.warn("[ESI OneSignal] identity sync failed", identityError);
+        }
+      };
+      const bindESIFirebaseIdentity = () => {
+        const firebaseAuth = window.auth;
+        if (!firebaseAuth || typeof firebaseAuth.onAuthStateChanged !== "function") return false;
+        firebaseAuth.onAuthStateChanged(user => { void syncESIOneSignalIdentity(user); });
+        if (firebaseAuth.currentUser) void syncESIOneSignalIdentity(firebaseAuth.currentUser);
+        return true;
+      };
+      // password.js exposes window.auth after Firebase initialization; retry
+      // briefly rather than racing deferred script execution.
+      let identityAttempts = 0;
+      const identityTimer = setInterval(() => {
+        identityAttempts++;
+        if (bindESIFirebaseIdentity() || identityAttempts >= 40) clearInterval(identityTimer);
+      }, 250);
     } catch (error) {
       console.error("[ESI OneSignal] initialization failed", error);
       readyReject(error);
