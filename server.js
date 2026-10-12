@@ -18,7 +18,7 @@ const FIREBASE_PROJECT_ID = "elite-notification";
 const ADMIN_EMAIL = "admin@elitescholarinstitute.app";
 const MAX_BODY = 64 * 1024;
 const ROOT = __dirname;
-const GATEWAY_VERSION = "2026-10-09-background-push";
+const GATEWAY_VERSION = "2026-10-12-reliability-hardening";
 
 let certCache = { expiresAt: 0, certs: {} };
 
