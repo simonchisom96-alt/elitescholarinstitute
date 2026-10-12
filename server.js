@@ -156,8 +156,16 @@ function postOneSignal(requestBody, authorization) {
       }
     }, res => {
       let data = "";
+      let responseBytes = 0;
       res.setEncoding("utf8");
-      res.on("data", chunk => { data += chunk; });
+      res.on("data", chunk => {
+        responseBytes += Buffer.byteLength(chunk);
+        if (responseBytes > 256 * 1024) {
+          res.destroy(new Error("OneSignal response exceeded the 256 KB safety limit"));
+          return;
+        }
+        data += chunk;
+      });
       res.on("end", () => {
         let parsed = {};
         try { parsed = data ? JSON.parse(data) : {}; } catch (_) {}
@@ -167,6 +175,13 @@ function postOneSignal(requestBody, authorization) {
         }
         resolve(parsed);
       });
+      res.on("error", reject);
+    });
+    // Do not let a stalled upstream request leave the admin UI waiting forever.
+    // This is a timeout, not an automatic retry: retrying an ambiguous send could
+    // deliver duplicate announcements if OneSignal accepted the first request.
+    req.setTimeout(20000, () => {
+      req.destroy(new Error("OneSignal API request timed out after 20 seconds"));
     });
     req.on("error", reject);
     req.write(requestBody);
@@ -264,7 +279,7 @@ async function handle(req, res) {
       appId: ONE_SIGNAL_APP_ID,
       firebaseProject: FIREBASE_PROJECT_ID,
       version: GATEWAY_VERSION,
-      audience: "Subscribed Users",
+      audience: "All currently subscribed push users",
       hostname: req.headers.host || ""
     });
   }
