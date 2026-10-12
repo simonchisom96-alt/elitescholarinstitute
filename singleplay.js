@@ -2845,9 +2845,6 @@ function normalizeExplanationCasing(q){
     let parts=raw.split(/\bbecause\b/i);
     let justification=(parts.length>1?parts.slice(1).join('because'):raw).trim();
     justification=justification.replace(/^[,.:;\s]+/,'');
-    // AI explanations sometimes repeat the full answer lead-in after the first
-    // "because". Strip any repeated "The correct answer is ..., because"
-    // prefixes so the explanation contains that lead-in only once.
     let previous='';
     while(justification && justification!==previous){
       previous=justification;
@@ -2855,16 +2852,13 @@ function normalizeExplanationCasing(q){
       justification=justification.replace(/^(?:because\s*)+/i,'').trim();
       justification=justification.replace(/^[,.:;\s]+/,'');
     }
-    let selectedOption=String(q.options[q.answer]||'').trim().replace(/[.!?]+$/,'');
-    const escapedOption=selectedOption.replace(/[.*+?^${}()|[\]\\]/g,'\\    if(justification.length<10) justification='this matches the correct principle for this question.';');
-    if(escapedOption){
-      const repeatedOptionLead=new RegExp('^the\\s+correct\\s+answer\\s+is\\s+'+escapedOption+'[.!?]*\\s*','i');
-      justification=justification.replace(repeatedOptionLead,'').trim();
+    const selectedOption=String(q.options[q.answer]||'').trim().replace(/[.!?]+$/,'');
+    const repeatedLead=('the correct answer is '+selectedOption).toLowerCase();
+    if(selectedOption && justification.toLowerCase().startsWith(repeatedLead)){
+      justification=justification.slice(repeatedLead.length).replace(/^[.!?,:;\s]+/,'').trim();
     }
     if(justification.length<10) justification='this matches the correct principle for this question.';
-    let opt=String(q.options[q.answer]||'').trim();
-    opt=opt.replace(/[.!?]+$/,'');
-    opt=opt.replace(/^([A-Z])/m, m=>m.toLowerCase());
+    let opt=selectedOption.replace(/^([A-Z])/m, m=>m.toLowerCase());
     q.explanation=`The correct answer is ${opt}, because ${justification}`;
     return q;
 }
