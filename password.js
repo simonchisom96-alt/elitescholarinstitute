@@ -1334,7 +1334,20 @@ async function pushNotif(data){
       // Uploaded images are data URLs for the in-page feed. Convert them to
       // a stable HTTPS Firebase Storage URL so OneSignal can attach the image
       // to the OS notification when Chrome is backgrounded or closed.
-      const nativeImageUrl = await getPushImageUrl(imageUrl);
+      // Image hosting is best-effort: a stalled Firebase Storage upload must
+      // never block the actual text push for a message, poll, quiz, or image post.
+      let nativeImageUrl = '';
+      if (imageUrl) {
+        let imageTimer;
+        try {
+          nativeImageUrl = await Promise.race([
+            getPushImageUrl(imageUrl),
+            new Promise(resolve => { imageTimer = setTimeout(() => resolve(''), 10000); })
+          ]);
+        } finally {
+          if (imageTimer) clearTimeout(imageTimer);
+        }
+      }
       if(nativeImageUrl) pushPayload.imageUrl = nativeImageUrl;
       else if(imageUrl) toast('Feed saved. Image could not be prepared for the system notification, so the text push will still be sent.', 'orange');
 
