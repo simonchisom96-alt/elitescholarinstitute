@@ -354,7 +354,7 @@ function subscribe(){
 async function replayMissedBroadcasts(){
   const offlineCheckpoint = localStorage.getItem(OFFLINE_CHECKPOINT_KEY);
   const since = offlineCheckpoint !== null ? Number(offlineCheckpoint || 0) : Number(localStorage.getItem(LAST_BROADCAST_TS_KEY) || 0);
-  if(!since) return;
+  if(!since && offlineCheckpoint === null) return;
   try{
     const snap = await db.ref('notifications')
       .orderByChild('timestamp')
@@ -367,7 +367,15 @@ async function replayMissedBroadcasts(){
       if(Number(item.timestamp || 0) > since) missed.push(item);
     });
     missed.sort((a,b)=>Number(a.timestamp||0)-Number(b.timestamp||0));
-    if(!missed.length) return;
+    if(!missed.length){
+      const checkpoint = Math.max(since, lastMaxTimestamp);
+      if(checkpoint > 0){
+        lastMaxTimestamp = checkpoint;
+        localStorage.setItem(LAST_BROADCAST_TS_KEY, String(checkpoint));
+      }
+      localStorage.removeItem(OFFLINE_CHECKPOINT_KEY);
+      return;
+    }
 
     // IMPORTANT: replaying only the toast/alert loses the actual missed items
     // from the feed, especially when the realtime query is limited to the last
