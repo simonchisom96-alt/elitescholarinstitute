@@ -86,6 +86,7 @@ let pageLimit = 20;
 let hasMore = false;
 let initialLoadDone = false;
 const LAST_BROADCAST_TS_KEY = 'esi_last_broadcast_ts_v1';
+const OFFLINE_CHECKPOINT_KEY = 'esi_offline_checkpoint_v1';
 const NOTIFICATION_CACHE_KEY = 'esi_notification_cache_v1';
 let lastMaxTimestamp = Number(localStorage.getItem(LAST_BROADCAST_TS_KEY) || 0);
 let replayOnReconnect = false;
@@ -234,14 +235,20 @@ window.addEventListener('scroll', ()=>{
 window.addEventListener('online', ()=>{
   $('offlineBanner').classList.remove('show');
   replayOnReconnect = true;
-  // Start catch-up BEFORE refreshing the live listener so the recovery query
-  // captures the last timestamp saved before the outage. The Firebase feed
-  // remains the source of truth; the local cache is only the offline fallback.
   void replayMissedBroadcasts();
   subscribe();
 });
+window.addEventListener('pageshow', ()=>{
+  if(navigator.onLine){ replayOnReconnect = true; void replayMissedBroadcasts(); }
+});
+document.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden && navigator.onLine){ replayOnReconnect = true; void replayMissedBroadcasts(); }
+});
 window.addEventListener('offline', ()=>{
   $('offlineBanner').classList.add('show');
+  if(localStorage.getItem(OFFLINE_CHECKPOINT_KEY) === null){
+    localStorage.setItem(OFFLINE_CHECKPOINT_KEY, String(Number(localStorage.getItem(LAST_BROADCAST_TS_KEY) || 0)));
+  }
 });
 
 /* ============================================================
@@ -345,9 +352,8 @@ function subscribe(){
 }
 
 async function replayMissedBroadcasts(){
-  // Read the checkpoint before awaiting Firebase: the live listener may update
-  // it while this catch-up query is in flight.
-  const since = Number(localStorage.getItem(LAST_BROADCAST_TS_KEY) || 0);
+  const offlineCheckpoint = localStorage.getItem(OFFLINE_CHECKPOINT_KEY);
+  const since = offlineCheckpoint !== null ? Number(offlineCheckpoint || 0) : Number(localStorage.getItem(LAST_BROADCAST_TS_KEY) || 0);
   if(!since) return;
   try{
     const snap = await db.ref('notifications')
@@ -378,6 +384,7 @@ async function replayMissedBroadcasts(){
     const checkpoint = Math.max(since, newest, lastMaxTimestamp);
     lastMaxTimestamp = checkpoint;
     localStorage.setItem(LAST_BROADCAST_TS_KEY, String(checkpoint));
+    localStorage.removeItem(OFFLINE_CHECKPOINT_KEY);
   }catch(err){
     console.warn('[ESI missed broadcast replay]', err);
     // Leave the saved checkpoint unchanged so the next reconnect can retry.
