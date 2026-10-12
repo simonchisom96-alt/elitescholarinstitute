@@ -2855,6 +2855,12 @@ function normalizeExplanationCasing(q){
       justification=justification.replace(/^(?:because\s*)+/i,'').trim();
       justification=justification.replace(/^[,.:;\s]+/,'');
     }
+    let selectedOption=String(q.options[q.answer]||'').trim().replace(/[.!?]+$/,'');
+    const escapedOption=selectedOption.replace(/[.*+?^${}()|[\]\\]/g,'\\    if(justification.length<10) justification='this matches the correct principle for this question.';');
+    if(escapedOption){
+      const repeatedOptionLead=new RegExp('^the\\s+correct\\s+answer\\s+is\\s+'+escapedOption+'[.!?]*\\s*','i');
+      justification=justification.replace(repeatedOptionLead,'').trim();
+    }
     if(justification.length<10) justification='this matches the correct principle for this question.';
     let opt=String(q.options[q.answer]||'').trim();
     opt=opt.replace(/[.!?]+$/,'');
