@@ -223,7 +223,7 @@ function buildOneSignalPayload(body) {
 async function inspectOneSignalUser(externalId) {
   const rawKey = process.env.ONESIGNAL_REST_API_KEY;
   if (!rawKey) return { configured: false, api_reachable: false, error: "ONESIGNAL_REST_API_KEY is not configured on the server" };
-  const authorization = /^(Key|Basic)\\s+/i.test(rawKey) ? rawKey : "Key " + rawKey;
+  const authorization = /^(Key|Basic)\s+/i.test(rawKey) ? rawKey : "Key " + rawKey;
   const endpoint = "https://api.onesignal.com/apps/" + encodeURIComponent(ONE_SIGNAL_APP_ID) +
     "/users/by/external_id/" + encodeURIComponent(externalId);
   try {
