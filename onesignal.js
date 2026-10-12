@@ -7,7 +7,7 @@
   // not this backend; retrying them masks the first useful network/CORS error
   // and can turn a real gateway response into a generic "Failed to fetch".
   const PUSH_GATEWAYS = [
-    "https://elitescholarinstitute-api.onrender.com"
+    "https://esi-beams-api.onrender.com"
   ];
   window.ESI_PUSH_GATEWAYS = PUSH_GATEWAYS.slice();
 
