@@ -378,7 +378,15 @@ async function replayMissedBroadcasts(){
     saveNotificationCache(cache);
     renderFeed();
     updateUnreadBadge();
-    missed.forEach(handleNewItem);
+    missed.forEach(item=>{
+      handleNewItem(item);
+      // A recovered broadcast must still create an OS pop-down when the ESI
+      // tab is backgrounded; normal live handling relies on OneSignal instead.
+      if(document.hidden){
+        const preview = (item.poll && item.poll.question) || (item.quiz && item.quiz.question) || item.text || 'New announcement';
+        void showESIForegroundNotification(preview, item);
+      }
+    });
 
     const newest = Math.max(...missed.map(x=>Number(x.timestamp||0)));
     const checkpoint = Math.max(since, newest, lastMaxTimestamp);
