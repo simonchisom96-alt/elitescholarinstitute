@@ -388,12 +388,11 @@ async function replayMissedBroadcasts(){
     updateUnreadBadge();
     missed.forEach(item=>{
       handleNewItem(item);
-      // A recovered broadcast must still create an OS pop-down when the ESI
-      // tab is backgrounded; normal live handling relies on OneSignal instead.
-      if(document.hidden){
-        const preview = (item.poll && item.poll.question) || (item.quiz && item.quiz.question) || item.text || 'New announcement';
-        void showESIForegroundNotification(preview, item);
-      }
+      // Do not rely on handleNewItem's dedupe state to decide whether a
+      // recovered post gets a native alert: the realtime snapshot may have
+      // already marked it announced while the tab was offline/backgrounded.
+      const preview = (item.poll && item.poll.question) || (item.quiz && item.quiz.question) || item.text || 'New announcement';
+      void showESIForegroundNotification(preview, item);
     });
 
     const newest = Math.max(...missed.map(x=>Number(x.timestamp||0)));
@@ -559,16 +558,14 @@ function handleNewItem(item){
   toast(label + preview.slice(0,40), item.priority==='urgent' ? 'orange' : 'blue');
   playBeep();
 
-  if(document.hidden){
-    startFlash();
-    // Background/closed delivery is handled by OneSignal.
-    return;
-  }
+  if(document.hidden) startFlash();
 
-  // On Android/mobile browsers, the page-level Notification constructor is
-  // unreliable. Use the already-registered ESI service worker so a foreground
-  // announcement produces the same native notification pop-down.
-  showESIForegroundNotification(preview, item);
+  // Always ask the service worker to show the native notification, including
+  // recovered items after reconnect. The browser/OS decides whether to display
+  // it; OneSignal remains the separate delivery path while the page is closed.
+  // This is intentionally not gated on document.hidden: reconnect recovery can
+  // happen while the notification page is visible too.
+  void showESIForegroundNotification(preview, item);
 }
 
 /* ============================================================
@@ -1023,12 +1020,36 @@ function shareCard(id){
     copyCardText(id);
   }
 }
-function deleteNotif(id){
-  if(!isAdmin) return;
+async function deleteNotif(id){
+  if(!isAdmin){ toast('Delete blocked: sign in with the ESI admin account first.','orange'); return; }
+  if(!id || !cache[id]){ toast('Delete failed: this broadcast is no longer in the current feed. Refresh and try again.','orange'); return; }
   if(!confirm('Delete this broadcast for everyone?')) return;
-  db.ref('notifications/'+id).remove()
-    .then(()=>toast('Broadcast deleted','blue'))
-    .catch(e=>toast('Delete failed: '+e.message,'orange'));
+  const btn = document.querySelector('[data-action="delete"][data-id="'+CSS.escape(String(id))+'"]');
+  if(btn){ btn.disabled = true; btn.textContent = 'Deleting…'; }
+  try{
+    if(!auth.currentUser || auth.currentUser.email !== ADMIN_EMAIL){
+      throw new Error('Your Firebase admin session has expired. Sign in again and retry.');
+    }
+    await auth.currentUser.getIdToken(true);
+    await db.ref('notifications/'+id).remove();
+    delete cache[id];
+    try{
+      const raw = JSON.parse(localStorage.getItem(NOTIFICATION_CACHE_KEY)||'[]');
+      localStorage.setItem(NOTIFICATION_CACHE_KEY, JSON.stringify(raw.filter(item=>String(item.id)!==String(id))));
+    }catch(_){}
+    renderFeed();
+    updateUnreadBadge();
+    toast('Broadcast deleted for everyone ✓','blue');
+  }catch(e){
+    console.error('[ESI delete broadcast]', {code:e.code||'', message:e.message||String(e)});
+    let message = e.message || String(e);
+    if(e.code === 'PERMISSION_DENIED' || /permission_denied|permission denied/i.test(message)){
+      message = 'Firebase denied deletion. The Realtime Database rules must allow the authenticated ESI admin to delete /notifications/'+id+'.';
+    }
+    toast('Delete failed: '+message,'orange');
+  }finally{
+    if(btn && btn.isConnected){ btn.disabled = false; btn.textContent = '🗑️ Delete'; }
+  }
 }
 function togglePin(id){
   if(!isAdmin) return;
