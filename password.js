@@ -1507,7 +1507,40 @@ async function adminSendDeviceTest(){
     }
   }
 }
-async function adminSyncPush(){try{const OS=await window.ESIOneSignalReady;if(OS?.User?.PushSubscription?.optIn)await OS.User.PushSubscription.optIn();await requestPush();await adminRefreshPushStatus();}catch(e){toast('Push re-establish failed: '+e.message,'orange');}}
+async function adminSyncPush(){
+  try{
+    const OS=await window.ESIOneSignalReady;
+    if(!OS) throw new Error('OneSignal did not initialize. Refresh the page and check the browser console.');
+    const supported=OS.Notifications?.isPushSupported?.();
+    if(supported===false) throw new Error('This browser does not support web push.');
+    let permission=OS.Notifications?.permission;
+    if(permission!==true&&permission!=='granted'){
+      await OS.Notifications.requestPermission();
+      permission=OS.Notifications?.permission;
+    }
+    if(permission!==true&&permission!=='granted'){
+      throw new Error('Notification permission was not granted. Enable notifications for ESI in browser settings.');
+    }
+    const push=OS.User?.PushSubscription;
+    if(!push) throw new Error('OneSignal push subscription API is unavailable.');
+    if(push.optIn) await push.optIn();
+    const started=Date.now();
+    let state={optedIn:!!push.optedIn,id:push.id||null,token:push.token||null};
+    while(Date.now()-started<30000){
+      state={optedIn:!!push.optedIn,id:push.id||null,token:push.token||null};
+      if(state.optedIn&&state.id&&state.token) break;
+      await new Promise(resolve=>setTimeout(resolve,500));
+    }
+    await adminRefreshPushStatus();
+    if(!state.optedIn||!state.id||!state.token){
+      throw new Error('Permission is granted, but OneSignal did not provide an active subscription ID and push token within 30 seconds. Check internet access and the OneSignal dashboard for this device.');
+    }
+    toast('Push subscription verified ✓ ID '+state.id,'blue');
+  }catch(e){
+    console.error('[ESI admin subscription recovery]',e);
+    toast('Push re-establish failed: '+(e&&e.message?e.message:String(e)),'orange');
+  }
+}
 function adminOpenOneSignal(){window.open('https://dashboard.onesignal.com','_blank','noopener,noreferrer');}
 function openSettings(){$('soundToggle').checked=soundOn;refreshSettingsAdminSection();$('settingsModal').classList.add('show');}
 function closeSettings(){$('settingsModal').classList.remove('show');}
