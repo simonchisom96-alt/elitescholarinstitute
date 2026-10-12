@@ -344,6 +344,8 @@ function subscribe(){
 }
 
 async function replayMissedBroadcasts(){
+  // Read the checkpoint before awaiting Firebase: the live listener may update
+  // it while this catch-up query is in flight.
   const since = Number(localStorage.getItem(LAST_BROADCAST_TS_KEY) || 0);
   if(!since) return;
   try{
@@ -355,18 +357,29 @@ async function replayMissedBroadcasts(){
     snap.forEach(child=>{
       const raw = child.val();
       const item = raw && typeof raw === 'object' ? { ...raw, id: child.key } : { id: child.key, text: String(raw || '') };
-      // The live snapshot may finish while this recovery query is in flight.
-      // Skip IDs already in the feed so startup cannot show duplicate alerts.
       if(Number(item.timestamp || 0) > since && !cache[item.id]) missed.push(item);
     });
     missed.sort((a,b)=>Number(a.timestamp||0)-Number(b.timestamp||0));
+    if(!missed.length) return;
+
+    // IMPORTANT: replaying only the toast/alert loses the actual missed items
+    // from the feed, especially when the realtime query is limited to the last
+    // 20 items. Merge them into the local feed cache before advancing checkpoint.
+    const merged = { ...cache };
+    missed.forEach(item=>{ merged[item.id] = item; });
+    cache = merged;
+    saveNotificationCache(cache);
+    renderFeed();
+    updateUnreadBadge();
     missed.forEach(handleNewItem);
-    if(missed.length){
-      const newest = Math.max(...missed.map(x=>Number(x.timestamp||0)));
-      localStorage.setItem(LAST_BROADCAST_TS_KEY, String(Math.max(since,newest)));
-    }
+
+    const newest = Math.max(...missed.map(x=>Number(x.timestamp||0)));
+    const checkpoint = Math.max(since, newest, lastMaxTimestamp);
+    lastMaxTimestamp = checkpoint;
+    localStorage.setItem(LAST_BROADCAST_TS_KEY, String(checkpoint));
   }catch(err){
     console.warn('[ESI missed broadcast replay]', err);
+    // Leave the saved checkpoint unchanged so the next reconnect can retry.
   }
 }
 function processSnapshot(snap){
