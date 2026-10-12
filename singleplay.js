@@ -2840,20 +2840,25 @@ const toast=m=>{let e=$('toast');if(!e)return;e.textContent=m;e.style.display='b
 // it is mid-sentence, so its first letter is forced lowercase instead of staying capitalized
 // the way a copied option (which is its own standalone sentence) naturally starts.
 function normalizeExplanationCasing(q){
-    if(!q||!q.options||typeof q.answer!=='number') return q;
+    if(!q||!Array.isArray(q.options)||typeof q.answer!=='number') return q;
     let raw=String(q.explanation||'').trim();
     let parts=raw.split(/\bbecause\b/i);
     let justification=(parts.length>1?parts.slice(1).join('because'):raw).trim();
-    justification=justification.replace(/^[,:\s]+/,'');
+    justification=justification.replace(/^[,.:;\s]+/,'');
+    // AI explanations sometimes repeat the full answer lead-in after the first
+    // "because". Strip any repeated "The correct answer is ..., because"
+    // prefixes so the explanation contains that lead-in only once.
+    let previous='';
+    while(justification && justification!==previous){
+      previous=justification;
+      justification=justification.replace(/^the\s+correct\s+answer\s+is\s+.+?,\s*because\s*/i,'').trim();
+      justification=justification.replace(/^(?:because\s*)+/i,'').trim();
+      justification=justification.replace(/^[,.:;\s]+/,'');
+    }
     if(justification.length<10) justification='this matches the correct principle for this question.';
-    // Options are written as full sentences, so they usually already end with
-    // their own "." — concatenating that straight into ", because" used to
-    // produce a stray double punctuation like "...is Helium., because...".
-    // Strip any trailing ./!/? from the copied option FIRST, then lowercase its
-    // first letter since it now continues a sentence instead of starting one.
     let opt=String(q.options[q.answer]||'').trim();
     opt=opt.replace(/[.!?]+$/,'');
-    opt=opt.replace(/^([A-Z])/, m=>m.toLowerCase());
+    opt=opt.replace(/^([A-Z])/m, m=>m.toLowerCase());
     q.explanation=`The correct answer is ${opt}, because ${justification}`;
     return q;
 }
