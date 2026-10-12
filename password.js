@@ -405,6 +405,20 @@ async function replayMissedBroadcasts(){
     // Leave the saved checkpoint unchanged so the next reconnect can retry.
   }
 }
+function firebaseConnectionStateHandler(snap){
+  const connected = snap.val() === true;
+  if(!connected){
+    if(localStorage.getItem(OFFLINE_CHECKPOINT_KEY) === null){
+      localStorage.setItem(OFFLINE_CHECKPOINT_KEY, String(Number(localStorage.getItem(LAST_BROADCAST_TS_KEY)||0)));
+    }
+    return;
+  }
+  replayOnReconnect = true;
+  // Let the Firebase value listener settle first, then perform the durable
+  // timestamp query. Both paths are idempotent by notification ID.
+  setTimeout(()=>{ void replayMissedBroadcasts(); }, 250);
+}
+
 function processSnapshot(snap){
   const val = snap.val() || {};
   const ids = Object.keys(val);
@@ -1704,6 +1718,14 @@ async function init(){
   // is reopened before Firebase reconnects.
   restoreNotificationCache();
   warmNotificationImageCache(cache);
+
+  // Track Firebase's actual connection state as well as browser online/offline
+  // events. Mobile networks can drop Firebase while navigator.onLine stays true.
+  // Capture the checkpoint at the moment Firebase disconnects, then recover on
+  // its own reconnect signal even if the browser emits no online event.
+  const connectedRef = db.ref('.info/connected');
+  connectedRef.off('value', firebaseConnectionStateHandler);
+  connectedRef.on('value', firebaseConnectionStateHandler);
 
   // Start the live Firebase listener immediately. Missed-message recovery
   // must never hold the feed hostage while a one-time read is waiting.
