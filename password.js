@@ -1523,7 +1523,15 @@ async function adminSyncPush(){
     }
     const push=OS.User?.PushSubscription;
     if(!push) throw new Error('OneSignal push subscription API is unavailable.');
-    if(push.optIn) await push.optIn();
+
+    // HaniLearn-style recovery: if OneSignal says opted-in but has not
+    // supplied both subscription ID and token, rebuild the subscription
+    // state instead of repeatedly calling optIn on a stale state.
+    if(push.optedIn && (!push.id || !push.token) && typeof push.optOut==='function'){
+      await push.optOut();
+      await new Promise(resolve=>setTimeout(resolve,800));
+    }
+    if(typeof push.optIn==='function') await push.optIn();
     const started=Date.now();
     let state={optedIn:!!push.optedIn,id:push.id||null,token:push.token||null};
     while(Date.now()-started<30000){
