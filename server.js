@@ -220,6 +220,48 @@ function buildOneSignalPayload(body) {
   return payload;
 }
 
+async function inspectOneSignalUser(externalId) {
+  const rawKey = process.env.ONESIGNAL_REST_API_KEY;
+  if (!rawKey) return { configured: false, api_reachable: false, error: "ONESIGNAL_REST_API_KEY is not configured on the server" };
+  const authorization = /^(Key|Basic)\\s+/i.test(rawKey) ? rawKey : "Key " + rawKey;
+  const endpoint = "https://api.onesignal.com/apps/" + encodeURIComponent(ONE_SIGNAL_APP_ID) +
+    "/users/by/external_id/" + encodeURIComponent(externalId);
+  try {
+    const response = await fetch(endpoint, {
+      method: "GET",
+      headers: { "Authorization": authorization, "Accept": "application/json" },
+      signal: AbortSignal.timeout(12000)
+    });
+    const text = await response.text();
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; } catch (_) {}
+    if (response.status === 404) {
+      return { configured: true, api_reachable: true, found: false, active_push_subscriptions: 0, subscriptions: [] };
+    }
+    if (!response.ok) {
+      return { configured: true, api_reachable: false, error: onesignalError(data, response.status) };
+    }
+    const user = data?.subscriptions ? data : (data?.identity ? data : {});
+    const subscriptions = Array.isArray(user.subscriptions) ? user.subscriptions : [];
+    const active = subscriptions.filter(s => {
+      const type = String(s.type || "").toLowerCase();
+      return type.includes("push") && Boolean(s.enabled) && Boolean(s.token) &&
+        (typeof s.notification_types !== "number" || s.notification_types > 0);
+    });
+    return {
+      configured: true, api_reachable: true, found: true,
+      active_push_subscriptions: active.length,
+      subscriptions: subscriptions.map(s => ({
+        id: String(s.id || ""), type: String(s.type || ""),
+        enabled: Boolean(s.enabled), token_present: Boolean(s.token),
+        notification_types: typeof s.notification_types === "number" ? s.notification_types : null
+      }))
+    };
+  } catch (error) {
+    return { configured: true, api_reachable: false, error: error.message || "OneSignal diagnostics request failed" };
+  }
+}
+
 async function sendOneSignal(body) {
   const apiKey = process.env.ONESIGNAL_REST_API_KEY;
   if (!apiKey) throw new Error("ONESIGNAL_REST_API_KEY is not configured on the server");
@@ -282,6 +324,22 @@ async function handle(req, res) {
       audience: "All currently subscribed push users",
       hostname: req.headers.host || ""
     });
+  }
+  if (url.pathname === "/api/onesignal/diagnostics") {
+    if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
+    try {
+      const token = getBearer(req);
+      if (!token) return json(res, 401, { error: "Missing Firebase authorization" });
+      const admin = await verifyFirebaseAdminToken(token);
+      const result = await inspectOneSignalUser(String(admin.sub));
+      return json(res, 200, result);
+    } catch (error) {
+      return json(res, error.statusCode && error.statusCode < 500 ? error.statusCode : 502, {
+        configured: Boolean(process.env.ONESIGNAL_REST_API_KEY),
+        api_reachable: false,
+        error: error.message || "OneSignal diagnostics failed"
+      });
+    }
   }
   if (url.pathname === "/api/onesignal/send") {
     if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
