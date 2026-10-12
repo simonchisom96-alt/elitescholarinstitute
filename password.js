@@ -354,7 +354,15 @@ function subscribe(){
 async function replayMissedBroadcasts(){
   const offlineCheckpoint = localStorage.getItem(OFFLINE_CHECKPOINT_KEY);
   const since = offlineCheckpoint !== null ? Number(offlineCheckpoint || 0) : Number(localStorage.getItem(LAST_BROADCAST_TS_KEY) || 0);
-  if(!since && offlineCheckpoint === null) return;
+  if(!since && offlineCheckpoint === null){
+    // First-ever visit has no historical baseline. Persist the newest snapshot
+    // only after the initial snapshot has been rendered, so later reconnects
+    // have a durable cursor.
+    if(lastMaxTimestamp > 0){
+      localStorage.setItem(LAST_BROADCAST_TS_KEY, String(lastMaxTimestamp));
+    }
+    return;
+  }
   try{
     const snap = await db.ref('notifications')
       .orderByChild('timestamp')
@@ -420,6 +428,11 @@ function firebaseConnectionStateHandler(snap){
 }
 
 function processSnapshot(snap){
+  // Critical ordering: on a cold page load after being offline, this first
+  // snapshot can already contain messages that arrived while the page was
+  // away. Do NOT persist its newest timestamp before the catch-up query reads
+  // the previous durable cursor, or those messages become invisible to replay.
+  const isFirstSnapshot = !initialLoadDone;
   const val = snap.val() || {};
   const ids = Object.keys(val);
   const newCache = {};
@@ -449,7 +462,11 @@ function processSnapshot(snap){
   }
 
   lastMaxTimestamp = Math.max(lastMaxTimestamp, maxTs);
-  if(lastMaxTimestamp > 0) localStorage.setItem(LAST_BROADCAST_TS_KEY, String(lastMaxTimestamp));
+  // Preserve the previous localStorage cursor until the initial catch-up query
+  // has read from it. Normal live snapshots can safely advance it immediately.
+  if(!isFirstSnapshot && lastMaxTimestamp > 0){
+    localStorage.setItem(LAST_BROADCAST_TS_KEY, String(lastMaxTimestamp));
+  }
   replayOnReconnect = false;
 
   const mergedCache = { ...cache, ...newCache };
@@ -463,6 +480,10 @@ function processSnapshot(snap){
   initialLoadDone = true;
   renderFeed();
   updateUnreadBadge();
+  // Run catch-up only after the initial snapshot is in the UI, but before its
+  // maximum timestamp is allowed to replace the last successfully processed
+  // cursor. replayMissedBroadcasts is idempotent by Firebase notification ID.
+  if(isFirstSnapshot) void replayMissedBroadcasts();
 }
 function loadMore(){
   pageLimit += 20;
