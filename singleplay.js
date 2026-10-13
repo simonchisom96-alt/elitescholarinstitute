@@ -3998,24 +3998,16 @@ document.getElementById('suggestionForm').addEventListener('submit',e=>{
 
 // ===== DRAGGABLE CALCULATOR =====
 (function(){
-(function(){
     const calc=$('calc'),head=$('calcH');
     if(!calc||!head)return;
     let dragging=false,offsetX=0,offsetY=0,pointerId=null,frame=0,lastX=0,lastY=0;
-    head.style.cursor='move';
-    head.style.touchAction='none';
-    head.style.userSelect='none';
-    head.style.webkitUserSelect='none';
+    head.style.cursor='move';head.style.touchAction='none';head.style.userSelect='none';head.style.webkitUserSelect='none';
     head.addEventListener('pointerdown',e=>{
         if(e.button!==undefined&&e.button!==0)return;
         const r=calc.getBoundingClientRect();
-        dragging=true;pointerId=e.pointerId;
-        offsetX=e.clientX-r.left;offsetY=e.clientY-r.top;
-        lastX=e.clientX;lastY=e.clientY;
+        dragging=true;pointerId=e.pointerId;offsetX=e.clientX-r.left;offsetY=e.clientY-r.top;lastX=e.clientX;lastY=e.clientY;
         try{head.setPointerCapture(pointerId);}catch(_){}
-        calc.style.position='fixed';
-        calc.style.left=r.left+'px';calc.style.top=r.top+'px';
-        calc.style.right='auto';calc.style.bottom='auto';
+        calc.style.position='fixed';calc.style.left=r.left+'px';calc.style.top=r.top+'px';calc.style.right='auto';calc.style.bottom='auto';
         e.preventDefault();
     });
     const move=e=>{
@@ -4024,8 +4016,7 @@ document.getElementById('suggestionForm').addEventListener('submit',e=>{
         if(frame)return;
         frame=requestAnimationFrame(()=>{
             frame=0;
-            const maxX=Math.max(0,window.innerWidth-calc.offsetWidth);
-            const maxY=Math.max(0,window.innerHeight-calc.offsetHeight);
+            const maxX=Math.max(0,window.innerWidth-calc.offsetWidth),maxY=Math.max(0,window.innerHeight-calc.offsetHeight);
             calc.style.left=Math.max(0,Math.min(maxX,lastX-offsetX))+'px';
             calc.style.top=Math.max(0,Math.min(maxY,lastY-offsetY))+'px';
         });
@@ -4036,14 +4027,10 @@ document.getElementById('suggestionForm').addEventListener('submit',e=>{
         if(e&&pointerId!==null&&e.pointerId!==undefined&&e.pointerId!==pointerId)return;
         dragging=false;
         try{if(head.hasPointerCapture(pointerId))head.releasePointerCapture(pointerId);}catch(_){}
-        pointerId=null;
-        if(frame){cancelAnimationFrame(frame);frame=0;}
+        pointerId=null;if(frame){cancelAnimationFrame(frame);frame=0;}
     };
-    head.addEventListener('pointermove',move,{passive:false});
-    head.addEventListener('pointerup',stop);
-    head.addEventListener('pointercancel',stop);
-    head.addEventListener('lostpointercapture',stop);
-})();;
+    head.addEventListener('pointermove',move,{passive:false});head.addEventListener('pointerup',stop);head.addEventListener('pointercancel',stop);head.addEventListener('lostpointercapture',stop);
+})();
 
 // Re-draw graphs when details opened
 document.querySelectorAll('details').forEach(det=>{
