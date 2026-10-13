@@ -3025,9 +3025,29 @@ pointer-events:none;
   }
   </script>
 \n<style id="esi-index-requested-polish">
-/* ESI index requested polish: resource-card spacing and single-image lightbox */
-.grid{column-gap:16px!important;row-gap:16px!important;}
-.grid>.card{margin:0!important;}
+/* ESI index requested polish: enforce real gaps on the actual resource-card grid */
+.esi-card-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  column-gap:22px!important;
+  row-gap:22px!important;
+  padding:0 6px 6px!important;
+  box-sizing:border-box!important;
+  align-items:stretch!important;
+}
+.esi-card-grid>.esi-resource-card{
+  min-width:0!important;
+  width:100%!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+}
+@media(max-width:700px){
+  .esi-card-grid{
+    column-gap:14px!important;
+    row-gap:16px!important;
+    padding:0 4px 6px!important;
+  }
+}
 .lightbox-arrow,#prevBtn,#nextBtn{display:none!important;visibility:hidden!important;pointer-events:none!important;}
 </style>
 </head>
