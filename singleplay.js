@@ -3999,31 +3999,72 @@ document.getElementById('suggestionForm').addEventListener('submit',e=>{
 // ===== DRAGGABLE CALCULATOR =====
 (function(){
     const calc=$('calc'),head=$('calcH');
-    if(!calc||!head)return;
-    let dragging=false,pointerId=null,offsetX=0,offsetY=0;
-    head.style.cursor='move';head.style.touchAction='none';head.style.userSelect='none';head.style.webkitUserSelect='none';head.style.webkitTouchCallout='none';
-    head.addEventListener('pointerdown',function(e){
-        if(e.isPrimary===false || (e.pointerType==='mouse' && e.button!==0))return;
-        const r=calc.getBoundingClientRect();
-        dragging=true;pointerId=e.pointerId;offsetX=e.clientX-r.left;offsetY=e.clientY-r.top;
-        calc.style.position='fixed';calc.style.left=r.left+'px';calc.style.top=r.top+'px';calc.style.right='auto';calc.style.bottom='auto';calc.style.margin='0';
-        try{head.setPointerCapture(e.pointerId);}catch(_){}
-        e.preventDefault();
-    },{passive:false});
+    if(!calc||!head||calc.dataset.dragReady==='1')return;
+    calc.dataset.dragReady='1';
+    let active=false,mode='',pointerId=null,offsetX=0,offsetY=0,raf=0,x=0,y=0,previousTransition='';
+    head.style.cursor='move';
+    head.style.touchAction='none';
+    head.style.userSelect='none';
+    head.style.webkitUserSelect='none';
+    head.style.webkitTouchCallout='none';
+
+    function coords(e){
+        if(e.touches&&e.touches.length)return {x:e.touches[0].clientX,y:e.touches[0].clientY};
+        if(e.changedTouches&&e.changedTouches.length)return {x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY};
+        return {x:e.clientX,y:e.clientY};
+    }
+    function start(e,m){
+        if(active)return;
+        if(m==='pointer'&&(e.isPrimary===false||(e.pointerType==='mouse'&&e.button!==0)))return;
+        if(m==='mouse'&&e.button!==0)return;
+        const p=coords(e),r=calc.getBoundingClientRect();
+        active=true;mode=m;pointerId=e.pointerId;
+        offsetX=p.x-r.left;offsetY=p.y-r.top;
+        previousTransition=calc.style.transition;
+        calc.style.transition='none';
+        calc.style.position='fixed';
+        calc.style.left=r.left+'px';calc.style.top=r.top+'px';
+        calc.style.right='auto';calc.style.bottom='auto';calc.style.margin='0';
+        calc.style.transform='none';
+        if(m==='pointer'){try{head.setPointerCapture(e.pointerId);}catch(_){}}
+        if(e.cancelable)e.preventDefault();
+    }
     function move(e){
-        if(!dragging||e.pointerId!==pointerId)return;
-        const maxX=Math.max(0,document.documentElement.clientWidth-calc.offsetWidth);
-        const maxY=Math.max(0,document.documentElement.clientHeight-calc.offsetHeight);
-        calc.style.left=Math.max(0,Math.min(maxX,e.clientX-offsetX))+'px';
-        calc.style.top=Math.max(0,Math.min(maxY,e.clientY-offsetY))+'px';
-        e.preventDefault();
+        if(!active)return;
+        if(mode==='pointer'&&e.pointerId!==pointerId)return;
+        if(mode==='touch'&&e.touches&&e.touches.length!==1)return;
+        const p=coords(e),rect=calc.getBoundingClientRect();
+        const vw=window.innerWidth||document.documentElement.clientWidth;
+        const vh=window.innerHeight||document.documentElement.clientHeight;
+        x=Math.max(0,Math.min(Math.max(0,vw-rect.width),p.x-offsetX));
+        y=Math.max(0,Math.min(Math.max(0,vh-rect.height),p.y-offsetY));
+        if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(active){calc.style.left=x+'px';calc.style.top=y+'px';}});
+        if(e.cancelable)e.preventDefault();
     }
     function stop(e){
-        if(!dragging||(e&&e.pointerId!==undefined&&e.pointerId!==pointerId))return;
-        dragging=false;try{if(pointerId!==null&&head.hasPointerCapture(pointerId))head.releasePointerCapture(pointerId);}catch(_){}
-        pointerId=null;
+        if(!active)return;
+        if(mode==='pointer'&&e&&e.pointerId!==undefined&&e.pointerId!==pointerId)return;
+        active=false;
+        if(raf){cancelAnimationFrame(raf);raf=0;}
+        calc.style.transition=previousTransition;
+        if(mode==='pointer'){try{if(head.hasPointerCapture(pointerId))head.releasePointerCapture(pointerId);}catch(_){}}
+        mode='';pointerId=null;
     }
-    window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',stop);window.addEventListener('pointercancel',stop);window.addEventListener('blur',()=>{dragging=false;pointerId=null;});
+    head.addEventListener('pointerdown',e=>start(e,'pointer'),{passive:false});
+    window.addEventListener('pointermove',move,{passive:false});
+    window.addEventListener('pointerup',stop);
+    window.addEventListener('pointercancel',stop);
+    // Explicit touch fallback for Android browsers and WebViews.
+    head.addEventListener('touchstart',e=>start(e,'touch'),{passive:false});
+    window.addEventListener('touchmove',move,{passive:false});
+    window.addEventListener('touchend',stop,{passive:true});
+    window.addEventListener('touchcancel',stop,{passive:true});
+    if(!window.PointerEvent){
+        head.addEventListener('mousedown',e=>start(e,'mouse'),{passive:false});
+        window.addEventListener('mousemove',move,{passive:false});
+        window.addEventListener('mouseup',stop);
+    }
+    window.addEventListener('blur',stop);
 })();
 
 // Re-draw graphs when details opened
