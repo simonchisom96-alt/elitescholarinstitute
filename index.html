@@ -2744,7 +2744,7 @@ html.esi-loader-active body{
 
 
 <style id="esi-exact-final-fix">
-
+</style>
 
 <style id="esi-final-visual-polish">
 /* Bottom navigation icons: clear chat bubble and three stacked books. */
@@ -3088,6 +3088,66 @@ html body .esi-card-grid > a.esi-resource-card{
   }
   html body .esi-card-grid > a.esi-resource-card{
     min-width:0!important;
+    padding:12px 8px!important;
+  }
+}
+</style>
+<style id="esi-force-resource-card-separation-v4">
+/* Hard reset of legacy card positioning/width rules that caused cards to overlap. */
+html body .esi-card-grid{
+  display:grid!important;
+  position:relative!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  grid-auto-flow:row!important;
+  grid-auto-rows:auto!important;
+  gap:22px!important;
+  column-gap:22px!important;
+  row-gap:22px!important;
+  align-items:stretch!important;
+  justify-items:stretch!important;
+  width:100%!important;
+  max-width:100%!important;
+  height:auto!important;
+  padding:12px!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+}
+html body .esi-card-grid > a.esi-resource-card{
+  position:relative!important;
+  inset:auto!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  float:none!important;
+  transform:none!important;
+  translate:none!important;
+  grid-area:auto!important;
+  grid-column:auto!important;
+  grid-row:auto!important;
+  justify-self:stretch!important;
+  align-self:stretch!important;
+  display:flex!important;
+  flex-direction:column!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:auto!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+  border:2px solid #00bfff!important;
+  border-radius:18px!important;
+  box-shadow:0 0 0 4px #04142f!important;
+  z-index:1!important;
+}
+@media(max-width:700px){
+  html body .esi-card-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:18px!important;
+    padding:10px!important;
+  }
+  html body .esi-card-grid > a.esi-resource-card{
     padding:12px 8px!important;
   }
 }
