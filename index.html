@@ -5221,4 +5221,48 @@ document.addEventListener('click',function(e){
   }
 }
 </style>
+
+<style id="esi-force-resource-card-separation-v2">
+/* FINAL OVERRIDE: make each homepage resource card visibly distinct. */
+.esi-card-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:24px!important;
+  column-gap:24px!important;
+  row-gap:24px!important;
+  width:100%!important;
+  max-width:100%!important;
+  padding:12px!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+  align-items:stretch!important;
+  justify-content:stretch!important;
+  background:transparent!important;
+}
+.esi-card-grid > a.esi-resource-card{
+  display:grid!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+  border:2px solid #00bfff!important;
+  border-radius:18px!important;
+  box-shadow:0 0 0 4px #04142f,0 8px 24px rgba(0,0,0,.3)!important;
+}
+@media(max-width:700px){
+  .esi-card-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:16px!important;
+    column-gap:16px!important;
+    row-gap:18px!important;
+    padding:8px!important;
+  }
+  .esi-card-grid > a.esi-resource-card{
+    min-width:0!important;
+    padding:12px 8px!important;
+    border-width:2px!important;
+  }
+}
+</style>
 </html>
