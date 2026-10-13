@@ -4000,36 +4000,30 @@ document.getElementById('suggestionForm').addEventListener('submit',e=>{
 (function(){
     const calc=$('calc'),head=$('calcH');
     if(!calc||!head)return;
-    let dragging=false,offsetX=0,offsetY=0,pointerId=null,frame=0,lastX=0,lastY=0;
-    head.style.cursor='move';head.style.touchAction='none';head.style.userSelect='none';head.style.webkitUserSelect='none';
-    head.addEventListener('pointerdown',e=>{
-        if(e.button!==undefined&&e.button!==0)return;
+    let dragging=false,pointerId=null,offsetX=0,offsetY=0;
+    head.style.cursor='move';head.style.touchAction='none';head.style.userSelect='none';head.style.webkitUserSelect='none';head.style.webkitTouchCallout='none';
+    head.addEventListener('pointerdown',function(e){
+        if(e.isPrimary===false || (e.pointerType==='mouse' && e.button!==0))return;
         const r=calc.getBoundingClientRect();
-        dragging=true;pointerId=e.pointerId;offsetX=e.clientX-r.left;offsetY=e.clientY-r.top;lastX=e.clientX;lastY=e.clientY;
-        try{head.setPointerCapture(pointerId);}catch(_){}
-        calc.style.position='fixed';calc.style.left=r.left+'px';calc.style.top=r.top+'px';calc.style.right='auto';calc.style.bottom='auto';
+        dragging=true;pointerId=e.pointerId;offsetX=e.clientX-r.left;offsetY=e.clientY-r.top;
+        calc.style.position='fixed';calc.style.left=r.left+'px';calc.style.top=r.top+'px';calc.style.right='auto';calc.style.bottom='auto';calc.style.margin='0';
+        try{head.setPointerCapture(e.pointerId);}catch(_){}
         e.preventDefault();
-    });
-    const move=e=>{
+    },{passive:false});
+    function move(e){
         if(!dragging||e.pointerId!==pointerId)return;
-        lastX=e.clientX;lastY=e.clientY;
-        if(frame)return;
-        frame=requestAnimationFrame(()=>{
-            frame=0;
-            const maxX=Math.max(0,window.innerWidth-calc.offsetWidth),maxY=Math.max(0,window.innerHeight-calc.offsetHeight);
-            calc.style.left=Math.max(0,Math.min(maxX,lastX-offsetX))+'px';
-            calc.style.top=Math.max(0,Math.min(maxY,lastY-offsetY))+'px';
-        });
+        const maxX=Math.max(0,document.documentElement.clientWidth-calc.offsetWidth);
+        const maxY=Math.max(0,document.documentElement.clientHeight-calc.offsetHeight);
+        calc.style.left=Math.max(0,Math.min(maxX,e.clientX-offsetX))+'px';
+        calc.style.top=Math.max(0,Math.min(maxY,e.clientY-offsetY))+'px';
         e.preventDefault();
-    };
-    const stop=e=>{
-        if(!dragging)return;
-        if(e&&pointerId!==null&&e.pointerId!==undefined&&e.pointerId!==pointerId)return;
-        dragging=false;
-        try{if(head.hasPointerCapture(pointerId))head.releasePointerCapture(pointerId);}catch(_){}
-        pointerId=null;if(frame){cancelAnimationFrame(frame);frame=0;}
-    };
-    head.addEventListener('pointermove',move,{passive:false});head.addEventListener('pointerup',stop);head.addEventListener('pointercancel',stop);head.addEventListener('lostpointercapture',stop);
+    }
+    function stop(e){
+        if(!dragging||(e&&e.pointerId!==undefined&&e.pointerId!==pointerId))return;
+        dragging=false;try{if(pointerId!==null&&head.hasPointerCapture(pointerId))head.releasePointerCapture(pointerId);}catch(_){}
+        pointerId=null;
+    }
+    window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',stop);window.addEventListener('pointercancel',stop);window.addEventListener('blur',()=>{dragging=false;pointerId=null;});
 })();
 
 // Re-draw graphs when details opened
