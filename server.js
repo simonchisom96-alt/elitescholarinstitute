@@ -22,7 +22,7 @@ const GATEWAY_VERSION = "2026-10-12-reliability-hardening";
 
 let certCache = { expiresAt: 0, certs: {} };
 
-const WEBSITE_ORIGIN = "https://elitescholarinstitute.onrender.com";
+const WEBSITE_ORIGIN = "https://elitescholarinstitute.pages.dev";
 const WEB_ICON = WEBSITE_ORIGIN + "/logo.jpg";
 
 function applyCors(req, res) {
