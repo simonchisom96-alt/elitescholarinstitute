@@ -133,15 +133,19 @@ export async function sendOneSignal(env, body) {
   const rawKey = env.ONESIGNAL_REST_API_KEY;
   if (!rawKey) throw new Error("ONESIGNAL_REST_API_KEY is not configured in Cloudflare Pages secrets");
 
+  // Reuse the same idempotency key for every retry so a network timeout or
+  // transient OneSignal 5xx cannot create duplicate announcements.
+  const deliveryId = String(body.deliveryId || crypto.randomUUID());
   const payload = {
     app_id: ONE_SIGNAL_APP_ID,
     target_channel: "push",
     name: (body.subscriptionId || body.externalId) ? "ESI device test" : "ESI Announcement",
+    idempotency_key: deliveryId,
     headings: { en: body.title },
     contents: { en: body.message },
-    // This is a web-push-only app, so use web_url (OneSignal advises not
-    // to send url and web_url together). Keep a 28-day TTL so push services can
-    // retain a message while a subscribed device is temporarily offline.
+    // Web push uses web_url; OneSignal advises against sending url and web_url together.
+    // The 28-day TTL allows push services to retain a message while a subscribed device
+    // is temporarily offline (actual delivery still depends on browser/OS subscription state).
     web_url: body.url,
     ttl: 2419200,
     priority: 10,
@@ -152,12 +156,10 @@ export async function sendOneSignal(env, body) {
   if (body.subscriptionId) {
     payload.include_subscription_ids = [body.subscriptionId];
   } else if (body.externalId) {
-    // The SDK's subscription ID can briefly be stale while OneSignal is
-    // merging a newly opted-in browser subscription. Targeting the verified
-    // external user lets OneSignal select that user's active push subscription(s).
+    // Target the verified external user, not a possibly stale per-browser ID.
     payload.include_aliases = { external_id: [body.externalId] };
   } else {
-    // Broadcasts always target OneSignal's canonical active push audience.
+    // Broadcast to every currently subscribed push user in OneSignal.
     payload.included_segments = ["Subscribed Users"];
   }
   if (body.imageUrl) {
@@ -167,30 +169,60 @@ export async function sendOneSignal(env, body) {
 
   const authOptions = /^(Key|Basic)\s+/i.test(rawKey) ? [rawKey] : ["Key " + rawKey, "Basic " + rawKey];
   let lastError;
-  for (let i = 0; i < authOptions.length; i++) {
-    const response = await fetch("https://api.onesignal.com/notifications", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": authOptions[i]
-      },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(20000)
-    });
-    const data = await response.json().catch(() => ({}));
-    if (response.ok) {
-      if (typeof data.id !== "string" || !data.id.trim()) {
-        throw new Error(oneSignalError(data, response.status) || "OneSignal returned no notification ID");
+  for (let authIndex = 0; authIndex < authOptions.length; authIndex++) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let response, data;
+      try {
+        response = await fetch("https://api.onesignal.com/notifications", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": authOptions[authIndex]
+          },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(18000)
+        });
+        data = await response.json().catch(() => ({}));
+      } catch (error) {
+        lastError = error;
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 500 * (2 ** attempt)));
+          continue;
+        }
+        if (authIndex < authOptions.length - 1) break;
+        throw new Error("Could not reach OneSignal after three attempts: " + (error?.message || String(error)));
       }
-      if (typeof data.recipients === "number" && data.recipients < 1) {
-        throw new Error("OneSignal accepted the request but matched zero subscriptions.");
+
+      if (response.ok) {
+        // OneSignal can return HTTP 200 with an empty ID when there are no
+        // subscribed recipients. Treat that as a failed send, not success.
+        if (typeof data.id !== "string" || !data.id.trim()) {
+          throw new Error(oneSignalError(data, response.status) || "OneSignal returned no notification ID");
+        }
+        if (typeof data.recipients === "number" && data.recipients < 1) {
+          throw new Error("OneSignal accepted the request but matched zero subscriptions.");
+        }
+        return data;
       }
-      return data;
+
+      lastError = Object.assign(new Error(oneSignalError(data, response.status)), { statusCode: response.status });
+      const authFailure = response.status === 401 || response.status === 403 ||
+        /unauthorized|invalid api key|access denied/i.test(lastError.message);
+      if (authFailure) {
+        if (authIndex < authOptions.length - 1) break;
+        throw lastError;
+      }
+      const transient = response.status === 429 || response.status >= 500;
+      if (transient && attempt < 2) {
+        const retryAfter = Number(response.headers.get("Retry-After"));
+        const delay = Number.isFinite(retryAfter) && retryAfter > 0
+          ? Math.min(3000, retryAfter * 1000)
+          : 500 * (2 ** attempt);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw lastError;
     }
-    lastError = Object.assign(new Error(oneSignalError(data, response.status)), { statusCode: response.status });
-    const authFailure = response.status === 401 || response.status === 403 ||
-      /unauthorized|invalid api key|access denied/i.test(lastError.message);
-    if (!authFailure || i === authOptions.length - 1) throw lastError;
   }
   throw lastError || new Error("OneSignal request failed");
 }
