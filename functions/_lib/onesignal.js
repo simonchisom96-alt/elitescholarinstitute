@@ -226,8 +226,13 @@ export async function inspectOneSignalUser(env, externalId) {
     if (!response.ok) return { configured: true, api_reachable: false, error: oneSignalError(data, response.status) };
     const subscriptions = Array.isArray(data?.subscriptions) ? data.subscriptions : [];
     const active = subscriptions.filter(s => {
+      // OneSignal v2 reports web push types as browser names (for example
+      // "Chrome" or "Firefox"), not necessarily the literal word "push".
+      // Exclude email/SMS channels instead of accidentally counting zero web
+      // subscriptions for a valid browser subscription.
       const type = String(s.type || "").toLowerCase();
-      return type.includes("push") && Boolean(s.enabled) && Boolean(s.token) &&
+      const isNonPushChannel = /email|sms|phone/.test(type);
+      return !isNonPushChannel && Boolean(s.enabled) && Boolean(s.token) &&
         (typeof s.notification_types !== "number" || s.notification_types > 0);
     });
     return {
