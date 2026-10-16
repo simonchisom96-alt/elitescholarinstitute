@@ -1584,8 +1584,18 @@ async function adminTestGateway(){
     if(!health.configured){
       throw new Error('Gateway is online, but ONESIGNAL_REST_API_KEY is missing from its server environment.');
     }
+    if(health.apiKeyCheck === 'rejected' || health.apiKeyValid === false){
+      throw new Error('Cloudflare has a OneSignal REST API key configured, but OneSignal rejected it for this app. Check that the secret is the REST API key for the ESI OneSignal app, then update the Cloudflare Pages secret and redeploy. '+(health.apiKeyError||''));
+    }
+    if(health.apiKeyCheck === 'unreachable'){
+      throw new Error('Cloudflare gateway is running, but the API-key validation request could not reach OneSignal: '+(health.apiKeyError||'unknown network error'));
+    }
+    if(health.apiKeyCheck !== 'valid'){
+      throw new Error('The gateway did not confirm that the OneSignal REST API key is valid. Health check version: '+(health.version||'unknown'));
+    }
     console.info('[ESI gateway health]', {
       host:new URL(base).host, configured:!!health.configured,
+      apiKeyValid:!!health.apiKeyValid, apiKeyCheck:health.apiKeyCheck,
       appId:health.appId, firebaseProject:health.firebaseProject,
       version:health.version, audience:health.audience
     });
