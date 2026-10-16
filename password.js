@@ -1642,7 +1642,10 @@ async function adminSendDeviceTest(){
       title: 'ESI background test',
       message: 'Background push test. If this appears in the phone notification shade after Chrome is closed, delivery is working.',
       url: '/notification.html',
-      subscriptionId: status.id
+      // Target the signed-in admin's OneSignal user, not a possibly stale
+      // per-browser subscription ID. The server verifies this UID against the
+      // Firebase admin token before forwarding it to OneSignal.
+      externalId: auth.currentUser?.uid || ''
     });
     toast('OneSignal accepted a device-only test. ID '+(result.id||'missing')+' · recipients '+(result.recipients??'?')+'. Close Chrome completely and check the notification shade.','blue');
   }catch(error){
@@ -1668,6 +1671,18 @@ async function adminSyncPush(){
     }
     if(permission!==true&&permission!=='granted'){
       throw new Error('Notification permission was not granted. Enable notifications for ESI in browser settings.');
+    }
+    const adminUid = auth.currentUser?.uid;
+    if(!adminUid) throw new Error('Sign in with the ESI admin account before repairing push.');
+    if(OS.User?.externalId !== adminUid && typeof OS.login === 'function'){
+      await OS.login(adminUid);
+    }
+    const identityStarted=Date.now();
+    while(Date.now()-identityStarted<10000 && OS.User?.externalId !== adminUid){
+      await new Promise(resolve=>setTimeout(resolve,250));
+    }
+    if(OS.User?.externalId !== adminUid){
+      throw new Error('Push permission is available, but OneSignal has not linked this browser to the signed-in admin identity yet. Wait a moment and try again.');
     }
     const push=OS.User?.PushSubscription;
     if(!push) throw new Error('OneSignal push subscription API is unavailable.');
