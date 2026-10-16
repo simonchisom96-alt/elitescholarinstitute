@@ -111,11 +111,11 @@
     const OneSignal = await window.ESIOneSignalReady;
     if (!OneSignal.Notifications) throw new Error("OneSignal notifications are unavailable");
     await OneSignal.Notifications.requestPermission();
+    const permission = OneSignal.Notifications.permission;
+    if (permission !== true && permission !== "granted") return permission;
     if (OneSignal.User?.PushSubscription?.optIn) {
       await OneSignal.User.PushSubscription.optIn();
     }
-    const permission = OneSignal.Notifications.permission;
-    if (permission !== true && permission !== "granted") return permission;
     const status = await waitForESIPushSubscription(OneSignal);
     if (!status.optedIn || !status.id || !status.token) {
       throw new Error("Browser permission is granted, but OneSignal has not created an active push subscription/token yet. Keep this ESI page open, check your connection, then tap Re-establish Push Subscription again.");
