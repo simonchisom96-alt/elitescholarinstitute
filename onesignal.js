@@ -31,7 +31,6 @@
       });
       window.ESIOneSignal = OneSignal;
       readyResolve(OneSignal);
-      scheduleESIPushReminderCheck();
 
       // HaniLearn pattern adapted to ESI's Firebase Auth: keep OneSignal's
       // external identity aligned with the currently signed-in Firebase user.
@@ -77,104 +76,8 @@
     return ("Notification" in window) ? Notification.permission : "unsupported";
   }
 
-  function removeESIPushReminder() {
-    const el = document.getElementById("esiPushReminder");
-    if (el) el.remove();
-  }
-
-  function showESIPushReminder(permission, optedIn) {
-    if (permission === "granted" && optedIn) {
-      removeESIPushReminder();
-      return;
-    }
-    if (document.getElementById("esiPushReminder")) return;
-
-    const wrap = document.createElement("div");
-    wrap.id = "esiPushReminder";
-    wrap.style.cssText =
-      "position:fixed;left:12px;right:12px;bottom:88px;z-index:99999;" +
-      "background:#0d1b3e;color:#f2f6ff;border:1px solid #2a4d8f;" +
-      "border-radius:14px;padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,.45);" +
-      "font:600 12px Poppins,Arial,sans-serif;display:flex;align-items:center;gap:10px;";
-
-    const text = document.createElement("div");
-    text.style.cssText = "flex:1;line-height:1.35;";
-
-    const button = document.createElement("button");
-    button.type = "button";
-    button.style.cssText =
-      "border:0;border-radius:9px;padding:8px 11px;background:#ff8a00;" +
-      "color:#1a0e00;font:800 11px Poppins,Arial,sans-serif;white-space:nowrap;";
-
-    if (permission === "denied") {
-      text.textContent = "ESI notifications are blocked by your browser.";
-      button.textContent = "Settings";
-      button.addEventListener("click", () => {
-        alert("Notifications are blocked for ESI. Re-enable Notifications for this site in your browser settings, then return to ESI.");
-      });
-    } else if (permission === "granted" && !optedIn) {
-      text.textContent = "Browser permission is on, but this device is not subscribed for background push.";
-      button.textContent = "Subscribe";
-      button.addEventListener("click", async () => {
-        button.disabled = true;
-        button.textContent = "Subscribing…";
-        try {
-          const OneSignal = await window.ESIOneSignalReady;
-          if (OneSignal?.User?.PushSubscription?.optIn) {
-            await OneSignal.User.PushSubscription.optIn();
-          }
-          await refreshESIPushReminder();
-        } catch (error) {
-          console.error("[ESI OneSignal] re-subscribe failed", error);
-          button.disabled = false;
-          button.textContent = "Subscribe";
-        }
-      });
-    } else {
-      text.textContent = "Turn on ESI notifications so announcements can arrive when the site is closed.";
-      button.textContent = "Enable";
-      button.addEventListener("click", async () => {
-        button.disabled = true;
-        button.textContent = "Enabling…";
-        try {
-          const result = await window.requestESIPushPermission();
-          if (result === true || result === "granted") {
-            removeESIPushReminder();
-          } else {
-            button.disabled = false;
-            button.textContent = "Enable";
-          }
-        } catch (error) {
-          console.error("[ESI OneSignal] permission request failed", error);
-          button.disabled = false;
-          button.textContent = "Enable";
-        }
-      });
-    }
-
-    wrap.append(text, button);
-    document.body.appendChild(wrap);
-  }
-
-  async function refreshESIPushReminder() {
-    try {
-      const OneSignal = await window.ESIOneSignalReady;
-      const browserPermission = getBrowserPermission();
-      const optedIn = !!OneSignal?.User?.PushSubscription?.optedIn;
-      if (browserPermission === "granted" && optedIn) removeESIPushReminder();
-      else showESIPushReminder(browserPermission, optedIn);
-    } catch (error) {
-      console.warn("[ESI OneSignal] push status check failed", error);
-    }
-  }
-
-  function scheduleESIPushReminderCheck() {
-    setTimeout(refreshESIPushReminder, 1200);
-    window.addEventListener("pageshow", refreshESIPushReminder);
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) refreshESIPushReminder();
-    });
-  }
+  // The automatic orange push-reminder banner has been removed. OneSignal
+  // initialization and the explicit push helpers below remain available.
 
   async function waitForESIPushSubscription(OneSignal, timeoutMs = 20000) {
     const started = Date.now();
