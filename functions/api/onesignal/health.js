@@ -15,7 +15,7 @@ export async function onRequest({ request, env }) {
   if (rawKey) {
     apiKeyCheck = "checking";
     try {
-      const authorization = /^(Key|Basic)\\s+/i.test(rawKey) ? rawKey : "Key " + rawKey;
+      const authorization = /^(Key|Basic)\s+/i.test(rawKey) ? rawKey : "Key " + rawKey;
       const response = await fetch(
         "https://api.onesignal.com/apps/" + encodeURIComponent(ONE_SIGNAL_APP_ID),
         {
