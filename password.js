@@ -1551,10 +1551,8 @@ async function requestPush(){
       toast('Push permission was not granted: '+String(permission),'orange');
       return permission;
     }
-    if(window.ESIOneSignal){
-      const sub=window.ESIOneSignal.User?.PushSubscription;
-      if(sub?.optIn) await sub.optIn();
-    }
+    // requestESIPushPermission already calls optIn and waits for a real ID/token.
+    // Do not call optIn a second time here; duplicate opt-ins can race subscription state.
     toast('ESI push notifications enabled ✓','blue');
     if(typeof adminRefreshPushStatus==='function') await adminRefreshPushStatus();
     return permission;
@@ -1695,8 +1693,14 @@ async function adminSyncPush(){
     }
     toast('Push subscription verified ✓ ID '+state.id,'blue');
   }catch(e){
-    console.error('[ESI admin subscription recovery]',e);
-    toast('Push re-establish failed: '+(e&&e.message?e.message:String(e)),'orange');
+    const detail = e&&e.message ? e.message : String(e);
+    try {
+      const diagnostics = await window.getESIPushDiagnostics?.();
+      console.error('[ESI admin subscription recovery]', { error: detail, diagnostics });
+    } catch (_) {
+      console.error('[ESI admin subscription recovery]', e);
+    }
+    toast('Push re-establish failed: '+detail,'orange');
   }
 }
 function adminOpenOneSignal(){window.open('https://dashboard.onesignal.com','_blank','noopener,noreferrer');}
