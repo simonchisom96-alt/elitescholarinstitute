@@ -10,11 +10,19 @@
 
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   let readyResolve, readyReject;
+  let initTimeout;
   window.ESIOneSignalInitError = null;
   window.ESIOneSignalReady = new Promise((resolve, reject) => {
     readyResolve = resolve;
     readyReject = reject;
   });
+  // Do not leave the admin UI waiting forever if the SDK CDN fails to load.
+  initTimeout = setTimeout(() => {
+    if (window.ESIOneSignal) return;
+    const error = new Error("OneSignal SDK did not finish initializing within 25 seconds. Check the SDK network request and service-worker registration.");
+    window.ESIOneSignalInitError = error.message;
+    readyReject(error);
+  }, 25000);
 
   window.OneSignalDeferred.push(async function(OneSignal) {
     try {
@@ -29,6 +37,7 @@
       });
       window.ESIOneSignal = OneSignal;
       window.ESIOneSignalInitError = null;
+      clearTimeout(initTimeout);
       readyResolve(OneSignal);
 
       // HaniLearn pattern adapted to ESI's Firebase Auth: keep OneSignal's
@@ -67,6 +76,7 @@
       }, 250);
     } catch (error) {
       window.ESIOneSignalInitError = error?.message || String(error);
+      clearTimeout(initTimeout);
       console.error("[ESI OneSignal] initialization failed", error);
       readyReject(error);
     }
