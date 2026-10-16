@@ -1565,7 +1565,42 @@ async function requestPush(){
 
 async function getESIPushStatus(){const out={permission:'unknown',optedIn:false,id:null,token:null,error:null};try{if(!window.ESIOneSignalReady)throw new Error('OneSignal initialization promise is missing');const OS=await window.ESIOneSignalReady;out.permission=OS?.Notifications?.permission??('Notification'in window?Notification.permission:'unknown');const sub=OS?.User?.PushSubscription;if(sub){out.optedIn=!!sub.optedIn;out.id=sub.id||null;out.token=sub.token||null;}}catch(e){out.error=e?.message||String(e);}out.active=(out.permission===true||out.permission==='granted')&&out.optedIn&&!!out.id&&!!out.token;return out;}
 async function refreshSettingsAdminSection(){const el=$('settingsAdminArea');if(!el)return;if(!isAdmin){el.innerHTML='<div class="admin-panel-title">🔐 ADMIN ACCESS</div><button class="admin-control admin-full" onclick="closeSettings();openAdminLogin()"><strong>Unlock Admin Dashboard</strong><span>Sign in with the ESI admin account to access broadcast and push controls.</span></button>';return;}el.innerHTML='<div class="admin-panel-title">🛡️ ADMIN DASHBOARD · PUSH CONTROL</div><div class="admin-status"><span id="adminPushDot" class="admin-dot"></span><div class="admin-status-text"><strong id="adminPushStatus">Checking OneSignal…</strong><span id="adminPushDetail">Checking permission and subscription.</span></div></div><div class="admin-grid"><button class="admin-control" onclick="adminRefreshPushStatus()"><strong>🔄 Refresh Status</strong><span>Re-check OneSignal connection.</span></button><button class="admin-control" onclick="requestPush()"><strong>🔔 Enable Push</strong><span>Request browser notification permission.</span></button><button class="admin-control" onclick="adminTestGateway()"><strong>🧪 Test Gateway</strong><span>Verify the secure ESI push server and deployed version.</span></button><button class="admin-control" onclick="adminSendDeviceTest()"><strong>📱 Test This Device</strong><span>Send a OneSignal push only to this phone. Close Chrome after it is accepted.</span></button><button class="admin-control" onclick="adminOpenOneSignal()"><strong>⚙️ OneSignal</strong><span>Open the OneSignal dashboard.</span></button><button class="admin-control admin-full" onclick="adminSyncPush()"><strong>♻️ Re-establish Push Subscription</strong><span>Refresh the SDK and request permission again if the subscription is missing.</span></button><button class="admin-control admin-danger admin-full" onclick="adminLogout()"><strong>🔒 Sign Out Admin Mode</strong><span>End the Firebase admin session on this device.</span></button></div>';await adminRefreshPushStatus();}
-async function adminRefreshPushStatus(){const status=await getESIPushStatus(),dot=$('adminPushDot'),title=$('adminPushStatus'),detail=$('adminPushDetail');if(!dot||!title||!detail)return;const active=!!status.active;dot.classList.toggle('off',!active);title.textContent=active?'Background push subscription active':'Push subscription not active';detail.textContent=status.error?'OneSignal status error: '+status.error:'Permission: '+status.permission+' · Opted in: '+(status.optedIn?'yes':'no')+' · Subscription ID: '+(status.id||'none')+' · Push token: '+(status.token?'ready':'missing')+'. A valid ID and token are both required before sending a device test.';}
+async function adminRefreshPushStatus(){
+  const status=await getESIPushStatus();
+  const dot=$('adminPushDot'),title=$('adminPushStatus'),detail=$('adminPushDetail');
+  if(!dot||!title||!detail)return;
+  let serverCount=null,serverError='';
+  // The browser SDK can look subscribed before OneSignal's server has indexed
+  // the user. Never show green based only on local permission/token state.
+  if(status.active&&auth.currentUser){
+    try{
+      const token=await auth.currentUser.getIdToken(true);
+      const response=await fetch(window.location.origin+'/api/onesignal/diagnostics',{
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        credentials:'omit',cache:'no-store',body:'{}'
+      });
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(data.error||('HTTP '+response.status));
+      if(!data.configured||!data.api_reachable)throw new Error(data.error||'OneSignal API is not reachable');
+      serverCount=Number(data.active_push_subscriptions||0);
+    }catch(e){serverError=e?.message||String(e);}
+  }
+  const active=!!status.active&&serverCount!==null&&serverCount>0;
+  dot.classList.toggle('off',!active);
+  if(active){
+    title.textContent='Background push verified by OneSignal';
+    detail.textContent='This admin account has '+serverCount+' active server-side push subscription(s). Broadcasts target all users in the “Subscribed Users” audience.';
+  }else if(status.active&&serverCount===0){
+    title.textContent='Browser subscribed, server subscription missing';
+    detail.textContent='The browser has a token, but OneSignal reports no active push subscription for this admin account. Tap Re-establish Push Subscription, wait, then Refresh Status.';
+  }else if(status.active&&serverError){
+    title.textContent='Could not verify OneSignal server status';
+    detail.textContent='Local permission/token exists, but server verification failed: '+serverError;
+  }else{
+    title.textContent='Push subscription not active';
+    detail.textContent=status.error?'OneSignal status error: '+status.error:'Permission: '+status.permission+' · Opted in: '+(status.optedIn?'yes':'no')+' · Subscription ID: '+(status.id||'none')+' · Push token: '+(status.token?'ready':'missing')+'. Re-establish the subscription and verify it on the server.';
+  }
+}
 async function adminTestGateway(){
   // Always test the same-origin Cloudflare Pages Functions gateway.
   // Never fall back to the retired Render service.
