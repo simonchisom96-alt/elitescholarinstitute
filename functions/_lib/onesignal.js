@@ -139,6 +139,10 @@ export async function sendOneSignal(env, body) {
     name: body.subscriptionId ? "ESI device test" : "ESI Announcement",
     headings: { en: body.title },
     contents: { en: body.message },
+    // Set both URL fields so web push uses the intended click target across
+    // OneSignal API response/schema variants. Keep a 28-day TTL so push services
+    // can retain a message while a subscribed device is temporarily offline.
+    url: body.url,
     web_url: body.url,
     ttl: 2419200,
     priority: 10,
@@ -146,8 +150,17 @@ export async function sendOneSignal(env, body) {
     firefox_icon: WEB_ICON,
     data: { url: body.url }
   };
-  if (body.subscriptionId) payload.include_subscription_ids = [body.subscriptionId];
-  else payload.included_segments = ["Subscribed Users"];
+  if (body.subscriptionId) {
+    payload.include_subscription_ids = [body.subscriptionId];
+  } else if (body.externalId) {
+    // The SDK's subscription ID can briefly be stale while OneSignal is
+    // merging a newly opted-in browser subscription. Targeting the verified
+    // external user lets OneSignal select that user's active push subscription(s).
+    payload.include_aliases = { external_id: [body.externalId] };
+  } else {
+    // Broadcasts always target OneSignal's canonical active push audience.
+    payload.included_segments = ["Subscribed Users"];
+  }
   if (body.imageUrl) {
     payload.chrome_web_image = body.imageUrl;
     payload.big_picture = body.imageUrl;
