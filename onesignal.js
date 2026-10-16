@@ -3,12 +3,9 @@
 (() => {
   const APP_ID = "c7be3202-494e-43dd-b47d-d969d65dd96f";
 
-  // Use only the verified gateway. The other historical hostnames are
-  // not this backend; retrying them masks the first useful network/CORS error
-  // and can turn a real gateway response into a generic "Failed to fetch".
-  const PUSH_GATEWAYS = [
-    "https://esi-beams-api.onrender.com"
-  ];
+  // The secure API now runs as Cloudflare Pages Functions on this same origin.
+  // Keep requests same-origin so they do not depend on Render or cross-origin CORS.
+  const PUSH_GATEWAYS = [window.location.origin];
   window.ESI_PUSH_GATEWAYS = PUSH_GATEWAYS.slice();
 
   window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -177,7 +174,7 @@
           lastError = new Error("Push gateway " + new URL(baseUrl).host + " timed out after 55s");
         } else if (error instanceof TypeError) {
           lastError = new Error("Could not reach " + new URL(baseUrl).host +
-            ". Browser fetch failed before an HTTP response (possible CORS/preflight, network, or server connection failure). Check the gateway health result and Render logs.");
+            ". Browser fetch failed before an HTTP response (network failure, or a Functions deployment issue). Check the Cloudflare Pages API health endpoint.");
         } else {
           lastError = error;
         }
