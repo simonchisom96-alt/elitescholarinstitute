@@ -32,7 +32,7 @@
         allowLocalhostAsSecureOrigin: false,
         // Subdirectory scope so this worker does not replace the PWA worker
         // registered at "/". Official v16 custom-path setup.
-        serviceWorkerPath: "onesignal/OneSignalSDKWorker.js",
+        serviceWorkerPath: "/onesignal/OneSignalSDKWorker.js",
         serviceWorkerParam: { scope: "/onesignal/" }
       });
       window.ESIOneSignal = OneSignal;
