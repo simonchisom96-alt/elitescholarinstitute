@@ -46,7 +46,7 @@ export async function onRequest({ request, env }) {
     apiKeyError,
     appId: ONE_SIGNAL_APP_ID,
     firebaseProject: FIREBASE_PROJECT_ID,
-    version: "2026-10-16-cloudflare-push-delivery-3",
+    version: "2026-10-16-cloudflare-push-delivery-4",
     audience: "All currently subscribed push users",
     hostname: new URL(request.url).host
   });
