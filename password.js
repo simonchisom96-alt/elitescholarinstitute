@@ -1673,6 +1673,21 @@ async function adminSendDeviceTest(){
       toast('This phone is not fully subscribed yet. Tap Re-establish Push Subscription, keep this page open until it finishes, then Refresh Status. A subscription ID and push token must both be ready.','orange');
       return;
     }
+    // Confirm OneSignal's server has indexed an active push subscription
+    // for this admin before attempting the device-only test.
+    const token = await auth.currentUser.getIdToken(true);
+    const checkResponse = await fetch(window.location.origin+'/api/onesignal/diagnostics',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      credentials:'omit',cache:'no-store',body:'{}'
+    });
+    const check = await checkResponse.json().catch(()=>({}));
+    if(!checkResponse.ok || !check.api_reachable){
+      throw new Error(check.error || ('OneSignal server verification failed: HTTP '+checkResponse.status));
+    }
+    if(Number(check.active_push_subscriptions||0)<1){
+      throw new Error('This browser has a local push token, but OneSignal has not confirmed an active push subscription for the admin account yet. Tap Re-establish Push Subscription, wait a few seconds, then Refresh Status.');
+    }
     const result = await window.sendESIPush({
       title: 'ESI background test',
       message: 'Background push test. If this appears in the phone notification shade after Chrome is closed, delivery is working.',
