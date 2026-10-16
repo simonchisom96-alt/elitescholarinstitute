@@ -10,6 +10,7 @@
 
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   let readyResolve, readyReject;
+  window.ESIOneSignalInitError = null;
   window.ESIOneSignalReady = new Promise((resolve, reject) => {
     readyResolve = resolve;
     readyReject = reject;
@@ -27,6 +28,7 @@
         serviceWorkerParam: { scope: "/onesignal/" }
       });
       window.ESIOneSignal = OneSignal;
+      window.ESIOneSignalInitError = null;
       readyResolve(OneSignal);
 
       // HaniLearn pattern adapted to ESI's Firebase Auth: keep OneSignal's
@@ -64,6 +66,7 @@
         if (bindESIFirebaseIdentity() || identityAttempts >= 40) clearInterval(identityTimer);
       }, 250);
     } catch (error) {
+      window.ESIOneSignalInitError = error?.message || String(error);
       console.error("[ESI OneSignal] initialization failed", error);
       readyReject(error);
     }
@@ -118,6 +121,36 @@
       optedIn: !!sub?.optedIn,
       id: sub?.id || null,
       token: sub?.token || null
+    };
+  };
+
+  // Diagnostic-only: report worker registrations without exposing subscription tokens.
+  window.getESIPushDiagnostics = async function() {
+    let registrations = [];
+    let registrationError = null;
+    try {
+      if ('serviceWorker' in navigator) {
+        registrations = (await navigator.serviceWorker.getRegistrations()).map(reg => ({
+          scope: reg.scope,
+          activeScript: reg.active?.scriptURL || null,
+          installingScript: reg.installing?.scriptURL || null,
+          waitingScript: reg.waiting?.scriptURL || null
+        }));
+      }
+    } catch (error) { registrationError = error?.message || String(error); }
+    const sub = window.ESIOneSignal?.User?.PushSubscription;
+    return {
+      page: location.href,
+      secureContext: window.isSecureContext,
+      serviceWorkerSupported: 'serviceWorker' in navigator,
+      browserPermission: getBrowserPermission(),
+      oneSignalInitialized: !!window.ESIOneSignal,
+      oneSignalInitError: window.ESIOneSignalInitError || null,
+      optedIn: !!sub?.optedIn,
+      hasSubscriptionId: !!sub?.id,
+      hasPushToken: !!sub?.token,
+      registrations,
+      registrationError
     };
   };
 
