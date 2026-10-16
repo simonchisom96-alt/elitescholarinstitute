@@ -180,7 +180,8 @@ export async function sendOneSignal(env, body) {
             "Authorization": authOptions[authIndex]
           },
           body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(18000)
+          // Keep the worst-case gateway duration below the browser's 55s timeout.
+          signal: AbortSignal.timeout(12000)
         });
         data = await response.json().catch(() => ({}));
       } catch (error) {
@@ -189,7 +190,8 @@ export async function sendOneSignal(env, body) {
           await new Promise(resolve => setTimeout(resolve, 500 * (2 ** attempt)));
           continue;
         }
-        if (authIndex < authOptions.length - 1) break;
+        // A network failure says nothing about the auth scheme; do not spend
+        // another full retry cycle trying a different header format.
         throw new Error("Could not reach OneSignal after three attempts: " + (error?.message || String(error)));
       }
 
