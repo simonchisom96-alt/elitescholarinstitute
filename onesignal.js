@@ -176,7 +176,8 @@
       message: String(payload.message || "New announcement").slice(0, 4000),
       imageUrl: String(payload.imageUrl || "").slice(0, 2000),
       url: String(payload.url || "/notification.html").slice(0, 1000),
-      subscriptionId: String(payload.subscriptionId || "").slice(0, 80)
+      subscriptionId: String(payload.subscriptionId || "").slice(0, 80),
+      externalId: String(payload.externalId || "").slice(0, 128)
     });
 
     let lastError = null;
