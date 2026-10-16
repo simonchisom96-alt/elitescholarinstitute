@@ -136,13 +136,12 @@ export async function sendOneSignal(env, body) {
   const payload = {
     app_id: ONE_SIGNAL_APP_ID,
     target_channel: "push",
-    name: body.subscriptionId ? "ESI device test" : "ESI Announcement",
+    name: (body.subscriptionId || body.externalId) ? "ESI device test" : "ESI Announcement",
     headings: { en: body.title },
     contents: { en: body.message },
-    // Set both URL fields so web push uses the intended click target across
-    // OneSignal API response/schema variants. Keep a 28-day TTL so push services
-    // can retain a message while a subscribed device is temporarily offline.
-    url: body.url,
+    // This is a web-push-only app, so use web_url (OneSignal advises not
+    // to send url and web_url together). Keep a 28-day TTL so push services can
+    // retain a message while a subscribed device is temporarily offline.
     web_url: body.url,
     ttl: 2419200,
     priority: 10,
