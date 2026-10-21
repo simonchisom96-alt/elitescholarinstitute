@@ -4725,6 +4725,21 @@ async function shareRoomInvite(roomId, room){
         const visible=$('lobbyCodeVal') ? $('lobbyCodeVal').textContent.trim() : '';
         if(visible && !/^[-—\s]+$/.test(visible)) code=visible;
     }
+    // Legacy rooms may predate room codes. Mint and index one before sharing so
+    // every invitation has both a usable code and a direct link.
+    if(!code || /^[-—\s]+$/.test(code)){
+        try{
+            code=await genUniqueRoomCode();
+            await mdb.ref('mp_rooms/'+roomId).update({code});
+            await mdb.ref('mp_room_codes/'+code).set(roomId);
+            room.code=code;
+            if($('lobbyCodeVal')) $('lobbyCodeVal').textContent=code;
+            if($('lobbyCodeWrap')) $('lobbyCodeWrap').style.display='block';
+        }catch(error){
+            console.error('[ESI Invite] Could not assign a room code.',error);
+            code='';
+        }
+    }
     return shareESIInvite({kind:'room',id:roomId,hostName:room.hostName||'An ESI player',code,title:'ESI Multiplayer Invitation'});
 }
 function shareTournamentInvite(tournamentId, tournament){
