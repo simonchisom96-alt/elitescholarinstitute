@@ -4695,25 +4695,35 @@ function ensureInvitationButton(anchorId, buttonId, label, onClick){
     }
     button.onclick=onClick;
 }
-async function shareESIInvite({kind, id, hostName, code, title}){
+async function shareESIInvite({kind, id, hostName, code, title, details={}}){
     if(!id){toast('This invitation is not ready yet.');return;}
-    const url=buildESIInviteUrl(kind,id);
+    const url=buildESIInviteUrl(kind,id,details);
     const heading=kind==='room'?'ESI Multiplayer':'ESI Tournament';
     const usableCode=String(code||'').trim();
-    const hasCode=!!usableCode && !/^[-—\s]+$/.test(usableCode) && !/^(?:room\s*code|code)$/i.test(usableCode);
+    const hasCode=!!usableCode && !/^[-—\\s]+$/.test(usableCode) && !/^(?:room\\s*code|code)$/i.test(usableCode);
+    const challengeLines=[];
+    if(details.title)challengeLines.push('🏅 Tournament: '+details.title);
+    if(details.subjects)challengeLines.push('📚 Subject(s): '+details.subjects);
+    if(details.qcount)challengeLines.push('📝 Questions: '+details.qcount);
+    if(details.difficulty)challengeLines.push('🔥 Difficulty: '+details.difficulty);
+    if(details.mode)challengeLines.push('🎮 Mode: '+details.mode);
+    if(details.time)challengeLines.push('⏱ Time: '+details.time);
+    if(details.starts)challengeLines.push('📅 Starts: '+details.starts);
     const message=[
         '⚔️ '+(hostName||'An ESI player')+' challenges you to '+heading+'!',
         '',
+        ...challengeLines,
+        ...(challengeLines.length?['']:[]),
         kind==='room'
-          ? (hasCode ? 'Join with room code: '+usableCode : 'Join directly using the invitation link below.')
-          : (hasCode ? 'Join with tournament code: '+usableCode : 'Open ESI Tournaments using the invitation link below.'),
+          ? (hasCode ? '🔑 Room code: '+usableCode : 'Join directly using the invitation link below.')
+          : (hasCode ? '🔑 Tournament code: '+usableCode : 'Open ESI Tournaments using the invitation link below.'),
         '',
-        'Tap the invitation link below to join.',
+        'Tap the invitation link below to open the correct ESI lobby or match.',
         url
-    ].join('\n');
+    ].join('\\n');
     try{
         if(window.ESIAndroid && typeof window.ESIAndroid.share==='function'){
-            // The Android bridge already receives the complete message; avoid appending a second URL.
+            // The Android bridge receives the complete message; the URL is already included once.
             window.ESIAndroid.share('ESI Multiplayer Invitation',message,'');
             return;
         }
@@ -4819,6 +4829,7 @@ function bootESIInviteRouting(){
             clean.searchParams.delete('esiInvite');
             clean.searchParams.delete('roomId');
             clean.searchParams.delete('tournamentId');
+            ['esiSubject','esiQuestions','esiDifficulty','esiMode','esiTime','esiTitle','esiStarts'].forEach(key=>clean.searchParams.delete(key));
             history.replaceState(null,'',clean.pathname+(clean.search?clean.search:'')+clean.hash);
         }catch(_){}
         enterMultiplayer();
