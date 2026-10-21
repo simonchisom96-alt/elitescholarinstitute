@@ -4405,12 +4405,17 @@ function setCRMode(mode){
     $('crRaceBox').style.display = mode==='spak' ? 'flex' : 'none';
 }
 function genRoomCode(){return 'ESI-'+Math.floor(1000+Math.random()*9000);}
-async function genUniqueRoomCode(){
-    // Codes are indexed separately in Firebase; verify before publishing to avoid collisions.
+async function genUniqueRoomCode(roomId){
+    // Atomically reserve the index so two hosts cannot claim the same code concurrently.
+    if(!roomId)throw new Error('A room ID is required to reserve a room code.');
     for(let attempt=0;attempt<12;attempt++){
         const code=genRoomCode();
-        const snap=await mdb.ref('mp_room_codes/'+code).get();
-        if(!snap.exists())return code;
+        const reservation=await mdb.ref('mp_room_codes/'+code).transaction(
+            current => current == null ? roomId : undefined,
+            undefined,
+            false
+        );
+        if(reservation.committed)return code;
     }
     throw new Error('Could not generate a unique room code. Please try again.');
 }
@@ -4433,7 +4438,7 @@ async function createRoom(){
     let maxPlayers=teamMode?teamSize*2:2;
     let roomRef=mdb.ref('mp_rooms').push();
     let roomId=roomRef.key;
-    let code=await genUniqueRoomCode();
+    let code=await genUniqueRoomCode(roomId);
     let players={};
     players[MY_UID]={name:ME.username, ready:false, team: teamMode?'A':null, uid:MY_UID, avatarEmoji:ME.avatarEmoji||'🎓'};
     await roomRef.set({
@@ -4777,7 +4782,7 @@ async function shareRoomInvite(roomId, room){
     // every invitation has both a usable code and a direct link.
     if(!code || /^[-—\s]+$/.test(code)){
         try{
-            code=await genUniqueRoomCode();
+            code=await genUniqueRoomCode(roomId);
             await mdb.ref('mp_rooms/'+roomId).update({code});
             await mdb.ref('mp_room_codes/'+code).set(roomId);
             room.code=code;
