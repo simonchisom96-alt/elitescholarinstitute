@@ -4647,10 +4647,15 @@ function getESIInviteDetails(record, kind){
     const qcount=Number(settings.qcount)||0;
     const mode=String(settings.mode||'').toLowerCase();
     const difficulty=String(settings.difficulty||'').trim();
+    const perQ=Number(settings.perQ)||0;
+    const estimatedSeconds=qcount*perQ;
+    const estimatedTotal=estimatedSeconds>0
+        ? [Math.floor(estimatedSeconds/60)>0?Math.floor(estimatedSeconds/60)+' min':'',estimatedSeconds%60>0?(estimatedSeconds%60)+' sec':''].filter(Boolean).join(' ')
+        : '';
     const time=mode==='speed'
         ? ((Number(settings.totalMinutes)||0)>0 ? (Number(settings.totalMinutes)+' min total') : 'Sprint timer')
         : mode==='spak'
-            ? ((Number(settings.perQ)||0)>0 ? (Number(settings.perQ)+' sec/question') : 'Per-question timer')
+            ? (perQ>0 ? (perQ+' sec/question'+(estimatedTotal?' (~'+estimatedTotal+' total)':'')) : 'Per-question timer')
             : (mode==='free' ? 'Casual / untimed' : '');
     const scheduledStart=Number(record && record.scheduledStart)||0;
     return {
