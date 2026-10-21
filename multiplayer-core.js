@@ -4847,11 +4847,12 @@ function bootESIInviteRouting(){
         return;
     }
     let attempts=0, routed=false;
+    // Poll readiness frequently so browser and Android APK taps route promptly.
     const timer=setInterval(()=>{
         attempts++;
         if(routed){clearInterval(timer);return;}
         if(!MY_UID || !ME || !mdb || typeof enterMultiplayer!=='function') {
-            if(attempts>=240){clearInterval(timer);toast('Could not open the invitation yet. Sign in, then tap the link again.');}
+            if(attempts>=1200){clearInterval(timer);toast('Could not open the invitation yet. Sign in, then tap the link again.');}
             return;
         }
         if(typeof isUnlocked==='function' && !isUnlocked()){
@@ -4871,14 +4872,12 @@ function bootESIInviteRouting(){
         }catch(_){}
         enterMultiplayer();
         window.scrollTo({top:0,behavior:'auto'});
-        setTimeout(()=>{
-            if(kind==='room') Promise.resolve(openESIRoomInvite(id)).catch(error=>{console.error('[ESI Invite] room join failed',error);toast('Could not open this room. Check your connection and try again.');});
-            else {
-                try{openTournamentDetail(id);}catch(error){console.error('[ESI Invite] tournament open failed',error);toast('Could not open this tournament.');}
-            }
-            window.scrollTo({top:0,behavior:'auto'});
-        },250);
-    },500);
+        // Route immediately; remove the former extra 250 ms timeout and 500 ms polling delay.
+        if(kind==='room') Promise.resolve(openESIRoomInvite(id)).catch(error=>{console.error('[ESI Invite] room join failed',error);toast('Could not open this room. Check your connection and try again.');});
+        else {
+            try{openTournamentDetail(id);}catch(error){console.error('[ESI Invite] tournament open failed',error);toast('Could not open this tournament.');}
+        }
+    },100);
 }
 async function openESIRoomInvite(roomId){
     const ref=mdb.ref('mp_rooms/'+roomId);
@@ -4959,7 +4958,16 @@ function renderLobby(roomId, room){
     const publicRoom=room.visibility==='public';
     if(room.code && !publicRoom){$('lobbyCodeWrap').style.display='block';$('lobbyCodeVal').textContent=room.code;}
     else{$('lobbyCodeWrap').style.display='none';$('lobbyCodeVal').textContent='';}
-    // Keep the share button available even when the public code box is hidden.
+    // Public rooms (including team battles) must not retain a legacy code or code index.
+    if(publicRoom && room.code){
+        const legacyCode=String(room.code);
+        room.code=null;
+        mdb.ref('mp_rooms/'+roomId+'/code').remove().catch(()=>{});
+        mdb.ref('mp_room_codes/'+legacyCode).get().then(snap=>{
+            if(snap.exists() && snap.val()===roomId) return mdb.ref('mp_room_codes/'+legacyCode).remove();
+        }).catch(()=>{});
+    }
+    // The share button remains visible as a sibling while the code container is hidden.
     ensureInvitationButton('lobbyCodeWrap','lobbyShareBtn','🔗 Share Room Invite',()=>shareRoomInvite(roomId,room));
     $('lobbyTeamWrap').style.display=room.teamMode?'block':'none';
     let plist=Object.values(room.players||{});
@@ -7741,8 +7749,14 @@ function renderTournamentDetail(tid, t){
 
     let isHost=t.hostUid===MY_UID;
     let isRegistered=!!(t.players&&t.players[MY_UID]);
-    $('tCodeBox').style.display = (t.visibility==='private' && t.code) ? 'block' : 'none';
-    $('tCodeVal').textContent = (t.visibility==='private' && t.code) ? t.code : '';
+    const publicTournament=t.visibility==='public';
+    $('tCodeBox').style.display = (!publicTournament && t.visibility==='private' && t.code) ? 'block' : 'none';
+    $('tCodeVal').textContent = (!publicTournament && t.visibility==='private' && t.code) ? t.code : '';
+    // Remove any legacy public tournament code as soon as its detail is opened.
+    if(publicTournament && t.code){
+        t.code=null;
+        mdb.ref('mp_tournaments/'+tid+'/code').remove().catch(()=>{});
+    }
     // Keep sharing available for public tournaments with no visible code box.
     ensureInvitationButton('tCodeBox','tournamentShareBtn','🔗 Share Tournament Invite',()=>shareTournamentInvite(tid,t));
 
