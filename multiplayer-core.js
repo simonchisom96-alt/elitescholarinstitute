@@ -4705,12 +4705,13 @@ function ensureInvitationButton(anchorId, buttonId, label, onClick){
     }
     button.onclick=onClick;
 }
-async function shareESIInvite({kind, id, hostName, code, title, details={}}){
+async function shareESIInvite({kind, id, hostName, code, title, details={}, publicInvite=false}){
     if(!id){toast('This invitation is not ready yet.');return;}
     const url=buildESIInviteUrl(kind,id,details);
     const heading=kind==='room'?'ESI Multiplayer':'ESI Tournament';
     const usableCode=String(code||'').trim();
     const hasCode=!!usableCode && !/^[-—\\s]+$/.test(usableCode) && !/^(?:room\\s*code|code)$/i.test(usableCode);
+    const includeCode=!publicInvite && hasCode;
     const challengeLines=[];
     if(details.title)challengeLines.push('🏅 Tournament: '+details.title);
     if(details.subjects)challengeLines.push('📚 Subject(s): '+details.subjects);
@@ -4724,15 +4725,15 @@ async function shareESIInvite({kind, id, hostName, code, title, details={}}){
         '',
         ...challengeLines,
         ...(challengeLines.length?['']:[]),
-        kind==='room'
-          ? (hasCode ? '🔑 Room code: '+usableCode+',' : 'Join directly using the invitation link below.')
-          : (hasCode ? '🔑 Tournament code: '+usableCode+',' : 'Open ESI Tournaments using the invitation link below.'),
-        'OR;',
+        ...(includeCode ? [
+          (kind==='room' ? '🔑 Room code: ' : '🔑 Tournament code: ')+usableCode+',',
+          'OR;'
+        ] : []),
         kind==='room'
           ? 'Tap the invitation link below to join the match lobby or spectate.'
           : 'Tap the invitation link below to join the tournament lobby or spectate.',
         url
-    ].join('\n');
+    ].join('\\n');
     try{
         if(window.ESIAndroid && typeof window.ESIAndroid.share==='function'){
             // The Android bridge receives the complete message; the URL is already included once.
@@ -4796,7 +4797,7 @@ async function shareRoomInvite(roomId, room){
         }
     }
     const details=getESIInviteDetails(room,'room');
-    return shareESIInvite({kind:'room',id:roomId,hostName:room.hostName||'An ESI player',code,title:'ESI Multiplayer Invitation',details});
+    return shareESIInvite({kind:'room',id:roomId,hostName:room.hostName||'An ESI player',code,title:'ESI Multiplayer Invitation',details,publicInvite:room.visibility==='public'});
 }
 async function shareTournamentInvite(tournamentId, tournament){
     tournament=tournament||{};
@@ -4809,7 +4810,7 @@ async function shareTournamentInvite(tournamentId, tournament){
     }catch(error){console.warn('[ESI Invite] Could not refresh tournament before sharing.',error);}
     const code=String(tournament.code||'').trim();
     const details=getESIInviteDetails(tournament,'tournament');
-    return shareESIInvite({kind:'tournament',id:tournamentId,hostName:tournament.hostName||tournament.creatorName||'An ESI host',code,title:'ESI Tournament Invitation',details});
+    return shareESIInvite({kind:'tournament',id:tournamentId,hostName:tournament.hostName||tournament.creatorName||'An ESI host',code,title:'ESI Tournament Invitation',details,publicInvite:tournament.visibility!=='private'});
 }
 function bootESIInviteRouting(){
     let params;
