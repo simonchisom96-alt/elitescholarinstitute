@@ -4778,7 +4778,7 @@ async function shareRoomInvite(roomId, room){
     }catch(error){
         console.warn('[ESI Invite] Could not refresh room before sharing.',error);
     }
-    const isPublic=room.visibility==='public';
+    const isPublic=room.visibility!=='private';
     let code=String(room.code||'').trim();
     if(isPublic){
         // Remove any legacy code/index from a public room; its link remains shareable.
@@ -4824,7 +4824,7 @@ async function shareTournamentInvite(tournamentId, tournament){
             if(snap.exists())tournament={...tournament,...(snap.val()||{})};
         }
     }catch(error){console.warn('[ESI Invite] Could not refresh tournament before sharing.',error);}
-    const isPublic=tournament.visibility==='public';
+    const isPublic=tournament.visibility!=='private';
     let code=String(tournament.code||'').trim();
     if(isPublic && code){
         // Public individual/team tournaments use links, never tournament codes.
@@ -4955,7 +4955,7 @@ function renderLobby(roomId, room){
         ${room.powerups?`<span class="chip-mini">⚡ Power-ups ON</span>`:'<span class="chip-mini">Power-ups OFF</span>'}
         ${room.settings.showExplanations===false?'<span class="chip-mini">🙈 Explanations Hidden</span>':'<span class="chip-mini">💡 Explanations Shown</span>'}
     `;
-    const publicRoom=room.visibility==='public';
+    const publicRoom=room.visibility!=='private';
     if(room.code && !publicRoom){$('lobbyCodeWrap').style.display='block';$('lobbyCodeVal').textContent=room.code;}
     else{$('lobbyCodeWrap').style.display='none';$('lobbyCodeVal').textContent='';}
     // Public rooms (including team battles) must not retain a legacy code or code index.
@@ -7749,7 +7749,7 @@ function renderTournamentDetail(tid, t){
 
     let isHost=t.hostUid===MY_UID;
     let isRegistered=!!(t.players&&t.players[MY_UID]);
-    const publicTournament=t.visibility==='public';
+    const publicTournament=t.visibility!=='private';
     $('tCodeBox').style.display = (!publicTournament && t.visibility==='private' && t.code) ? 'block' : 'none';
     $('tCodeVal').textContent = (!publicTournament && t.visibility==='private' && t.code) ? t.code : '';
     // Remove any legacy public tournament code as soon as its detail is opened.
