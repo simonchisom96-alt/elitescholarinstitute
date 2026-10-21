@@ -4748,9 +4748,14 @@ function bootESIInviteRouting(){
 }
 async function openESIRoomInvite(roomId){
     const ref=mdb.ref('mp_rooms/'+roomId);
-    const snap=await ref.get();
-    if(!snap.exists()){toast('That room no longer exists.');showScreen('rooms');return;}
-    const room=snap.val();
+    let room=null;
+    for(let attempt=0;attempt<16;attempt++){
+        const snap=await ref.get();
+        if(!snap.exists()){toast('That room no longer exists.');showScreen('rooms');return;}
+        room=snap.val();
+        if(room.status!=='starting')break;
+        await new Promise(resolve=>setTimeout(resolve,1000));
+    }
     if(room.status==='waiting'){
         const players=room.players||{};
         if(!players[MY_UID] && Object.keys(players).length >= (room.maxPlayers||8)){
@@ -4761,18 +4766,14 @@ async function openESIRoomInvite(roomId){
         await joinPublicRoom(roomId);
         return;
     }
-    if(room.status==='starting'){
-        showScreen('rooms');
-        toast('The host is starting the match. Reopen the invite in a moment to watch it.');
-        return;
-    }
     if(room.status==='in_progress' && room.matchId){
         const isPlayer=!!(room.players && room.players[MY_UID]);
         joinExistingMatch(room.matchId,roomId,!isPlayer);
         if(!isPlayer)toast('The match has started. You joined as a spectator.');
         return;
     }
-    toast('This room is no longer accepting players.');
+    if(room.status==='starting')toast('The host is still starting the match. Try the invitation again shortly.');
+    else toast('This room is no longer accepting players.');
     showScreen('rooms');
 }
 function copyRoomCode(){
