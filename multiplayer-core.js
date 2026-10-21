@@ -4877,7 +4877,7 @@ function bootESIInviteRouting(){
         else {
             try{openTournamentDetail(id);}catch(error){console.error('[ESI Invite] tournament open failed',error);toast('Could not open this tournament.');}
         }
-    },100);
+    },50);
 }
 async function openESIRoomInvite(roomId){
     const ref=mdb.ref('mp_rooms/'+roomId);
