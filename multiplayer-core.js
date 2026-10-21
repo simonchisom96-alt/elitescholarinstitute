@@ -4641,10 +4641,43 @@ async function hostStartMatch(){
     $('hostStartBtn').disabled=false;$('hostStartBtn').textContent='🚀 Start Match (Host)';
 }
 
-function buildESIInviteUrl(kind, id){
+function getESIInviteDetails(record, kind){
+    const settings=record && record.settings ? record.settings : {};
+    const subjects=Array.isArray(settings.subjects) ? settings.subjects.filter(Boolean) : [];
+    const qcount=Number(settings.qcount)||0;
+    const mode=String(settings.mode||'').toLowerCase();
+    const difficulty=String(settings.difficulty||'').trim();
+    const time=mode==='speed'
+        ? ((Number(settings.totalMinutes)||0)>0 ? (Number(settings.totalMinutes)+' min total') : 'Sprint timer')
+        : mode==='spak'
+            ? ((Number(settings.perQ)||0)>0 ? (Number(settings.perQ)+' sec/question') : 'Per-question timer')
+            : (mode==='free' ? 'Casual / untimed' : '');
+    const scheduledStart=Number(record && record.scheduledStart)||0;
+    return {
+        subjects:subjects.slice(0,12).join(', '),
+        qcount:qcount>0?String(qcount):'',
+        difficulty:difficulty.slice(0,40),
+        mode:mode==='spak'?'Spak':mode==='speed'?'Sprint':mode==='free'?'Casual':'',
+        time,
+        title:String(record && (record.name||record.title)||'').trim().slice(0,100),
+        starts:scheduledStart ? new Date(scheduledStart).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : ''
+    };
+}
+function buildESIInviteUrl(kind, id, details={}){
     const url = new URL('https://elitescholarinstitute.pages.dev/quiz.html');
     url.searchParams.set('esiInvite', kind);
     url.searchParams.set(kind==='room' ? 'roomId' : 'tournamentId', id);
+    // Keep the challenge summary in the URL too, so the shared link carries its context.
+    const params={
+        esiSubject:details.subjects,
+        esiQuestions:details.qcount,
+        esiDifficulty:details.difficulty,
+        esiMode:details.mode,
+        esiTime:details.time,
+        esiTitle:details.title,
+        esiStarts:details.starts
+    };
+    Object.entries(params).forEach(([key,value])=>{if(value)url.searchParams.set(key,String(value).slice(0,180));});
     return url.toString();
 }
 function ensureInvitationButton(anchorId, buttonId, label, onClick){
@@ -4740,12 +4773,21 @@ async function shareRoomInvite(roomId, room){
             code='';
         }
     }
-    return shareESIInvite({kind:'room',id:roomId,hostName:room.hostName||'An ESI player',code,title:'ESI Multiplayer Invitation'});
+    const details=getESIInviteDetails(room,'room');
+    return shareESIInvite({kind:'room',id:roomId,hostName:room.hostName||'An ESI player',code,title:'ESI Multiplayer Invitation',details});
 }
-function shareTournamentInvite(tournamentId, tournament){
+async function shareTournamentInvite(tournamentId, tournament){
     tournament=tournament||{};
+    // Refresh the canonical tournament so shared settings and schedule are accurate.
+    try{
+        if(mdb && tournamentId){
+            const snap=await mdb.ref('mp_tournaments/'+tournamentId).get();
+            if(snap.exists())tournament={...tournament,...(snap.val()||{})};
+        }
+    }catch(error){console.warn('[ESI Invite] Could not refresh tournament before sharing.',error);}
     const code=String(tournament.code||'').trim();
-    return shareESIInvite({kind:'tournament',id:tournamentId,hostName:tournament.hostName||tournament.creatorName||'An ESI host',code,title:'ESI Tournament Invitation'});
+    const details=getESIInviteDetails(tournament,'tournament');
+    return shareESIInvite({kind:'tournament',id:tournamentId,hostName:tournament.hostName||tournament.creatorName||'An ESI host',code,title:'ESI Tournament Invitation',details});
 }
 function bootESIInviteRouting(){
     let params;
@@ -4780,11 +4822,13 @@ function bootESIInviteRouting(){
             history.replaceState(null,'',clean.pathname+(clean.search?clean.search:'')+clean.hash);
         }catch(_){}
         enterMultiplayer();
+        window.scrollTo({top:0,behavior:'auto'});
         setTimeout(()=>{
             if(kind==='room') Promise.resolve(openESIRoomInvite(id)).catch(error=>{console.error('[ESI Invite] room join failed',error);toast('Could not open this room. Check your connection and try again.');});
             else {
                 try{openTournamentDetail(id);}catch(error){console.error('[ESI Invite] tournament open failed',error);toast('Could not open this tournament.');}
             }
+            window.scrollTo({top:0,behavior:'auto'});
         },250);
     },500);
 }
