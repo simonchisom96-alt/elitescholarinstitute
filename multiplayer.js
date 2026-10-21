@@ -5,7 +5,8 @@
 */
 (function(){
   const core = document.createElement('script');
-  core.src = './multiplayer-core.js';
+  // Versioned URL forces clients with a stale cached loader/service-worker response to fetch the public-lobby code visibility fix.
+  core.src = './multiplayer-core.js?v=20261021-public-lobby-code-free';
   core.onload = function(){
     window.isUnlocked = function(){ return true; };
 
