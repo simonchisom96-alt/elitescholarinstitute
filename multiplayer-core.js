@@ -4733,7 +4733,7 @@ async function shareESIInvite({kind, id, hostName, code, title, details={}, publ
           ? 'Tap the invitation link below to join the match lobby or spectate.'
           : 'Tap the invitation link below to join the tournament lobby or spectate.',
         url
-    ].join('\\n');
+    ].join('\n');
     try{
         if(window.ESIAndroid && typeof window.ESIAndroid.share==='function'){
             // The Android bridge receives the complete message; the URL is already included once.
