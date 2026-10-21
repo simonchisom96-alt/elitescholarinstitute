@@ -1669,40 +1669,31 @@ async function adminTestGateway(){
 async function adminSendDeviceTest(){
   try{
     const status = await getESIPushStatus();
-    if(!status.active){
-      toast('This phone is not fully subscribed yet. Tap Re-establish Push Subscription, keep this page open until it finishes, then Refresh Status. A subscription ID and push token must both be ready.','orange');
+    if(!status.active || !status.id){
+      toast('This phone does not have a complete OneSignal push subscription yet. Tap Re-establish Push Subscription, keep this page open until it finishes, then Refresh Status.','orange');
       return;
     }
-    // Confirm OneSignal's server has indexed an active push subscription
-    // for this admin before attempting the device-only test.
-    const token = await auth.currentUser.getIdToken(true);
-    const checkResponse = await fetch(window.location.origin+'/api/onesignal/diagnostics',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      credentials:'omit',cache:'no-store',body:'{}'
-    });
-    const check = await checkResponse.json().catch(()=>({}));
-    if(!checkResponse.ok || !check.api_reachable){
-      throw new Error(check.error || ('OneSignal server verification failed: HTTP '+checkResponse.status));
+    if(!auth.currentUser){
+      toast('Sign in with the ESI admin account before testing this phone.','orange');
+      return;
     }
-    if(Number(check.active_push_subscriptions||0)<1){
-      throw new Error('This browser has a local push token, but OneSignal has not confirmed an active push subscription for the admin account yet. Tap Re-establish Push Subscription, wait a few seconds, then Refresh Status.');
-    }
+    // A device test must target the exact active subscription returned by this
+    // browser. External-ID targeting can fail with "all included players are
+    // not subscribed" when identity linking has not finished, even though the
+    // browser has a valid subscription. This is only a device test; regular
+    // announcements continue to broadcast to the full "Subscribed Users" segment.
     const result = await window.sendESIPush({
       title: 'ESI background test',
       message: 'Background push test. If this appears in the phone notification shade after Chrome is closed, delivery is working.',
       url: '/notification.html',
-      // Target the signed-in admin's OneSignal user, not a possibly stale
-      // per-browser subscription ID. The server verifies this UID against the
-      // Firebase admin token before forwarding it to OneSignal.
-      externalId: auth.currentUser?.uid || ''
+      subscriptionId: status.id
     });
-    toast('OneSignal accepted the admin-account background test. ID '+(result.id||'missing')+' · recipients '+(result.recipients??'?')+'. Close Chrome completely and check the notification shade.','blue');
+    toast('OneSignal accepted the test for this phone. ID '+(result.id||'missing')+' · recipients '+(result.recipients??'?')+'. Close Chrome completely and check the notification shade.','blue');
   }catch(error){
     console.error('[ESI device test]', error);
     const detail=(error && error.message ? error.message : 'unknown error');
     if(/all included players are not subscribed|not subscribed|zero subscriptions|not an eligible push subscriber/i.test(detail)){
-      toast('OneSignal says this subscription is not active on its servers. Tap Re-establish Push Subscription, wait for the ID and token, then test again. If it repeats, check Audience → Subscriptions for this exact phone.','orange');
+      toast('OneSignal did not accept this phone’s specific subscription. This does not mean all ESI users are unsubscribed; broadcasts still target the “Subscribed Users” audience. Re-establish this phone’s subscription and test again.','orange');
     }else{
       toast('Device test failed: '+detail,'orange');
     }
