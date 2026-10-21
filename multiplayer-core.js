@@ -4683,7 +4683,18 @@ async function shareESIInvite({kind, id, hostName, code, title}){
     if(navigator.clipboard && navigator.clipboard.writeText){
         try{await navigator.clipboard.writeText(full);copied();return;}catch(_){}
     }
-    fallbackCopy(full,copied);
+    const field=document.createElement('textarea');
+    field.value=full;
+    field.setAttribute('readonly','');
+    field.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
+    document.body.appendChild(field);
+    field.select();
+    let copiedToClipboard=false;
+    try{copiedToClipboard=document.execCommand('copy')===true;}catch(_){}
+    field.remove();
+    if(copiedToClipboard) copied();
+    else if(typeof window.prompt==='function') window.prompt('Copy this ESI invitation and send it to your opponent:',full);
+    else toast('Copy this invitation link: '+url);
 }
 function shareRoomInvite(roomId, room){
     room=room||{};
