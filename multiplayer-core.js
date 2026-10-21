@@ -4725,10 +4725,12 @@ async function shareESIInvite({kind, id, hostName, code, title, details={}}){
         ...challengeLines,
         ...(challengeLines.length?['']:[]),
         kind==='room'
-          ? (hasCode ? '🔑 Room code: '+usableCode : 'Join directly using the invitation link below.')
-          : (hasCode ? '🔑 Tournament code: '+usableCode : 'Open ESI Tournaments using the invitation link below.'),
-        '',
-        'Tap the invitation link below to open the correct ESI lobby or match.',
+          ? (hasCode ? '🔑 Room code: '+usableCode+',' : 'Join directly using the invitation link below.')
+          : (hasCode ? '🔑 Tournament code: '+usableCode+',' : 'Open ESI Tournaments using the invitation link below.'),
+        'OR;',
+        kind==='room'
+          ? 'Tap the invitation link below to join the match lobby or spectate.'
+          : 'Tap the invitation link below to join the tournament lobby or spectate.',
         url
     ].join('\n');
     try{
