@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
     private var authPopup: Dialog? = null
     private var fileChooserCallback: ValueCallback<Array<android.net.Uri>>? = null
     private val offlineHome = "https://appassets.androidplatform.net/index.html"
-    private val onlineOrigin = "https://elitescholarinstitute.onrender.com"
+    private val onlineOrigin = "https://elitescholarinstitute.pages.dev"
     private val diskCache by lazy { File(cacheDir, "esi-web-cache").apply { mkdirs() } }
     private val shareDir by lazy { File(cacheDir, "shared").apply { mkdirs() } }
     private val fileChooserRequestCode = 41001
@@ -522,6 +522,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun incomingInvitationUrl(source: Intent?): String? {
+        val uri = source?.data ?: return null
+        if (uri.scheme != "https" || uri.host != "elitescholarinstitute.pages.dev" || uri.path != "/quiz.html") return null
+        val kind = uri.getQueryParameter("esiInvite")
+        val id = when (kind) {
+            "room" -> uri.getQueryParameter("roomId")
+            "tournament" -> uri.getQueryParameter("tournamentId")
+            else -> null
+        } ?: return null
+        if (!Regex("^[A-Za-z0-9_-]{6,128}$").matches(id)) return null
+        val query = uri.encodedQuery?.let { "?$it" } ?: return null
+        return onlineOrigin + "/quiz.html" + query
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -630,10 +644,16 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        if (savedInstanceState == null) webView.loadUrl(offlineHome) else webView.restoreState(savedInstanceState)
+        if (savedInstanceState == null) webView.loadUrl(incomingInvitationUrl(intent) ?: offlineHome) else webView.restoreState(savedInstanceState)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() { if (webView.canGoBack()) webView.goBack() else finish() }
         })
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        incomingInvitationUrl(intent)?.let { webView.loadUrl(it) }
     }
 
     override fun onSaveInstanceState(outState: Bundle) { webView.saveState(outState); super.onSaveInstanceState(outState) }
