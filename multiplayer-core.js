@@ -4660,10 +4660,12 @@ async function shareESIInvite({kind, id, hostName, code, title}){
     const message=[
         '⚔️ '+(hostName||'An ESI player')+' challenges you to '+heading+'!',
         '',
-        'Join me on Elite Scholar Institute.',
-        code ? ((kind==='room'?'Room Code: ':'Tournament Code: ')+code) : '',
+        kind==='room'
+          ? 'Open ESI Multiplayer and accept my challenge with this room code:'
+          : 'Open ESI Tournaments and accept my invitation with this code:',
+        code || '',
         '',
-        'Tap the invitation link below to open the lobby.'
+        'Or tap the invitation link below to join me.'
     ].filter((line,index,arr)=>line!=='' || (index>0 && arr[index-1]!=='' )).join('\n');
     try{
         if(window.ESIAndroid && typeof window.ESIAndroid.share==='function'){
