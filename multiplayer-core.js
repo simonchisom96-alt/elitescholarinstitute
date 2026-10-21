@@ -4405,6 +4405,15 @@ function setCRMode(mode){
     $('crRaceBox').style.display = mode==='spak' ? 'flex' : 'none';
 }
 function genRoomCode(){return 'ESI-'+Math.floor(1000+Math.random()*9000);}
+async function genUniqueRoomCode(){
+    // Codes are indexed separately in Firebase; verify before publishing to avoid collisions.
+    for(let attempt=0;attempt<12;attempt++){
+        const code=genRoomCode();
+        const snap=await mdb.ref('mp_room_codes/'+code).get();
+        if(!snap.exists())return code;
+    }
+    throw new Error('Could not generate a unique room code. Please try again.');
+}
 
 async function createRoom(){
     if(!ME){toast('Please wait for sign-in to finish.');return;}
@@ -4424,7 +4433,7 @@ async function createRoom(){
     let maxPlayers=teamMode?teamSize*2:2;
     let roomRef=mdb.ref('mp_rooms').push();
     let roomId=roomRef.key;
-    let code=visibility==='private'?genRoomCode():null;
+    let code=await genUniqueRoomCode();
     let players={};
     players[MY_UID]={name:ME.username, ready:false, team: teamMode?'A':null, uid:MY_UID, avatarEmoji:ME.avatarEmoji||'🎓'};
     await roomRef.set({
@@ -4632,10 +4641,48 @@ async function hostStartMatch(){
     $('hostStartBtn').disabled=false;$('hostStartBtn').textContent='🚀 Start Match (Host)';
 }
 
-function buildESIInviteUrl(kind, id){
+function getESIInviteDetails(record, kind){
+    const settings=record && record.settings ? record.settings : {};
+    const subjects=Array.isArray(settings.subjects) ? settings.subjects.filter(Boolean) : [];
+    const qcount=Number(settings.qcount)||0;
+    const mode=String(settings.mode||'').toLowerCase();
+    const difficulty=String(settings.difficulty||'').trim();
+    const perQ=Number(settings.perQ)||0;
+    const estimatedSeconds=qcount*perQ;
+    const estimatedTotal=estimatedSeconds>0
+        ? [Math.floor(estimatedSeconds/60)>0?Math.floor(estimatedSeconds/60)+' min':'',estimatedSeconds%60>0?(estimatedSeconds%60)+' sec':''].filter(Boolean).join(' ')
+        : '';
+    const time=mode==='speed'
+        ? ((Number(settings.totalMinutes)||0)>0 ? (Number(settings.totalMinutes)+' min total') : 'Sprint timer')
+        : mode==='spak'
+            ? (perQ>0 ? (perQ+' sec/question'+(estimatedTotal?' (~'+estimatedTotal+' total)':'')) : 'Per-question timer')
+            : (mode==='free' ? 'Casual / untimed' : '');
+    const scheduledStart=Number(record && record.scheduledStart)||0;
+    return {
+        subjects:subjects.slice(0,12).join(', '),
+        qcount:qcount>0?String(qcount):'',
+        difficulty:difficulty.slice(0,40),
+        mode:mode==='spak'?'Spak':mode==='speed'?'Sprint':mode==='free'?'Casual':'',
+        time,
+        title:String(record && (record.name||record.title)||'').trim().slice(0,100),
+        starts:scheduledStart ? new Date(scheduledStart).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : ''
+    };
+}
+function buildESIInviteUrl(kind, id, details={}){
     const url = new URL('https://elitescholarinstitute.pages.dev/quiz.html');
     url.searchParams.set('esiInvite', kind);
     url.searchParams.set(kind==='room' ? 'roomId' : 'tournamentId', id);
+    // Keep the challenge summary in the URL too, so the shared link carries its context.
+    const params={
+        esiSubject:details.subjects,
+        esiQuestions:details.qcount,
+        esiDifficulty:details.difficulty,
+        esiMode:details.mode,
+        esiTime:details.time,
+        esiTitle:details.title,
+        esiStarts:details.starts
+    };
+    Object.entries(params).forEach(([key,value])=>{if(value)url.searchParams.set(key,String(value).slice(0,180));});
     return url.toString();
 }
 function ensureInvitationButton(anchorId, buttonId, label, onClick){
@@ -4653,40 +4700,52 @@ function ensureInvitationButton(anchorId, buttonId, label, onClick){
     }
     button.onclick=onClick;
 }
-async function shareESIInvite({kind, id, hostName, code, title}){
+async function shareESIInvite({kind, id, hostName, code, title, details={}}){
     if(!id){toast('This invitation is not ready yet.');return;}
-    const url=buildESIInviteUrl(kind,id);
+    const url=buildESIInviteUrl(kind,id,details);
     const heading=kind==='room'?'ESI Multiplayer':'ESI Tournament';
+    const usableCode=String(code||'').trim();
+    const hasCode=!!usableCode && !/^[-—\\s]+$/.test(usableCode) && !/^(?:room\\s*code|code)$/i.test(usableCode);
+    const challengeLines=[];
+    if(details.title)challengeLines.push('🏅 Tournament: '+details.title);
+    if(details.subjects)challengeLines.push('📚 Subject(s): '+details.subjects);
+    if(details.qcount)challengeLines.push('📝 Questions: '+details.qcount);
+    if(details.difficulty)challengeLines.push('🔥 Difficulty: '+details.difficulty);
+    if(details.mode)challengeLines.push('🎮 Mode: '+details.mode);
+    if(details.time)challengeLines.push('⏱ Time: '+details.time);
+    if(details.starts)challengeLines.push('📅 Starts: '+details.starts);
     const message=[
         '⚔️ '+(hostName||'An ESI player')+' challenges you to '+heading+'!',
         '',
+        ...challengeLines,
+        ...(challengeLines.length?['']:[]),
         kind==='room'
-          ? 'Open ESI Multiplayer and accept my challenge with this room code:'
-          : 'Open ESI Tournaments and accept my invitation with this code:',
-        code || '',
+          ? (hasCode ? '🔑 Room code: '+usableCode : 'Join directly using the invitation link below.')
+          : (hasCode ? '🔑 Tournament code: '+usableCode : 'Open ESI Tournaments using the invitation link below.'),
         '',
-        'Or tap the invitation link below to join me.'
-    ].filter((line,index,arr)=>line!=='' || (index>0 && arr[index-1]!=='' )).join('\n');
+        'Tap the invitation link below to open the correct ESI lobby or match.',
+        url
+    ].join('\\n');
     try{
         if(window.ESIAndroid && typeof window.ESIAndroid.share==='function'){
-            window.ESIAndroid.share('Join my ESI Multiplayer challenge',message,url);
+            // The Android bridge receives the complete message; the URL is already included once.
+            window.ESIAndroid.share('ESI Multiplayer Invitation',message,'');
             return;
         }
         if(typeof navigator.share==='function'){
-            await navigator.share({title:title||'Join my ESI Multiplayer challenge',text:message,url});
+            await navigator.share({title:title||'ESI Multiplayer Invitation',text:message});
             return;
         }
     }catch(error){
         if(error && error.name==='AbortError')return;
         console.warn('[ESI Invite] native share was unavailable; using copy fallback.',error);
     }
-    const full=message+'\n'+url;
     const copied=()=>toast('🔗 Invitation copied — share it with your opponent.');
     if(navigator.clipboard && navigator.clipboard.writeText){
-        try{await navigator.clipboard.writeText(full);copied();return;}catch(_){}
+        try{await navigator.clipboard.writeText(message);copied();return;}catch(_){}
     }
     const field=document.createElement('textarea');
-    field.value=full;
+    field.value=message;
     field.setAttribute('readonly','');
     field.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
     document.body.appendChild(field);
@@ -4695,17 +4754,55 @@ async function shareESIInvite({kind, id, hostName, code, title}){
     try{copiedToClipboard=document.execCommand('copy')===true;}catch(_){}
     field.remove();
     if(copiedToClipboard) copied();
-    else if(typeof window.prompt==='function') window.prompt('Copy this ESI invitation and send it to your opponent:',full);
+    else if(typeof window.prompt==='function') window.prompt('Copy this ESI invitation and send it to your opponent:',message);
     else toast('Copy this invitation link: '+url);
 }
-function shareRoomInvite(roomId, room){
+async function shareRoomInvite(roomId, room){
     room=room||{};
-    const code=room.code || ($('lobbyCodeVal')&&$('lobbyCodeVal').textContent.trim()) || '';
-    return shareESIInvite({kind:'room',id:roomId,hostName:room.hostName||'An ESI player',code,title:'Join '+(room.hostName||'my')+' on ESI Multiplayer'});
+    // Fetch the canonical record so a stale lobby snapshot cannot turn a real code into dashes.
+    try{
+        if(mdb && roomId){
+            const snap=await mdb.ref('mp_rooms/'+roomId).get();
+            if(snap.exists()) room={...room,...(snap.val()||{})};
+        }
+    }catch(error){
+        console.warn('[ESI Invite] Could not refresh room before sharing.',error);
+    }
+    let code=String(room.code||'').trim();
+    if(!code || /^[-—\s]+$/.test(code)){
+        const visible=$('lobbyCodeVal') ? $('lobbyCodeVal').textContent.trim() : '';
+        if(visible && !/^[-—\s]+$/.test(visible)) code=visible;
+    }
+    // Legacy rooms may predate room codes. Mint and index one before sharing so
+    // every invitation has both a usable code and a direct link.
+    if(!code || /^[-—\s]+$/.test(code)){
+        try{
+            code=await genUniqueRoomCode();
+            await mdb.ref('mp_rooms/'+roomId).update({code});
+            await mdb.ref('mp_room_codes/'+code).set(roomId);
+            room.code=code;
+            if($('lobbyCodeVal')) $('lobbyCodeVal').textContent=code;
+            if($('lobbyCodeWrap')) $('lobbyCodeWrap').style.display='block';
+        }catch(error){
+            console.error('[ESI Invite] Could not assign a room code.',error);
+            code='';
+        }
+    }
+    const details=getESIInviteDetails(room,'room');
+    return shareESIInvite({kind:'room',id:roomId,hostName:room.hostName||'An ESI player',code,title:'ESI Multiplayer Invitation',details});
 }
-function shareTournamentInvite(tournamentId, tournament){
+async function shareTournamentInvite(tournamentId, tournament){
     tournament=tournament||{};
-    return shareESIInvite({kind:'tournament',id:tournamentId,hostName:tournament.hostName||tournament.creatorName||'An ESI host',code:tournament.visibility==='private'?(tournament.code||''):'',title:'Join '+(tournament.name||'my ESI tournament')});
+    // Refresh the canonical tournament so shared settings and schedule are accurate.
+    try{
+        if(mdb && tournamentId){
+            const snap=await mdb.ref('mp_tournaments/'+tournamentId).get();
+            if(snap.exists())tournament={...tournament,...(snap.val()||{})};
+        }
+    }catch(error){console.warn('[ESI Invite] Could not refresh tournament before sharing.',error);}
+    const code=String(tournament.code||'').trim();
+    const details=getESIInviteDetails(tournament,'tournament');
+    return shareESIInvite({kind:'tournament',id:tournamentId,hostName:tournament.hostName||tournament.creatorName||'An ESI host',code,title:'ESI Tournament Invitation',details});
 }
 function bootESIInviteRouting(){
     let params;
@@ -4737,14 +4834,17 @@ function bootESIInviteRouting(){
             clean.searchParams.delete('esiInvite');
             clean.searchParams.delete('roomId');
             clean.searchParams.delete('tournamentId');
+            ['esiSubject','esiQuestions','esiDifficulty','esiMode','esiTime','esiTitle','esiStarts'].forEach(key=>clean.searchParams.delete(key));
             history.replaceState(null,'',clean.pathname+(clean.search?clean.search:'')+clean.hash);
         }catch(_){}
         enterMultiplayer();
+        window.scrollTo({top:0,behavior:'auto'});
         setTimeout(()=>{
             if(kind==='room') Promise.resolve(openESIRoomInvite(id)).catch(error=>{console.error('[ESI Invite] room join failed',error);toast('Could not open this room. Check your connection and try again.');});
             else {
                 try{openTournamentDetail(id);}catch(error){console.error('[ESI Invite] tournament open failed',error);toast('Could not open this tournament.');}
             }
+            window.scrollTo({top:0,behavior:'auto'});
         },250);
     },500);
 }
