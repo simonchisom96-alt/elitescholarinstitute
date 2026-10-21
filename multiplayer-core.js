@@ -4438,7 +4438,8 @@ async function createRoom(){
     let maxPlayers=teamMode?teamSize*2:2;
     let roomRef=mdb.ref('mp_rooms').push();
     let roomId=roomRef.key;
-    let code=await genUniqueRoomCode(roomId);
+    // Public rooms, including team battles, use the invitation link and have no code.
+    let code=visibility==='private' ? await genUniqueRoomCode(roomId) : null;
     let players={};
     players[MY_UID]={name:ME.username, ready:false, team: teamMode?'A':null, uid:MY_UID, avatarEmoji:ME.avatarEmoji||'🎓'};
     await roomRef.set({
@@ -4447,7 +4448,7 @@ async function createRoom(){
         teamNames: teamMode?{A:'Team A',B:'Team B'}:null,
         players, createdAt:firebase.database.ServerValue.TIMESTAMP
     });
-    if(code) await mdb.ref('mp_room_codes/'+code).set(roomId);
+    if(visibility==='private' && code) await mdb.ref('mp_room_codes/'+code).set(roomId);
     closeModal('crModal');
     enterLobby(roomId);
     toast('Room created! Waiting for players…');
@@ -4710,8 +4711,9 @@ async function shareESIInvite({kind, id, hostName, code, title, details={}, publ
     const url=buildESIInviteUrl(kind,id,details);
     const heading=kind==='room'?'ESI Multiplayer':'ESI Tournament';
     const usableCode=String(code||'').trim();
-    const hasCode=!!usableCode && !/^[-—\\s]+$/.test(usableCode) && !/^(?:room\\s*code|code)$/i.test(usableCode);
-    const includeCode=!publicInvite && hasCode;
+    const hasCode=!!usableCode && !/^[-—\s]+$/.test(usableCode) && !/^(?:room\s*code|tournament\s*code|code)$/i.test(usableCode);
+    // Only explicitly public matches are code-free; private/legacy-unspecified matches keep codes.
+    const includeCode=publicInvite!==true && hasCode;
     const challengeLines=[];
     if(details.title)challengeLines.push('🏅 Tournament: '+details.title);
     if(details.subjects)challengeLines.push('📚 Subject(s): '+details.subjects);
@@ -4776,28 +4778,42 @@ async function shareRoomInvite(roomId, room){
     }catch(error){
         console.warn('[ESI Invite] Could not refresh room before sharing.',error);
     }
+    const isPublic=room.visibility==='public';
     let code=String(room.code||'').trim();
-    if(!code || /^[-—\s]+$/.test(code)){
-        const visible=$('lobbyCodeVal') ? $('lobbyCodeVal').textContent.trim() : '';
-        if(visible && !/^[-—\s]+$/.test(visible)) code=visible;
-    }
-    // Legacy rooms may predate room codes. Mint and index one before sharing so
-    // every invitation has both a usable code and a direct link.
-    if(!code || /^[-—\s]+$/.test(code)){
-        try{
-            code=await genUniqueRoomCode(roomId);
-            await mdb.ref('mp_rooms/'+roomId).update({code});
-            await mdb.ref('mp_room_codes/'+code).set(roomId);
-            room.code=code;
-            if($('lobbyCodeVal')) $('lobbyCodeVal').textContent=code;
-            if($('lobbyCodeWrap')) $('lobbyCodeWrap').style.display='block';
-        }catch(error){
-            console.error('[ESI Invite] Could not assign a room code.',error);
-            code='';
+    if(isPublic){
+        // Remove any legacy code/index from a public room; its link remains shareable.
+        if(code){
+            try{
+                const indexSnap=await mdb.ref('mp_room_codes/'+code).get();
+                if(indexSnap.exists() && indexSnap.val()===roomId) await mdb.ref('mp_room_codes/'+code).remove();
+                await mdb.ref('mp_rooms/'+roomId+'/code').remove();
+            }catch(error){console.warn('[ESI Invite] Could not clean up legacy public room code.',error);}
+        }
+        code='';
+        room.code=null;
+        if($('lobbyCodeWrap')) $('lobbyCodeWrap').style.display='none';
+    }else{
+        if(!code || /^[-—\s]+$/.test(code)){
+            const visible=$('lobbyCodeVal') ? $('lobbyCodeVal').textContent.trim() : '';
+            if(visible && !/^[-—\s]+$/.test(visible)) code=visible;
+        }
+        // Private legacy rooms get a usable code and index before sharing.
+        if(!code || /^[-—\s]+$/.test(code)){
+            try{
+                code=await genUniqueRoomCode(roomId);
+                await mdb.ref('mp_rooms/'+roomId).update({code});
+                await mdb.ref('mp_room_codes/'+code).set(roomId);
+                room.code=code;
+                if($('lobbyCodeVal')) $('lobbyCodeVal').textContent=code;
+                if($('lobbyCodeWrap')) $('lobbyCodeWrap').style.display='block';
+            }catch(error){
+                console.error('[ESI Invite] Could not assign a room code.',error);
+                code='';
+            }
         }
     }
     const details=getESIInviteDetails(room,'room');
-    return shareESIInvite({kind:'room',id:roomId,hostName:room.hostName||'An ESI player',code,title:'ESI Multiplayer Invitation',details,publicInvite:room.visibility==='public'});
+    return shareESIInvite({kind:'room',id:roomId,hostName:room.hostName||'An ESI player',code,title:'ESI Multiplayer Invitation',details,publicInvite:isPublic});
 }
 async function shareTournamentInvite(tournamentId, tournament){
     tournament=tournament||{};
@@ -4808,9 +4824,17 @@ async function shareTournamentInvite(tournamentId, tournament){
             if(snap.exists())tournament={...tournament,...(snap.val()||{})};
         }
     }catch(error){console.warn('[ESI Invite] Could not refresh tournament before sharing.',error);}
-    const code=String(tournament.code||'').trim();
+    const isPublic=tournament.visibility==='public';
+    let code=String(tournament.code||'').trim();
+    if(isPublic && code){
+        // Public individual/team tournaments use links, never tournament codes.
+        try{await mdb.ref('mp_tournaments/'+tournamentId+'/code').remove();}
+        catch(error){console.warn('[ESI Invite] Could not clean up legacy public tournament code.',error);}
+        code='';
+        tournament.code=null;
+    }
     const details=getESIInviteDetails(tournament,'tournament');
-    return shareESIInvite({kind:'tournament',id:tournamentId,hostName:tournament.hostName||tournament.creatorName||'An ESI host',code,title:'ESI Tournament Invitation',details,publicInvite:tournament.visibility!=='private'});
+    return shareESIInvite({kind:'tournament',id:tournamentId,hostName:tournament.hostName||tournament.creatorName||'An ESI host',code,title:'ESI Tournament Invitation',details,publicInvite:isPublic});
 }
 function bootESIInviteRouting(){
     let params;
@@ -4932,7 +4956,10 @@ function renderLobby(roomId, room){
         ${room.powerups?`<span class="chip-mini">⚡ Power-ups ON</span>`:'<span class="chip-mini">Power-ups OFF</span>'}
         ${room.settings.showExplanations===false?'<span class="chip-mini">🙈 Explanations Hidden</span>':'<span class="chip-mini">💡 Explanations Shown</span>'}
     `;
-    if(room.code){$('lobbyCodeWrap').style.display='block';$('lobbyCodeVal').textContent=room.code;}else{$('lobbyCodeWrap').style.display='none';}
+    const publicRoom=room.visibility==='public';
+    if(room.code && !publicRoom){$('lobbyCodeWrap').style.display='block';$('lobbyCodeVal').textContent=room.code;}
+    else{$('lobbyCodeWrap').style.display='none';$('lobbyCodeVal').textContent='';}
+    // Keep the share button available even when the public code box is hidden.
     ensureInvitationButton('lobbyCodeWrap','lobbyShareBtn','🔗 Share Room Invite',()=>shareRoomInvite(roomId,room));
     $('lobbyTeamWrap').style.display=room.teamMode?'block':'none';
     let plist=Object.values(room.players||{});
@@ -7715,7 +7742,8 @@ function renderTournamentDetail(tid, t){
     let isHost=t.hostUid===MY_UID;
     let isRegistered=!!(t.players&&t.players[MY_UID]);
     $('tCodeBox').style.display = (t.visibility==='private' && t.code) ? 'block' : 'none';
-    if(t.code) $('tCodeVal').textContent=t.code;
+    $('tCodeVal').textContent = (t.visibility==='private' && t.code) ? t.code : '';
+    // Keep sharing available for public tournaments with no visible code box.
     ensureInvitationButton('tCodeBox','tournamentShareBtn','🔗 Share Tournament Invite',()=>shareTournamentInvite(tid,t));
 
     let players=Object.values(t.players||{});
