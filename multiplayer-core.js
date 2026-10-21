@@ -4955,9 +4955,15 @@ function renderLobby(roomId, room){
         ${room.powerups?`<span class="chip-mini">⚡ Power-ups ON</span>`:'<span class="chip-mini">Power-ups OFF</span>'}
         ${room.settings.showExplanations===false?'<span class="chip-mini">🙈 Explanations Hidden</span>':'<span class="chip-mini">💡 Explanations Shown</span>'}
     `;
-    const publicRoom=room.visibility!=='private';
-    if(room.code && !publicRoom){$('lobbyCodeWrap').style.display='block';$('lobbyCodeVal').textContent=room.code;}
-    else{$('lobbyCodeWrap').style.display='none';$('lobbyCodeVal').textContent='';}
+    const visibility=String(room.visibility||'').trim().toLowerCase();
+    const publicRoom=visibility!=='private';
+    const roomCodeWrap=$('lobbyCodeWrap');
+    const roomCodeVal=$('lobbyCodeVal');
+    if(roomCodeWrap){
+        roomCodeWrap.hidden=publicRoom;
+        roomCodeWrap.style.setProperty('display',publicRoom?'none':'block','important');
+    }
+    if(roomCodeVal)roomCodeVal.textContent=(!publicRoom&&room.code)?String(room.code):'';
     // Public rooms (including team battles) must not retain a legacy code or code index.
     if(publicRoom && room.code){
         const legacyCode=String(room.code);
@@ -4969,6 +4975,12 @@ function renderLobby(roomId, room){
     }
     // The share button remains visible as a sibling while the code container is hidden.
     ensureInvitationButton('lobbyCodeWrap','lobbyShareBtn','🔗 Share Room Invite',()=>shareRoomInvite(roomId,room));
+    // Re-assert code visibility after creating/updating the adjacent share button.
+    if(roomCodeWrap){
+        roomCodeWrap.hidden=publicRoom;
+        roomCodeWrap.style.setProperty('display',publicRoom?'none':'block','important');
+    }
+    if(roomCodeVal && publicRoom)roomCodeVal.textContent='';
     $('lobbyTeamWrap').style.display=room.teamMode?'block':'none';
     let plist=Object.values(room.players||{});
     if(room.teamMode){
@@ -7749,9 +7761,16 @@ function renderTournamentDetail(tid, t){
 
     let isHost=t.hostUid===MY_UID;
     let isRegistered=!!(t.players&&t.players[MY_UID]);
-    const publicTournament=t.visibility!=='private';
-    $('tCodeBox').style.display = (!publicTournament && t.visibility==='private' && t.code) ? 'block' : 'none';
-    $('tCodeVal').textContent = (!publicTournament && t.visibility==='private' && t.code) ? t.code : '';
+    const tournamentVisibility=String(t.visibility||'').trim().toLowerCase();
+    const publicTournament=tournamentVisibility!=='private';
+    const tournamentCodeBox=$('tCodeBox');
+    const tournamentCodeVal=$('tCodeVal');
+    const showTournamentCode=!publicTournament && !!t.code;
+    if(tournamentCodeBox){
+        tournamentCodeBox.hidden=!showTournamentCode;
+        tournamentCodeBox.style.setProperty('display',showTournamentCode?'block':'none','important');
+    }
+    if(tournamentCodeVal)tournamentCodeVal.textContent=showTournamentCode?String(t.code):'';
     // Remove any legacy public tournament code as soon as its detail is opened.
     if(publicTournament && t.code){
         t.code=null;
@@ -7759,6 +7778,11 @@ function renderTournamentDetail(tid, t){
     }
     // Keep sharing available for public tournaments with no visible code box.
     ensureInvitationButton('tCodeBox','tournamentShareBtn','🔗 Share Tournament Invite',()=>shareTournamentInvite(tid,t));
+    if(tournamentCodeBox){
+        tournamentCodeBox.hidden=!showTournamentCode;
+        tournamentCodeBox.style.setProperty('display',showTournamentCode?'block':'none','important');
+    }
+    if(tournamentCodeVal && publicTournament)tournamentCodeVal.textContent='';
 
     let players=Object.values(t.players||{});
     $('tPlayerCount').textContent=`(${players.length}/${t.maxPlayers})`;
