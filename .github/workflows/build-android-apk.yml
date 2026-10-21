@@ -201,6 +201,12 @@ jobs:
           echo "$BADGING" | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
           echo "APK SHA-256: $(sha256sum release/ESI.apk | cut -d' ' -f1)"
           echo "APK bytes: $(wc -c < release/ESI.apk)"
+          test -s release/ESI.apk
+          unzip -t release/ESI.apk
+          SDK_APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)
+          test -n "$SDK_APKSIGNER"
+          "$SDK_APKSIGNER" verify --verbose --print-certs release/ESI.apk
+          echo "APK archive, Android package metadata, and APK signature verification passed."
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
