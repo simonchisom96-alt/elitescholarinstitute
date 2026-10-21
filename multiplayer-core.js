@@ -4734,7 +4734,7 @@ async function shareESIInvite({kind, id, hostName, code, title, details={}}){
     try{
         if(window.ESIAndroid && typeof window.ESIAndroid.share==='function'){
             // The Android bridge receives the complete message; the URL is already included once.
-            window.ESIAndroid.share('ESI Multiplayer Invitation',message,'');
+            window.ESIAndroid.share('',message,'');
             return;
         }
         if(typeof navigator.share==='function'){
