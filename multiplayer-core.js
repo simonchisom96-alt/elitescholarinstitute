@@ -4730,7 +4730,7 @@ async function shareESIInvite({kind, id, hostName, code, title, details={}}){
         '',
         'Tap the invitation link below to open the correct ESI lobby or match.',
         url
-    ].join('\\n');
+    ].join('\n');
     try{
         if(window.ESIAndroid && typeof window.ESIAndroid.share==='function'){
             // The Android bridge receives the complete message; the URL is already included once.
