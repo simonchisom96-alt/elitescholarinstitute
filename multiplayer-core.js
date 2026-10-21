@@ -4723,6 +4723,11 @@ function bootESIInviteRouting(){
             if(attempts>=240){clearInterval(timer);toast('Could not open the invitation yet. Sign in, then tap the link again.');}
             return;
         }
+        if(typeof isUnlocked==='function' && !isUnlocked()){
+            clearInterval(timer);
+            toast('Unlock ESI Multiplayer first, then tap the invitation link again.');
+            return;
+        }
         routed=true;
         clearInterval(timer);
         try{
@@ -4734,12 +4739,41 @@ function bootESIInviteRouting(){
         }catch(_){}
         enterMultiplayer();
         setTimeout(()=>{
-            if(kind==='room') Promise.resolve(joinPublicRoom(id)).catch(error=>{console.error('[ESI Invite] room join failed',error);toast('Could not join this room. Check your connection and try again.');});
+            if(kind==='room') Promise.resolve(openESIRoomInvite(id)).catch(error=>{console.error('[ESI Invite] room join failed',error);toast('Could not open this room. Check your connection and try again.');});
             else {
                 try{openTournamentDetail(id);}catch(error){console.error('[ESI Invite] tournament open failed',error);toast('Could not open this tournament.');}
             }
         },250);
     },500);
+}
+async function openESIRoomInvite(roomId){
+    const ref=mdb.ref('mp_rooms/'+roomId);
+    const snap=await ref.get();
+    if(!snap.exists()){toast('That room no longer exists.');showScreen('rooms');return;}
+    const room=snap.val();
+    if(room.status==='waiting'){
+        const players=room.players||{};
+        if(!players[MY_UID] && Object.keys(players).length >= (room.maxPlayers||8)){
+            enterLobby(roomId,true);
+            toast('This room is full, so you joined as a spectator. You can still use lobby chat.');
+            return;
+        }
+        await joinPublicRoom(roomId);
+        return;
+    }
+    if(room.status==='starting'){
+        showScreen('rooms');
+        toast('The host is starting the match. Reopen the invite in a moment to watch it.');
+        return;
+    }
+    if(room.status==='in_progress' && room.matchId){
+        const isPlayer=!!(room.players && room.players[MY_UID]);
+        joinExistingMatch(room.matchId,roomId,!isPlayer);
+        if(!isPlayer)toast('The match has started. You joined as a spectator.');
+        return;
+    }
+    toast('This room is no longer accepting players.');
+    showScreen('rooms');
 }
 function copyRoomCode(){
     let code=$('lobbyCodeVal') ? $('lobbyCodeVal').textContent.trim() : (currentRoomCode||'');
