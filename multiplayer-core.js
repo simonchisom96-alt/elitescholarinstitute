@@ -4593,6 +4593,9 @@ function syncRoomExpiryCountdown(roomId,room){
 }
 function enterLobby(roomId, asSpectator){
     currentRoomId=roomId;
+    // Prediction votes are stored on the room node. Avoid repainting the entire lobby
+    // (players, teams, controls and countdown) when the only change is a new vote.
+    let lastLobbyStructuralSnapshot=null;
     if(MY_UID) mdb.ref('mp_users/'+MY_UID+'/activeRoomId').set(roomId).catch(()=>{});
     isLobbySpectating=!!asSpectator;
     if(roomUnsub)roomUnsub();
@@ -4610,6 +4613,14 @@ function enterLobby(roomId, asSpectator){
             if(currentMatchId!==room.matchId) joinExistingMatch(room.matchId, roomId, !amPlayer);
             return;
         }
+        const structuralRoom={...room};
+        delete structuralRoom.predictions;
+        const structuralSnapshot=JSON.stringify(structuralRoom);
+        if(lastLobbyStructuralSnapshot===structuralSnapshot){
+            renderPredictionsPool(room);
+            return;
+        }
+        lastLobbyStructuralSnapshot=structuralSnapshot;
         renderLobby(roomId, room);
     };
     ref.on('value', cb);
@@ -5361,6 +5372,7 @@ function openQuickMatchModal(){
 }
 async function startQuickMatchSearch(){
     if(!ME)return;
+    if(!(await ensureNoOtherActiveRoom()))return;
     let settings={
         subjects:[...selSubjects.qm], topics:packTopicsForKey('qm'), difficulty:$('qmDiff').value, subMode:'standard',
         mode:$('qmMode').value, qcount:parseInt($('qmCount').value)||10,
@@ -6518,6 +6530,26 @@ async function endMatch(matchId, m){
         }
     }
     await mdb.ref('mp_matches/'+matchId).update({state:'ended', winner, endedAt:firebase.database.ServerValue.TIMESTAMP});
+    // A public room is discoverable/spectatable only while its match is actually live.
+    // Mark it ended and non-public as soon as the match finishes so stale public links
+    // and discovery snapshots cannot expose a completed match again.
+    if(m.roomId){
+        try{
+            const roomRef=mdb.ref('mp_rooms/'+m.roomId);
+            const roomSnap=await roomRef.get();
+            const room=roomSnap.val();
+            if(room && String(room.visibility||'').toLowerCase()!=='private'){
+                const updates={
+                    ['mp_rooms/'+m.roomId+'/visibility']:'private',
+                    ['mp_rooms/'+m.roomId+'/status']:'ended',
+                    ['mp_rooms/'+m.roomId+'/endedAt']:firebase.database.ServerValue.TIMESTAMP,
+                    ['mp_rooms/'+m.roomId+'/code']:null
+                };
+                if(room.code)updates['mp_room_codes/'+String(room.code)]=null;
+                await mdb.ref().update(updates);
+            }
+        }catch(e){console.warn('[PublicRoomCleanup] Could not hide ended public room',e);}
+    }
 }
 
 function showResultsScreen(matchId, m){
