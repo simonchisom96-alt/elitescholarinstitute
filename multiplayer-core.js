@@ -4427,6 +4427,10 @@ async function ensureNoOtherActiveRoom(targetRoomId){
     try{
         const activeSnap=await activeRef.get();
         const activeId=activeSnap.val();
+        if(activeId==='__quickmatch_search__' && activeId!==targetRoomId){
+            toast('Finish or cancel your current Quick Match search before opening another room.');
+            return false;
+        }
         if(activeId && activeId!==targetRoomId){
             // Do not treat currentRoomId as permission to open a second room. The same
             // active room is allowed; a different one is blocked until the first is over.
@@ -5411,6 +5415,8 @@ function openQuickMatchModal(){
 async function startQuickMatchSearch(){
     if(!ME)return;
     if(!(await ensureNoOtherActiveRoom()))return;
+    const searchLock=await mdb.ref('mp_users/'+MY_UID+'/activeRoomId').transaction(value=>value==null?'__quickmatch_search__':undefined);
+    if(!searchLock.committed){toast('Finish or leave your current room or match before starting Quick Match.');return;}
     let settings={
         subjects:[...selSubjects.qm], topics:packTopicsForKey('qm'), difficulty:$('qmDiff').value, subMode:'standard',
         mode:$('qmMode').value, qcount:parseInt($('qmCount').value)||10,
@@ -5529,7 +5535,10 @@ function cleanupQuickMatchListeners(){
 function cancelQuickMatchSearch(){
     qmSearching=false;
     cleanupQuickMatchListeners();
-    if(MY_UID) mdb.ref('mp_matchmaking_queue/'+MY_UID).remove();
+    if(MY_UID){
+        mdb.ref('mp_matchmaking_queue/'+MY_UID).remove();
+        mdb.ref('mp_users/'+MY_UID+'/activeRoomId').transaction(value=>value==='__quickmatch_search__'?null:value).catch(()=>{});
+    }
     $('qmSearchStatus').textContent='Search cancelled.';
 }
 
