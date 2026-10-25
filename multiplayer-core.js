@@ -4624,6 +4624,7 @@ function enterLobby(roomId, asSpectator){
         let room=snap.val();
         if(!room){ toast('Room closed.'); leaveRoomLocalOnly(); showScreen('rooms'); return; }
         let amPlayer=!!(room.players && room.players[MY_UID]);
+        lastLobbyRoomForPredictions=room;
         if(!amPlayer && !isLobbySpectating){ toast('You were removed from this room.'); leaveRoomLocalOnly(); showScreen('rooms'); return; }
         if(amPlayer) isLobbySpectating=false;
         // Once a room has entered a match, prediction/chat/room metadata updates must NOT
@@ -4651,7 +4652,9 @@ function enterLobby(roomId, asSpectator){
     const predictionsRef=mdb.ref('mp_room_predictions/'+roomId);
     const predictionsCb=snap=>{
         if(currentRoomId!==roomId || !lastLobbyRoomForPredictions)return;
-        renderPredictionsPool({...lastLobbyRoomForPredictions,predictions:snap.val()||lastLobbyRoomForPredictions.predictions||{}});
+        const room=lastLobbyRoomForPredictions;
+        if(room.status!=='waiting' && room.status!=='starting'){renderPredictionsPool(room);return;}
+        renderPredictionsPool({...room,predictions:{...(room.predictions||{}),...(snap.val()||{})}});
     };
     predictionsRef.on('value',predictionsCb);
     predictionsUnsub=()=>predictionsRef.off('value',predictionsCb);
@@ -4725,14 +4728,12 @@ async function predictWinner(pick){
 async function resolvePredictionsPool(roomId, winnerKey){
     if(!roomId||!winnerKey)return;
     try{
-        let snap=await mdb.ref('mp_room_predictions/'+roomId).get();
-        let preds=snap.val();
-        // Support votes stored by older app versions before predictions moved to their own path.
-        if(!preds){
-            const legacySnap=await mdb.ref('mp_rooms/'+roomId+'/predictions').get();
-            preds=legacySnap.val();
-        }
-        if(!preds)return;
+        const [snap,legacySnap]=await Promise.all([
+            mdb.ref('mp_room_predictions/'+roomId).get(),
+            mdb.ref('mp_rooms/'+roomId+'/predictions').get()
+        ]);
+        const preds={...(legacySnap.val()||{}),...(snap.val()||{})};
+        if(!Object.keys(preds).length)return;
         let correctUids=Object.keys(preds).filter(uid=>preds[uid].pick===winnerKey);
         if(correctUids.includes(MY_UID)){
             let coinSnap=await mdb.ref('mp_users/'+MY_UID+'/coins').get();
