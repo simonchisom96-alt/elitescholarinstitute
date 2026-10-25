@@ -3028,6 +3028,7 @@ function renderMpTopicButtons(setKey, wrapId){
 let crMode='spak';
 let currentRoomId=null;
 let roomUnsub=null;
+let predictionsUnsub=null;
 let lastRoomPlayers={};
 let lastRoomHostUid=null;
 let lobbyChatUnsub=null;
@@ -4616,7 +4617,9 @@ function enterLobby(roomId, asSpectator){
     if(MY_UID) mdb.ref('mp_users/'+MY_UID+'/activeRoomId').set(roomId).catch(()=>{});
     isLobbySpectating=!!asSpectator;
     if(roomUnsub)roomUnsub();
+    if(predictionsUnsub){predictionsUnsub();predictionsUnsub=null;}
     let ref=mdb.ref('mp_rooms/'+roomId);
+    let lastLobbyRoomForPredictions=null;
     let cb=snap=>{
         let room=snap.val();
         if(!room){ toast('Room closed.'); leaveRoomLocalOnly(); showScreen('rooms'); return; }
@@ -4630,6 +4633,7 @@ function enterLobby(roomId, asSpectator){
             if(currentMatchId!==room.matchId) joinExistingMatch(room.matchId, roomId, !amPlayer);
             return;
         }
+        lastLobbyRoomForPredictions=room;
         const structuralRoom={...room};
         delete structuralRoom.predictions;
         const structuralSnapshot=JSON.stringify(structuralRoom);
@@ -4642,6 +4646,15 @@ function enterLobby(roomId, asSpectator){
     };
     ref.on('value', cb);
     roomUnsub=()=>ref.off('value', cb);
+    // Prediction votes live on their own path, not under mp_rooms/{id}. This prevents each
+    // vote from waking the full room/lobby listener during ready-up and question transitions.
+    const predictionsRef=mdb.ref('mp_room_predictions/'+roomId);
+    const predictionsCb=snap=>{
+        if(currentRoomId!==roomId || !lastLobbyRoomForPredictions)return;
+        renderPredictionsPool({...lastLobbyRoomForPredictions,predictions:snap.val()||lastLobbyRoomForPredictions.predictions||{}});
+    };
+    predictionsRef.on('value',predictionsCb);
+    predictionsUnsub=()=>predictionsRef.off('value',predictionsCb);
     attachLobbyChat(roomId);
     showScreen('lobby');
 }
@@ -4658,6 +4671,7 @@ function leaveRoomLocalOnly(){
     if(roomUnsub){roomUnsub();roomUnsub=null;}
     if(lobbyChatUnsub){lobbyChatUnsub();lobbyChatUnsub=null;}
     if(lobbyTypingUnsub){lobbyTypingUnsub();lobbyTypingUnsub=null;}
+    if(predictionsUnsub){predictionsUnsub();predictionsUnsub=null;}
     currentRoomId=null;
     isLobbySpectating=false;
 }
@@ -4704,15 +4718,21 @@ function renderPredictionsPool(room){
 }
 async function predictWinner(pick){
     if(!currentRoomId||!MY_UID)return;
-    await mdb.ref('mp_rooms/'+currentRoomId+'/predictions/'+MY_UID).set({pick, name:ME.username, avatarEmoji:ME.avatarEmoji||'🎓', ts:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});
+    await mdb.ref('mp_room_predictions/'+currentRoomId+'/'+MY_UID).set({pick, name:ME.username, avatarEmoji:ME.avatarEmoji||'🎓', ts:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});
 }
 // Called once a match ends — pays out a small coin bonus to everyone (players or spectators)
 // who correctly predicted the winner, and reports how many got it right.
 async function resolvePredictionsPool(roomId, winnerKey){
     if(!roomId||!winnerKey)return;
     try{
-        let snap=await mdb.ref('mp_rooms/'+roomId+'/predictions').get();
-        let preds=snap.val(); if(!preds)return;
+        let snap=await mdb.ref('mp_room_predictions/'+roomId).get();
+        let preds=snap.val();
+        // Support votes stored by older app versions before predictions moved to their own path.
+        if(!preds){
+            const legacySnap=await mdb.ref('mp_rooms/'+roomId+'/predictions').get();
+            preds=legacySnap.val();
+        }
+        if(!preds)return;
         let correctUids=Object.keys(preds).filter(uid=>preds[uid].pick===winnerKey);
         if(correctUids.includes(MY_UID)){
             let coinSnap=await mdb.ref('mp_users/'+MY_UID+'/coins').get();
