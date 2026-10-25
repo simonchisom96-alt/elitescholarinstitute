@@ -4420,12 +4420,12 @@ async function genUniqueRoomCode(roomId){
     throw new Error('Could not generate a unique room code. Please try again.');
 }
 
-async function ensureNoOtherActiveRoom(){
+async function ensureNoOtherActiveRoom(targetRoomId){
     if(!MY_UID)return true;
     try{
         const activeSnap=await mdb.ref('mp_users/'+MY_UID+'/activeRoomId').get();
         const activeId=activeSnap.val();
-        if(!activeId || activeId===currentRoomId)return true;
+        if(!activeId || activeId===currentRoomId || activeId===targetRoomId)return true;
         const roomSnap=await mdb.ref('mp_rooms/'+activeId).get();
         const activeRoom=roomSnap.val();
         if(activeRoom && (activeRoom.status==='waiting'||activeRoom.status==='starting')){
@@ -4493,7 +4493,7 @@ async function joinRoomByCode(){
 }
 
 async function joinPublicRoom(roomId){
-    if(!(await ensureNoOtherActiveRoom()))return;
+    if(!(await ensureNoOtherActiveRoom(roomId)))return;
     let snap=await mdb.ref('mp_rooms/'+roomId).get();
     if(!snap.exists()){toast('That room no longer exists.');return;}
     let room=snap.val();
@@ -4929,6 +4929,7 @@ async function openESIRoomInvite(roomId){
         if(room.status!=='starting')break;
         await new Promise(resolve=>setTimeout(resolve,1000));
     }
+    if(!(await ensureNoOtherActiveRoom(roomId)))return;
     if(room.status==='waiting'){
         const players=room.players||{};
         if(!players[MY_UID] && Object.keys(players).length >= (room.maxPlayers||8)){
@@ -4940,6 +4941,13 @@ async function openESIRoomInvite(roomId){
         return;
     }
     if(room.status==='in_progress' && room.matchId){
+        const matchState=await mdb.ref('mp_matches/'+room.matchId+'/state').get();
+        if(matchState.val()!=='active'){
+            toast('This match has already ended.');
+            refreshPublicRooms(true);
+            showScreen('rooms');
+            return;
+        }
         const isPlayer=!!(room.players && room.players[MY_UID]);
         joinExistingMatch(room.matchId,roomId,!isPlayer);
         if(!isPlayer)toast('The match has started. You joined as a spectator.');
@@ -5117,7 +5125,7 @@ async function switchToSpectatorInLobby(){
 // ---- Public rooms browser ----
 function refreshPublicRooms(silent){
     // Keep the public discovery query bounded to 40 rooms to avoid loading an unbounded room list.
-    mdb.ref('mp_rooms').orderByChild('visibility').equalTo('public').limitToLast(40).get().then(async snap=>{
+    mdb.ref('mp_rooms').orderByChild('visibility').equalTo('public').limitToLast(30).get().then(async snap=>{
         let rooms=snap.val()||{};
         let waiting=Object.entries(rooms).filter(([id,r])=>r.status==='waiting');
         const candidates=Object.entries(rooms).filter(([id,r])=>r.status==='in_progress' && r.matchId);
@@ -5634,6 +5642,7 @@ let isSpectating=false;
 function joinExistingMatch(matchId, roomId, asSpectator){
     currentMatchId=matchId;
     isSpectating=!!asSpectator;
+    if(MY_UID && roomId) mdb.ref('mp_users/'+MY_UID+'/activeRoomId').set(roomId).catch(()=>{});
     clearInterval(matchLocalState.claimWinInterval);
     matchLocalState={timerHandle:null, myLocked:{}, lastQIdx:-1, reactionsSeen:new Set(), oppOfflineSince:null};
     if(pendingBotContext && pendingBotContext.matchId===matchId){
