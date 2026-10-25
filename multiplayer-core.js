@@ -3319,40 +3319,40 @@ async function pickAvatar(a){
 // avatar frames, shown on the leaderboard, lobby, and profile. =============================
 // ============================================================================================
 const SHOP_TAGS=[
-    {id:'tag_gold',label:'Gold',color:'#ffd700',price:1300},
-    {id:'tag_red',label:'Crimson',color:'#ff4757',price:1400},
-    {id:'tag_blue',label:'Azure',color:'#00bfff',price:1400},
-    {id:'tag_green',label:'Emerald',color:'#00ff88',price:1600},
-    {id:'tag_purple',label:'Violet',color:'#c084fc',price:1600},
-    {id:'tag_rainbow',label:'Rainbow',color:'linear-gradient(90deg,#ff4757,#ffd700,#00ff88,#00bfff,#c084fc)',price:2000}
+    {id:'tag_gold',label:'Gold',color:'#ffd700',price:35},
+    {id:'tag_red',label:'Crimson',color:'#ff4757',price:38},
+    {id:'tag_blue',label:'Azure',color:'#00bfff',price:40},
+    {id:'tag_green',label:'Emerald',color:'#00ff88',price:43},
+    {id:'tag_purple',label:'Violet',color:'#c084fc',price:45},
+    {id:'tag_rainbow',label:'Rainbow',color:'linear-gradient(90deg,#ff4757,#ffd700,#00ff88,#00bfff,#c084fc)',price:48}
 ];
 const SHOP_FRAMES=[
-    {id:'frame_bronze',label:'Bronze Ring',color:'#cd7f32',price:1350},
-    {id:'frame_silver',label:'Silver Ring',color:'#c0c0c0',price:1000},
-    {id:'frame_gold',label:'Gold Ring',color:'#ffd700',price:1500},
-    {id:'frame_diamond',label:'Diamond Ring',color:'#7dd3ff',price:2500}
+    {id:'frame_bronze',label:'Bronze Ring',color:'#cd7f32',price:51},
+    {id:'frame_silver',label:'Silver Ring',color:'#c0c0c0',price:53},
+    {id:'frame_gold',label:'Gold Ring',color:'#ffd700',price:56},
+    {id:'frame_diamond',label:'Diamond Ring',color:'#7dd3ff',price:58}
 ];
 const SHOP_TITLES=[
-    {id:'title_challenger',label:'Challenger',price:3000},
-    {id:'title_scholar',label:'Scholar',price:3000},
-    {id:'title_strategist',label:'Strategist',price:4000},
-    {id:'title_ace',label:'Ace',price:4500},
-    {id:'title_legend',label:'Legend',price:6000},
-    {id:'title_grandmaster',label:'Grandmaster',price:9000}
+    {id:'title_challenger',label:'Challenger',price:61},
+    {id:'title_scholar',label:'Scholar',price:64},
+    {id:'title_strategist',label:'Strategist',price:66},
+    {id:'title_ace',label:'Ace',price:69},
+    {id:'title_legend',label:'Legend',price:71},
+    {id:'title_grandmaster',label:'Grandmaster',price:74}
 ];
 const SHOP_REACTIONS=[
-    {id:'react_heart',emoji:'❤️',label:'Heart',price:5000},
-    {id:'react_100',emoji:'💯',label:'100',price:8000},
-    {id:'react_skull',emoji:'💀',label:'Skull',price:4500},
-    {id:'react_crown',emoji:'👑',label:'Crown',price:6000},
-    {id:'react_clap',emoji:'👏',label:'Clap',price:6000},
-    {id:'react_mind',emoji:'🤯',label:'Mind Blown',price:8000}
+    {id:'react_heart',emoji:'❤️',label:'Heart',price:77},
+    {id:'react_100',emoji:'💯',label:'100',price:79},
+    {id:'react_skull',emoji:'💀',label:'Skull',price:82},
+    {id:'react_crown',emoji:'👑',label:'Crown',price:84},
+    {id:'react_clap',emoji:'👏',label:'Clap',price:87},
+    {id:'react_mind',emoji:'🤯',label:'Mind Blown',price:90}
 ];
 const SHOP_EFFECTS=[
-    {id:'fx_confetti',label:'Confetti',icon:'🎊',price:1000},
-    {id:'fx_fireworks',label:'Fireworks',icon:'🎆',price:3000},
-    {id:'fx_coins',label:'Coin Rain',icon:'🪙',price:3500},
-    {id:'fx_stars',label:'Starburst',icon:'✨',price:4000}
+    {id:'fx_confetti',label:'Confetti',icon:'🎊',price:92},
+    {id:'fx_fireworks',label:'Fireworks',icon:'🎆',price:95},
+    {id:'fx_coins',label:'Coin Rain',icon:'🪙',price:97},
+    {id:'fx_stars',label:'Starburst',icon:'✨',price:100}
 ];
 function openShopModal(){
     openModal('shopModal');
@@ -4493,8 +4493,14 @@ function enterLobby(roomId, asSpectator){
         let amPlayer=!!(room.players && room.players[MY_UID]);
         if(!amPlayer && !isLobbySpectating){ toast('You were removed from this room.'); leaveRoomLocalOnly(); showScreen('rooms'); return; }
         if(amPlayer) isLobbySpectating=false;
+        // Once a room has entered a match, prediction/chat/room metadata updates must NOT
+        // rebuild the lobby or re-enter the same match. Doing so resets local question state,
+        // reattaches match listeners and can cause visible freezes at question transitions.
+        if(room.status==='in_progress' && room.matchId){
+            if(currentMatchId!==room.matchId) joinExistingMatch(room.matchId, roomId, !amPlayer);
+            return;
+        }
         renderLobby(roomId, room);
-        if(room.status==='in_progress' && room.matchId){ joinExistingMatch(room.matchId, roomId, !amPlayer); }
     };
     ref.on('value', cb);
     roomUnsub=()=>ref.off('value', cb);
