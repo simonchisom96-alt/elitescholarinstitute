@@ -5207,7 +5207,7 @@ async function switchToSpectatorInLobby(){
 // ---- Public rooms browser ----
 function refreshPublicRooms(silent){
     // Keep the public discovery query bounded to 40 rooms to avoid loading an unbounded room list.
-    mdb.ref('mp_rooms').orderByChild('visibility').equalTo('public').limitToLast(30).get().then(async snap=>{
+    mdb.ref('mp_rooms').orderByChild('visibility').equalTo('public').limitToLast(40).get().then(async snap=>{
         let rooms=snap.val()||{};
         let waiting=Object.entries(rooms).filter(([id,r])=>r.status==='waiting');
         const candidates=Object.entries(rooms).filter(([id,r])=>r.status==='in_progress' && r.matchId);
