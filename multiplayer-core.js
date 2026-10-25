@@ -4436,7 +4436,7 @@ function showActiveRoomGuardNotice(){
     notice.textContent=message;
     notice.style.opacity='1';
     clearTimeout(notice._hideTimer);
-    notice._hideTimer=setTimeout(()=>{notice.style.opacity='0';},4200);
+    notice._hideTimer=setTimeout(()=>{notice.style.opacity='0';},3000);
 }
 
 async function ensureNoOtherActiveRoom(targetRoomId){
