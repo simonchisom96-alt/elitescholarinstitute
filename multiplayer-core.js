@@ -4521,12 +4521,14 @@ async function expireInactiveRoom(roomId){
     try{
         const ref=mdb.ref('mp_rooms/'+roomId);
         const snap=await ref.get();
-        if(!snap.exists())return;
+        if(!snap.exists())return false;
         const room=snap.val()||{};
+        // Tournament rooms have their own lifecycle; this expiry applies only to normal/team rooms.
+        if(room.tournamentId)return false;
         // Never delete a room once its quiz has actually started.
-        if(room.status==='in_progress' || room.matchId)return;
+        if(room.status==='in_progress' || room.matchId)return false;
         const createdAt=Number(room.createdAt)||0;
-        if(!createdAt || Date.now()-createdAt<60*60*1000)return;
+        if(!createdAt || Date.now()-createdAt<60*60*1000)return false;
         const updates={};
         Object.keys(room.players||{}).forEach(uid=>{
             updates['mp_users/'+uid+'/activeRoomId']=null;
@@ -4534,7 +4536,8 @@ async function expireInactiveRoom(roomId){
         if(room.code)updates['mp_room_codes/'+String(room.code)]=null;
         updates['mp_rooms/'+roomId]=null;
         await mdb.ref().update(updates);
-    }catch(error){console.warn('[RoomExpiry] Could not clear expired room',error);}
+        return true;
+    }catch(error){console.warn('[RoomExpiry] Could not clear expired room',error);return false;}
 }
 function syncRoomExpiryCountdown(roomId,room){
     const chatBox=$('lobbyChatMsgs');
@@ -4547,6 +4550,7 @@ function syncRoomExpiryCountdown(roomId,room){
         chatBox.parentNode.insertBefore(banner,chatBox);
     }
     const status=String(room.status||'waiting');
+    if(room.tournamentId){banner.style.display='none';if(roomExpiryRoomId===roomId)stopRoomExpiryCountdown();return;}
     if(status==='in_progress'||room.matchId){
         banner.style.display='none';
         if(roomExpiryRoomId===roomId)stopRoomExpiryCountdown();
@@ -4569,8 +4573,8 @@ function syncRoomExpiryCountdown(roomId,room){
             if(remaining<=0){
                 currentBanner.textContent='This room has expired because the quiz did not start within 60 minutes.';
                 stopRoomExpiryCountdown();
-                expireInactiveRoom(roomId).then(()=>{
-                    if(currentRoomId===roomId){leaveRoomLocalOnly();showScreen('rooms');toast('This inactive room was automatically deleted after 60 minutes.');}
+                expireInactiveRoom(roomId).then(deleted=>{
+                    if(deleted && currentRoomId===roomId){leaveRoomLocalOnly();showScreen('rooms');toast('This inactive room was automatically deleted after 60 minutes.');}
                 });
                 return;
             }
