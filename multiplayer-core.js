@@ -4420,8 +4420,36 @@ async function genUniqueRoomCode(roomId){
     throw new Error('Could not generate a unique room code. Please try again.');
 }
 
+async function ensureNoOtherActiveRoom(){
+    if(!MY_UID)return true;
+    try{
+        const activeSnap=await mdb.ref('mp_users/'+MY_UID+'/activeRoomId').get();
+        const activeId=activeSnap.val();
+        if(!activeId || activeId===currentRoomId)return true;
+        const roomSnap=await mdb.ref('mp_rooms/'+activeId).get();
+        const activeRoom=roomSnap.val();
+        if(activeRoom && (activeRoom.status==='waiting'||activeRoom.status==='starting')){
+            toast('Finish or leave your current room before opening another one.');
+            return false;
+        }
+        if(activeRoom && activeRoom.status==='in_progress' && activeRoom.matchId){
+            const matchSnap=await mdb.ref('mp_matches/'+activeRoom.matchId+'/state').get();
+            if(matchSnap.val()!=='ended'){
+                toast('Finish your current match before opening another room.');
+                return false;
+            }
+        }
+        await mdb.ref('mp_users/'+MY_UID+'/activeRoomId').remove().catch(()=>{});
+        return true;
+    }catch(e){
+        console.warn('[RoomGuard] Could not verify active room',e);
+        toast('Could not verify your current room. Please try again.');
+        return false;
+    }
+}
 async function createRoom(){
     if(!ME){toast('Please wait for sign-in to finish.');return;}
+    if(!(await ensureNoOtherActiveRoom()))return;
     let teamMode = crContext==='team';
     let visibility=$('crVisibility').value;
     let powerups=$('crPowerups').value==='on';
@@ -4465,6 +4493,7 @@ async function joinRoomByCode(){
 }
 
 async function joinPublicRoom(roomId){
+    if(!(await ensureNoOtherActiveRoom()))return;
     let snap=await mdb.ref('mp_rooms/'+roomId).get();
     if(!snap.exists()){toast('That room no longer exists.');return;}
     let room=snap.val();
@@ -4484,6 +4513,7 @@ function autoBalanceTeam(players){
 let isLobbySpectating=false;
 function enterLobby(roomId, asSpectator){
     currentRoomId=roomId;
+    if(MY_UID) mdb.ref('mp_users/'+MY_UID+'/activeRoomId').set(roomId).catch(()=>{});
     isLobbySpectating=!!asSpectator;
     if(roomUnsub)roomUnsub();
     let ref=mdb.ref('mp_rooms/'+roomId);
@@ -4512,6 +4542,10 @@ function spectateLobby(roomId){
     toast('👁 Spectating this lobby — you can chat, and join as a player if a seat opens.');
 }
 function leaveRoomLocalOnly(){
+    const leavingRoomId=currentRoomId;
+    if(leavingRoomId && MY_UID){
+        mdb.ref('mp_users/'+MY_UID+'/activeRoomId').transaction(v=>v===leavingRoomId?null:v).catch(()=>{});
+    }
     if(roomUnsub){roomUnsub();roomUnsub=null;}
     if(lobbyChatUnsub){lobbyChatUnsub();lobbyChatUnsub=null;}
     if(lobbyTypingUnsub){lobbyTypingUnsub();lobbyTypingUnsub=null;}
@@ -5082,10 +5116,18 @@ async function switchToSpectatorInLobby(){
 
 // ---- Public rooms browser ----
 function refreshPublicRooms(silent){
-    mdb.ref('mp_rooms').orderByChild('visibility').equalTo('public').limitToLast(40).get().then(snap=>{
+    // Keep the public discovery query bounded to 40 rooms to avoid loading an unbounded room list.
+    mdb.ref('mp_rooms').orderByChild('visibility').equalTo('public').limitToLast(40).get().then(async snap=>{
         let rooms=snap.val()||{};
         let waiting=Object.entries(rooms).filter(([id,r])=>r.status==='waiting');
-        let live=Object.entries(rooms).filter(([id,r])=>r.status==='in_progress' && r.matchId);
+        const candidates=Object.entries(rooms).filter(([id,r])=>r.status==='in_progress' && r.matchId);
+        const liveChecks=await Promise.all(candidates.map(async ([id,r])=>{
+            try{
+                const state=await mdb.ref('mp_matches/'+r.matchId+'/state').get();
+                return state.val()==='active' ? [id,r] : null;
+            }catch(e){return null;}
+        }));
+        const live=liveChecks.filter(Boolean);
         renderPublicRoomsList(waiting, live);
     }).catch(()=>{ if(!silent){$('publicRoomsList').innerHTML='<div class="empty-hint">Could not load rooms.</div>';} });
 }
@@ -5183,7 +5225,9 @@ async function joinLiveSearch(targetUid){
 async function spectateRoom(roomId){
     let snap=await mdb.ref('mp_rooms/'+roomId).get();
     let room=snap.val();
-    if(!room || !room.matchId){toast('This match just ended.');return;}
+    if(!room || room.status!=='in_progress' || !room.matchId){toast('This match just ended.');return;}
+    const matchState=await mdb.ref('mp_matches/'+room.matchId+'/state').get();
+    if(matchState.val()!=='active'){toast('This match just ended.');refreshPublicRooms(true);return;}
     toast('👁 Spectating — you can watch but not answer.');
     joinExistingMatch(room.matchId, roomId, true);
 }
@@ -6387,6 +6431,10 @@ async function endMatch(matchId, m){
 
 function showResultsScreen(matchId, m){
     let staleBtn=$('backToTournamentBtn'); if(staleBtn) staleBtn.remove();
+    // Release the account-level room lock when this user's current match is over.
+    if(MY_UID && m && m.roomId){
+        mdb.ref('mp_users/'+MY_UID+'/activeRoomId').transaction(v=>v===m.roomId?null:v).catch(()=>{});
+    }
     let oppUidForMeta = myOpponentUid(m);
     let oppPlayerObj = oppUidForMeta ? m.players[oppUidForMeta] : null;
     lastMatchMeta={
@@ -7653,8 +7701,7 @@ function refreshTournamentHistoryList(){
         let entries=Object.entries(all).filter(([id,t])=>{
             if(t.status!=='ended')return false;
             if(hidden[id])return false;
-            if(t.visibility!=='private')return true; // public: visible to everyone
-            // private: only participants (players) or spectators can see it in history
+            // Finished tournaments are personal history only, never public again.
             return (t.players && t.players[MY_UID]) || (t.spectators && t.spectators[MY_UID]) || t.hostUid===MY_UID;
         }).sort((a,b)=>(b[1].endedAt||0)-(a[1].endedAt||0)).slice(0,20);
         let el=$('tournamentHistoryList');if(!el)return;
@@ -7695,7 +7742,6 @@ async function clearAllTournamentHistory(){
         let hidden=(ME&&ME.hiddenTournaments)||{};
         let ids=Object.entries(all).filter(([id,t])=>{
             if(t.status!=='ended'||hidden[id])return false;
-            if(t.visibility!=='private')return true;
             return (t.players&&t.players[MY_UID])||(t.spectators&&t.spectators[MY_UID])||t.hostUid===MY_UID;
         }).map(([id])=>id);
         if(!ids.length){toast('Nothing to clear.');return;}
