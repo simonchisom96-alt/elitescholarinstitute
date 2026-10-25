@@ -4422,24 +4422,41 @@ async function genUniqueRoomCode(roomId){
 
 async function ensureNoOtherActiveRoom(targetRoomId){
     if(!MY_UID)return true;
+    const activeRef=mdb.ref('mp_users/'+MY_UID+'/activeRoomId');
     try{
-        const activeSnap=await mdb.ref('mp_users/'+MY_UID+'/activeRoomId').get();
+        const activeSnap=await activeRef.get();
         const activeId=activeSnap.val();
-        if(!activeId || activeId===currentRoomId || activeId===targetRoomId)return true;
-        const roomSnap=await mdb.ref('mp_rooms/'+activeId).get();
-        const activeRoom=roomSnap.val();
-        if(activeRoom && (activeRoom.status==='waiting'||activeRoom.status==='starting')){
-            toast('Finish or leave your current room before opening another one.');
-            return false;
+        if(activeId && activeId!==targetRoomId){
+            // Do not treat currentRoomId as permission to open a second room. The same
+            // active room is allowed; a different one is blocked until the first is over.
+            const roomSnap=await mdb.ref('mp_rooms/'+activeId).get();
+            const activeRoom=roomSnap.val();
+            let stillActive=false;
+            if(activeRoom && (activeRoom.status==='waiting'||activeRoom.status==='starting')){
+                stillActive=true;
+            }else if(activeRoom && activeRoom.status==='in_progress' && activeRoom.matchId){
+                const matchSnap=await mdb.ref('mp_matches/'+activeRoom.matchId+'/state').get();
+                stillActive=matchSnap.val()!=='ended';
+            }
+            if(stillActive){
+                toast('Finish or leave your current room or match before opening another one.');
+                return false;
+            }
+            // The old room was deleted or has ended. Clear only our own stale pointer.
+            await activeRef.transaction(value=>value===activeId?null:value);
         }
-        if(activeRoom && activeRoom.status==='in_progress' && activeRoom.matchId){
-            const matchSnap=await mdb.ref('mp_matches/'+activeRoom.matchId+'/state').get();
-            if(matchSnap.val()!=='ended'){
-                toast('Finish your current match before opening another room.');
+        if(targetRoomId){
+            // Atomic claim closes the fast double-tap / second-tab race between the
+            // initial check and entering a room.
+            const claim=await activeRef.transaction(value=>{
+                if(value==null || value===targetRoomId)return targetRoomId;
+                return;
+            });
+            if(!claim.committed || claim.snapshot.val()!==targetRoomId){
+                toast('Finish or leave your current room or match before opening another one.');
                 return false;
             }
         }
-        await mdb.ref('mp_users/'+MY_UID+'/activeRoomId').remove().catch(()=>{});
         return true;
     }catch(e){
         console.warn('[RoomGuard] Could not verify active room',e);
@@ -4449,7 +4466,9 @@ async function ensureNoOtherActiveRoom(targetRoomId){
 }
 async function createRoom(){
     if(!ME){toast('Please wait for sign-in to finish.');return;}
-    if(!(await ensureNoOtherActiveRoom()))return;
+    const roomRef=mdb.ref('mp_rooms').push();
+    const roomId=roomRef.key;
+    if(!(await ensureNoOtherActiveRoom(roomId)))return;
     let teamMode = crContext==='team';
     let visibility=$('crVisibility').value;
     let powerups=$('crPowerups').value==='on';
@@ -4464,8 +4483,6 @@ async function createRoom(){
     };
     let teamSize=teamMode?parseInt($('crTeamSize').value)||2:1;
     let maxPlayers=teamMode?teamSize*2:2;
-    let roomRef=mdb.ref('mp_rooms').push();
-    let roomId=roomRef.key;
     // Public rooms, including team battles, use the invitation link and have no code.
     let code=visibility==='private' ? await genUniqueRoomCode(roomId) : null;
     let players={};
