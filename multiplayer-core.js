@@ -4511,6 +4511,82 @@ function autoBalanceTeam(players){
 }
 
 let isLobbySpectating=false;
+let roomExpiryInterval=null;
+let roomExpiryRoomId=null;
+function stopRoomExpiryCountdown(){
+    if(roomExpiryInterval){clearInterval(roomExpiryInterval);roomExpiryInterval=null;}
+    roomExpiryRoomId=null;
+}
+async function expireInactiveRoom(roomId){
+    try{
+        const ref=mdb.ref('mp_rooms/'+roomId);
+        const snap=await ref.get();
+        if(!snap.exists())return;
+        const room=snap.val()||{};
+        // Never delete a room once its quiz has actually started.
+        if(room.status==='in_progress' || room.matchId)return;
+        const createdAt=Number(room.createdAt)||0;
+        if(!createdAt || Date.now()-createdAt<60*60*1000)return;
+        const updates={};
+        Object.keys(room.players||{}).forEach(uid=>{
+            updates['mp_users/'+uid+'/activeRoomId']=null;
+        });
+        if(room.code)updates['mp_room_codes/'+String(room.code)]=null;
+        updates['mp_rooms/'+roomId]=null;
+        await mdb.ref().update(updates);
+    }catch(error){console.warn('[RoomExpiry] Could not clear expired room',error);}
+}
+function syncRoomExpiryCountdown(roomId,room){
+    const chatBox=$('lobbyChatMsgs');
+    if(!chatBox)return;
+    let banner=document.getElementById('lobbyRoomExpiryNotice');
+    if(!banner){
+        banner=document.createElement('div');
+        banner.id='lobbyRoomExpiryNotice';
+        banner.style.cssText='margin:0 0 8px;padding:7px 10px;border:1px solid rgba(234,179,8,.28);border-radius:9px;background:rgba(234,179,8,.07);color:var(--text-secondary,#aab4c8);font-size:11px;line-height:1.45;font-weight:500;';
+        chatBox.parentNode.insertBefore(banner,chatBox);
+    }
+    const status=String(room.status||'waiting');
+    if(status==='in_progress'||room.matchId){
+        banner.style.display='none';
+        if(roomExpiryRoomId===roomId)stopRoomExpiryCountdown();
+        return;
+    }
+    const createdAt=Number(room.createdAt)||0;
+    if(!createdAt){
+        banner.style.display='block';
+        banner.textContent='This room would auto-delete after 60 minutes if inactive.';
+        return;
+    }
+    if(roomExpiryRoomId!==roomId){
+        stopRoomExpiryCountdown();
+        roomExpiryRoomId=roomId;
+        roomExpiryInterval=setInterval(()=>{
+            if(currentRoomId!==roomId){stopRoomExpiryCountdown();return;}
+            const currentBanner=document.getElementById('lobbyRoomExpiryNotice');
+            if(!currentBanner)return;
+            const remaining=60*60*1000-(Date.now()-createdAt);
+            if(remaining<=0){
+                currentBanner.textContent='This room has expired because the quiz did not start within 60 minutes.';
+                stopRoomExpiryCountdown();
+                expireInactiveRoom(roomId).then(()=>{
+                    if(currentRoomId===roomId){leaveRoomLocalOnly();showScreen('rooms');toast('This inactive room was automatically deleted after 60 minutes.');}
+                });
+                return;
+            }
+            const minutes=Math.ceil(remaining/60000);
+            currentBanner.textContent='This room would auto-delete after 60 minutes if inactive · '+minutes+' min remaining';
+        },1000);
+    }
+    const remaining=60*60*1000-(Date.now()-createdAt);
+    if(remaining<=0){
+        banner.textContent='This room has expired because the quiz did not start within 60 minutes.';
+        expireInactiveRoom(roomId);
+        return;
+    }
+    banner.style.display='block';
+    banner.textContent='This room would auto-delete after 60 minutes if inactive · '+Math.ceil(remaining/60000)+' min remaining';
+}
 function enterLobby(roomId, asSpectator){
     currentRoomId=roomId;
     if(MY_UID) mdb.ref('mp_users/'+MY_UID+'/activeRoomId').set(roomId).catch(()=>{});
@@ -4542,6 +4618,7 @@ function spectateLobby(roomId){
     toast('👁 Spectating this lobby — you can chat, and join as a player if a seat opens.');
 }
 function leaveRoomLocalOnly(){
+    stopRoomExpiryCountdown();
     const leavingRoomId=currentRoomId;
     if(leavingRoomId && MY_UID){
         mdb.ref('mp_users/'+MY_UID+'/activeRoomId').transaction(v=>v===leavingRoomId?null:v).catch(()=>{});
@@ -4985,6 +5062,7 @@ function fallbackCopy(text,onDone){
     document.body.removeChild(ta);
 }
 function renderLobby(roomId, room){
+    syncRoomExpiryCountdown(roomId,room);
     lastRoomPlayers=room.players||{};
     lastRoomHostUid=room.hostUid;
     let isHost=room.hostUid===MY_UID;
