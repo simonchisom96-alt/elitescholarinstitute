@@ -8395,10 +8395,10 @@ async function checkTeamTournamentEnd(tid, t){
             let tn=t.teamNames||{A:'Team A',B:'Team B'};
             let winnerTeam = scoreA===scoreB ? null : (scoreA>scoreB?'A':'B');
             let champName = winnerTeam ? tn[winnerTeam] : 'Draw';
-            await mdb.ref('mp_tournaments/'+tid).update({status:'ended', championName:champName, finalScoreA:scoreA, finalScoreB:scoreB, endedAt:firebase.database.ServerValue.TIMESTAMP, nextMatchInfo:null});
+            await mdb.ref('mp_tournaments/'+tid).update({status:'ended', visibility:'private', code:null, championName:champName, finalScoreA:scoreA, finalScoreB:scoreB, endedAt:firebase.database.ServerValue.TIMESTAMP, nextMatchInfo:null});
             pushTournamentActivity(tid, winnerTeam ? `🏆 ${champName} wins the tournament! (${scoreA} - ${scoreB})` : `🤝 Tournament ended in a draw (${scoreA} - ${scoreB}).`);
         }else if(t.roundDeadline && Date.now()>t.roundDeadline){
-            await mdb.ref('mp_tournaments/'+tid).update({status:'ended', championUid:null, championName:'No one — the match wasn\u2019t finished within the time limit.', endedAt:firebase.database.ServerValue.TIMESTAMP, nextMatchInfo:null});
+            await mdb.ref('mp_tournaments/'+tid).update({status:'ended', visibility:'private', code:null, championUid:null, championName:'No one — the match wasn\u2019t finished within the time limit.', endedAt:firebase.database.ServerValue.TIMESTAMP, nextMatchInfo:null});
             pushTournamentActivity(tid, `⛔ Time limit reached before the match finished — tournament ended with no champion.`);
             players.forEach(p=>sendNotif(p.uid,'system', `"${t.name}" ended with no champion — the match wasn't completed in time.`));
         }
@@ -8564,11 +8564,11 @@ async function advanceTournamentIfNeeded(tid, t){
             if(allDone){
                 let winners=round.filter(m=>m.winnerUid).map(m=>({uid:m.winnerUid, name:m.winnerUid===m.p1uid?m.p1name:m.p2name}));
                 if(winners.length===0){
-                    await mdb.ref('mp_tournaments/'+tid).update({status:'ended', championUid:null, championName:'No one — every match was disqualified.', endedAt:firebase.database.ServerValue.TIMESTAMP});
+                    await mdb.ref('mp_tournaments/'+tid).update({status:'ended', visibility:'private', code:null, championUid:null, championName:'No one — every match was disqualified.', endedAt:firebase.database.ServerValue.TIMESTAMP});
                     pushTournamentActivity(tid, `🛑 Tournament ended with no champion — every match in the final round was disqualified.`);
                 }else if(winners.length===1){
                     let champ=winners[0];
-                    await mdb.ref('mp_tournaments/'+tid).update({status:'ended', championUid:champ.uid, championName:champ.name, endedAt:firebase.database.ServerValue.TIMESTAMP});
+                    await mdb.ref('mp_tournaments/'+tid).update({status:'ended', visibility:'private', code:null, championUid:champ.uid, championName:champ.name, endedAt:firebase.database.ServerValue.TIMESTAMP});
                     if(champ.uid===MY_UID){
                         let ach=Object.assign({}, ME.achievements||{}, {tournament_champ:true});
                         await mdb.ref('mp_users/'+MY_UID+'/achievements').set(ach);
@@ -8634,7 +8634,7 @@ async function advanceTournamentIfNeeded(tid, t){
                 });
                 let champUid=Object.keys(pts).sort((a,b)=>pts[b]-pts[a])[0];
                 let champName=(arr.find(m=>m.p1uid===champUid)||{}).p1name || (arr.find(m=>m.p2uid===champUid)||{}).p2name || '—';
-                await mdb.ref('mp_tournaments/'+tid).update({status:'ended', championUid:champUid, championName:champName, endedAt:firebase.database.ServerValue.TIMESTAMP});
+                await mdb.ref('mp_tournaments/'+tid).update({status:'ended', visibility:'private', code:null, championUid:champUid, championName:champName, endedAt:firebase.database.ServerValue.TIMESTAMP});
                 if(champUid===MY_UID){
                     let ach=Object.assign({}, ME.achievements||{}, {tournament_champ:true});
                     await mdb.ref('mp_users/'+MY_UID+'/achievements').set(ach);
