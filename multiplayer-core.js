@@ -4422,6 +4422,23 @@ async function genUniqueRoomCode(roomId){
     throw new Error('Could not generate a unique room code. Please try again.');
 }
 
+function showActiveRoomGuardNotice(){
+    const message='Delete your currently existing room to continue.';
+    let notice=document.getElementById('activeRoomGuardNotice');
+    if(!notice){
+        notice=document.createElement('div');
+        notice.id='activeRoomGuardNotice';
+        notice.setAttribute('role','alert');
+        notice.setAttribute('aria-live','assertive');
+        notice.style.cssText='position:fixed;left:50%;top:18px;transform:translateX(-50%);width:calc(100% - 32px);max-width:420px;box-sizing:border-box;padding:16px 18px;border-radius:14px;background:#111e42;color:#fff;border:2px solid #ffd700;box-shadow:0 12px 40px rgba(0,0,0,.55);font-size:15px;font-weight:800;line-height:1.4;text-align:center;z-index:2147483647;pointer-events:none;opacity:0;transition:opacity .16s ease;';
+        document.body.appendChild(notice);
+    }
+    notice.textContent=message;
+    notice.style.opacity='1';
+    clearTimeout(notice._hideTimer);
+    notice._hideTimer=setTimeout(()=>{notice.style.opacity='0';},4200);
+}
+
 async function ensureNoOtherActiveRoom(targetRoomId){
     if(!MY_UID)return true;
     const activeRef=mdb.ref('mp_users/'+MY_UID+'/activeRoomId');
@@ -4445,7 +4462,7 @@ async function ensureNoOtherActiveRoom(targetRoomId){
                 stillActive=matchSnap.val()!=='ended';
             }
             if(stillActive){
-                toast('Finish or leave your current room or match before opening another one.');
+                showActiveRoomGuardNotice();
                 return false;
             }
             // The old room was deleted or has ended. Clear only our own stale pointer.
@@ -4459,7 +4476,7 @@ async function ensureNoOtherActiveRoom(targetRoomId){
                 return;
             });
             if(!claim.committed || claim.snapshot.val()!==targetRoomId){
-                toast('Finish or leave your current room or match before opening another one.');
+                showActiveRoomGuardNotice();
                 return false;
             }
         }
