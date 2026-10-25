@@ -4133,6 +4133,7 @@ async function respondChallenge(accept){
     }
     toast('Setting up your match…');
     let roomId=mdb.ref('mp_rooms').push().key;
+    if(!(await ensureNoOtherActiveRoom(roomId)))return;
     let players={};
     players[c.fromUid]={name:c.fromName,ready:true,team:'A',uid:c.fromUid};
     players[MY_UID]={name:ME.username,ready:true,team:'B',uid:MY_UID};
@@ -5337,6 +5338,7 @@ function ignoreLiveSearch(uid){ ignoredSearches.add(uid); refreshLiveSearches();
 // claim-by-transaction handshake, just triggered by a direct tap instead of a background scan.
 async function joinLiveSearch(targetUid){
     if(!ME){toast('Please wait for sign-in to finish.');return;}
+    if(!(await ensureNoOtherActiveRoom()))return;
     let targetTicketRef=mdb.ref('mp_matchmaking_queue/'+targetUid);
     try{
         let result=await targetTicketRef.transaction(cur=>{
@@ -5351,6 +5353,10 @@ async function joinLiveSearch(targetUid){
         }
         let opp=result.snapshot.val();
         let roomId=mdb.ref('mp_rooms').push().key;
+        if(!(await ensureNoOtherActiveRoom(roomId))){
+            await targetTicketRef.update({claimed:false,claimedBy:null}).catch(()=>{});
+            return;
+        }
         let players={};
         players[opp.uid]={name:opp.name, ready:true, team:'A', uid:opp.uid};
         players[MY_UID]={name:ME.username, ready:true, team:'B', uid:MY_UID};
@@ -7420,6 +7426,7 @@ async function requestBotRematch(){
             let botUid='bot_'+Math.random().toString(36).slice(2,11);
             let botAccuracy=computeBotAccuracy();
             let roomId=mdb.ref('mp_rooms').push().key;
+            if(!(await ensureNoOtherActiveRoom(roomId)))return;
             let roomPlayers={};
             roomPlayers[botUid]={name:oppName, ready:true, team:'A', uid:botUid};
             roomPlayers[MY_UID]={name:ME.username, ready:true, team:'B', uid:MY_UID};
