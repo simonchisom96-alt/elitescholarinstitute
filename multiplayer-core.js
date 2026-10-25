@@ -4430,13 +4430,17 @@ function showActiveRoomGuardNotice(){
         notice.id='activeRoomGuardNotice';
         notice.setAttribute('role','alert');
         notice.setAttribute('aria-live','assertive');
-        notice.style.cssText='position:fixed;left:50%;top:18px;transform:translateX(-50%);width:calc(100% - 32px);max-width:420px;box-sizing:border-box;padding:16px 18px;border-radius:14px;background:#111e42;color:#fff;border:2px solid #ffd700;box-shadow:0 12px 40px rgba(0,0,0,.55);font-size:15px;font-weight:800;line-height:1.4;text-align:center;z-index:2147483647;pointer-events:none;opacity:0;transition:opacity .16s ease;';
+        notice.style.cssText='position:fixed;left:50%;top:18px;transform:translate(-50%,-18px);width:calc(100% - 32px);max-width:420px;box-sizing:border-box;padding:16px 18px;border-radius:14px;background:#111e42;color:#fff;border:2px solid #ffd700;box-shadow:0 12px 40px rgba(0,0,0,.55);font-size:15px;font-weight:800;line-height:1.4;text-align:center;z-index:2147483647;pointer-events:none;opacity:0;transition:opacity .22s ease,transform .22s ease;';
         document.body.appendChild(notice);
     }
     notice.textContent=message;
-    notice.style.opacity='1';
     clearTimeout(notice._hideTimer);
-    notice._hideTimer=setTimeout(()=>{notice.style.opacity='0';},3000);
+    notice.style.opacity='1';
+    notice.style.transform='translate(-50%,0)';
+    notice._hideTimer=setTimeout(()=>{
+        notice.style.opacity='0';
+        notice.style.transform='translate(-50%,-18px)';
+    },3000);
 }
 
 async function ensureNoOtherActiveRoom(targetRoomId){
