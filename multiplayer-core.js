@@ -4569,7 +4569,7 @@ async function expireInactiveRoom(roomId){
         const room=snap.val()||{};
         // This expiry is only for public, non-tournament rooms that never started.
         if(room.visibility!=='public' || room.tournamentId || room.type==='tournament')return false;
-        if(String(room.status||'waiting')!=='waiting' || room.matchId)return false;
+        if(!['waiting','starting'].includes(String(room.status||'waiting')) || room.matchId)return false;
         const createdAt=Number(room.createdAt)||0;
         if(!createdAt || Date.now()-createdAt<60*60*1000)return false;
         const updates={};
@@ -5286,13 +5286,21 @@ function refreshPublicRooms(silent){
         const now=Date.now(), hour=60*60*1000;
         const expired=Object.entries(rooms).filter(([id,r])=>
             r && r.visibility==='public' && !r.tournamentId && r.type!=='tournament' &&
-            String(r.status||'waiting')==='waiting' && !r.matchId &&
+            ['waiting','starting'].includes(String(r.status||'waiting')) && !r.matchId &&
             Number(r.createdAt)>0 && now-Number(r.createdAt)>=hour
         );
         // Re-check each record before deleting; started matches and tournaments are protected.
         if(expired.length){
-            await Promise.all(expired.map(([id])=>expireInactiveRoom(id)));
-            expired.forEach(([id])=>{delete rooms[id];});
+            const results=await Promise.all(expired.map(async ([id])=>[id,await expireInactiveRoom(id)]));
+            await Promise.all(results.map(async ([id,deleted])=>{
+                if(deleted){delete rooms[id];return;}
+                // A room may have started while the expiry check was running; refresh its current state.
+                try{
+                    const latest=await mdb.ref('mp_rooms/'+id).get();
+                    if(latest.exists())rooms[id]=latest.val();
+                    else delete rooms[id];
+                }catch(e){}
+            }));
         }
         let waiting=Object.entries(rooms).filter(([id,r])=>
             r && r.visibility==='public' && !r.tournamentId && r.type!=='tournament' && r.status==='waiting'
