@@ -4567,10 +4567,9 @@ async function expireInactiveRoom(roomId){
         const snap=await ref.get();
         if(!snap.exists())return false;
         const room=snap.val()||{};
-        // Tournament rooms have their own lifecycle; this expiry applies only to normal/team rooms.
-        if(room.tournamentId)return false;
-        // Never delete a room once its quiz has actually started.
-        if(room.status==='in_progress' || room.matchId)return false;
+        // This expiry is only for public, non-tournament rooms that never started.
+        if(room.visibility!=='public' || room.tournamentId || room.type==='tournament')return false;
+        if(String(room.status||'waiting')!=='waiting' || room.matchId)return false;
         const createdAt=Number(room.createdAt)||0;
         if(!createdAt || Date.now()-createdAt<60*60*1000)return false;
         const updates={};
@@ -4581,7 +4580,7 @@ async function expireInactiveRoom(roomId){
         updates['mp_rooms/'+roomId]=null;
         await mdb.ref().update(updates);
         return true;
-    }catch(error){console.warn('[RoomExpiry] Could not clear expired room',error);return false;}
+    }catch(error){console.warn('[RoomExpiry] Could not clear expired public room',error);return false;}
 }
 function syncRoomExpiryCountdown(roomId,room){
     const chatBox=$('lobbyChatMsgs');
@@ -4594,7 +4593,7 @@ function syncRoomExpiryCountdown(roomId,room){
         chatBox.parentNode.insertBefore(banner,chatBox);
     }
     const status=String(room.status||'waiting');
-    if(room.tournamentId){banner.style.display='none';if(roomExpiryRoomId===roomId)stopRoomExpiryCountdown();return;}
+    if(room.visibility!=='public' || room.tournamentId || room.type==='tournament'){banner.style.display='none';if(roomExpiryRoomId===roomId)stopRoomExpiryCountdown();return;}
     if(status==='in_progress'||room.matchId){
         banner.style.display='none';
         if(roomExpiryRoomId===roomId)stopRoomExpiryCountdown();
@@ -5281,11 +5280,26 @@ async function switchToSpectatorInLobby(){
 
 // ---- Public rooms browser ----
 function refreshPublicRooms(silent){
-    // Keep the public discovery query bounded to 40 rooms to avoid loading an unbounded room list.
-    mdb.ref('mp_rooms').orderByChild('visibility').equalTo('public').limitToLast(40).get().then(async snap=>{
+    // Scan every public room so older rooms cannot hide outside a recent-items limit.
+    mdb.ref('mp_rooms').orderByChild('visibility').equalTo('public').get().then(async snap=>{
         let rooms=snap.val()||{};
-        let waiting=Object.entries(rooms).filter(([id,r])=>r.status==='waiting');
-        const candidates=Object.entries(rooms).filter(([id,r])=>r.status==='in_progress' && r.matchId);
+        const now=Date.now(), hour=60*60*1000;
+        const expired=Object.entries(rooms).filter(([id,r])=>
+            r && r.visibility==='public' && !r.tournamentId && r.type!=='tournament' &&
+            String(r.status||'waiting')==='waiting' && !r.matchId &&
+            Number(r.createdAt)>0 && now-Number(r.createdAt)>=hour
+        );
+        // Re-check each record before deleting; started matches and tournaments are protected.
+        if(expired.length){
+            await Promise.all(expired.map(([id])=>expireInactiveRoom(id)));
+            expired.forEach(([id])=>{delete rooms[id];});
+        }
+        let waiting=Object.entries(rooms).filter(([id,r])=>
+            r && r.visibility==='public' && !r.tournamentId && r.type!=='tournament' && r.status==='waiting'
+        );
+        const candidates=Object.entries(rooms).filter(([id,r])=>
+            r && r.visibility==='public' && !r.tournamentId && r.type!=='tournament' && r.status==='in_progress' && r.matchId
+        );
         const liveChecks=await Promise.all(candidates.map(async ([id,r])=>{
             try{
                 const state=await mdb.ref('mp_matches/'+r.matchId+'/state').get();
@@ -5295,6 +5309,13 @@ function refreshPublicRooms(silent){
         const live=liveChecks.filter(Boolean);
         renderPublicRoomsList(waiting, live);
     }).catch(()=>{ if(!silent){$('publicRoomsList').innerHTML='<div class="empty-hint">Could not load rooms.</div>';} });
+}
+// While the multiplayer app is open, re-scan public rooms once a minute so expiry
+// does not depend on someone staying inside the specific room lobby.
+if(!window.__esiPublicRoomExpiryPoll){
+    window.__esiPublicRoomExpiryPoll=setInterval(()=>{
+        if(MY_UID)refreshPublicRooms(true);
+    },60000);
 }
 function renderPublicRoomsList(entries, liveEntries){
     liveEntries=liveEntries||[];
