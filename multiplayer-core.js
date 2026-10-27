@@ -4567,9 +4567,9 @@ async function expireInactiveRoom(roomId){
         const snap=await ref.get();
         if(!snap.exists())return false;
         const room=snap.val()||{};
-        // This expiry is only for public, non-tournament rooms that never started.
+        // Never expire tournament rooms. Every other public room expires 60 minutes after creation,
+        // regardless of mode, occupancy, or whether a match has already started.
         if(room.visibility!=='public' || room.tournamentId || room.type==='tournament')return false;
-        if(!['waiting','starting'].includes(String(room.status||'waiting')) || room.matchId)return false;
         const createdAt=Number(room.createdAt)||0;
         if(!createdAt || Date.now()-createdAt<60*60*1000)return false;
         const updates={};
@@ -4594,15 +4594,10 @@ function syncRoomExpiryCountdown(roomId,room){
     }
     const status=String(room.status||'waiting');
     if(room.visibility!=='public' || room.tournamentId || room.type==='tournament'){banner.style.display='none';if(roomExpiryRoomId===roomId)stopRoomExpiryCountdown();return;}
-    if(status==='in_progress'||room.matchId){
-        banner.style.display='none';
-        if(roomExpiryRoomId===roomId)stopRoomExpiryCountdown();
-        return;
-    }
     const createdAt=Number(room.createdAt)||0;
     if(!createdAt){
         banner.style.display='block';
-        banner.textContent='This room would auto-delete after 60 minutes if inactive.';
+        banner.textContent='This public room is automatically removed after 60 minutes.';
         return;
     }
     if(roomExpiryRoomId!==roomId){
@@ -4614,7 +4609,7 @@ function syncRoomExpiryCountdown(roomId,room){
             if(!currentBanner)return;
             const remaining=60*60*1000-(Date.now()-createdAt);
             if(remaining<=0){
-                currentBanner.textContent='This room has expired because the quiz did not start within 60 minutes.';
+                currentBanner.textContent='This public room has expired after 60 minutes.';
                 stopRoomExpiryCountdown();
                 expireInactiveRoom(roomId).then(deleted=>{
                     if(deleted && currentRoomId===roomId){leaveRoomLocalOnly();showScreen('rooms');toast('This inactive room was automatically deleted after 60 minutes.');}
@@ -4622,17 +4617,17 @@ function syncRoomExpiryCountdown(roomId,room){
                 return;
             }
             const minutes=Math.ceil(remaining/60000);
-            currentBanner.textContent='This room would auto-delete after 60 minutes if inactive · '+minutes+' min remaining';
+            currentBanner.textContent='This public room expires after 60 minutes · '+minutes+' min remaining';
         },1000);
     }
     const remaining=60*60*1000-(Date.now()-createdAt);
     if(remaining<=0){
-        banner.textContent='This room has expired because the quiz did not start within 60 minutes.';
+        banner.textContent='This public room has expired after 60 minutes.';
         expireInactiveRoom(roomId);
         return;
     }
     banner.style.display='block';
-    banner.textContent='This room would auto-delete after 60 minutes if inactive · '+Math.ceil(remaining/60000)+' min remaining';
+    banner.textContent='This public room expires after 60 minutes · '+Math.ceil(remaining/60000)+' min remaining';
 }
 function enterLobby(roomId, asSpectator){
     currentRoomId=roomId;
@@ -5286,21 +5281,17 @@ function refreshPublicRooms(silent){
         const now=Date.now(), hour=60*60*1000;
         const expired=Object.entries(rooms).filter(([id,r])=>
             r && r.visibility==='public' && !r.tournamentId && r.type!=='tournament' &&
-            ['waiting','starting'].includes(String(r.status||'waiting')) && !r.matchId &&
             Number(r.createdAt)>0 && now-Number(r.createdAt)>=hour
         );
-        // Re-check each record before deleting; started matches and tournaments are protected.
+        // Hide expired public rooms immediately in this listing, even if a delete write fails.
+        // Cleanup covers duels, team rooms, occupied rooms and rooms with an active match.
         if(expired.length){
             const results=await Promise.all(expired.map(async ([id])=>[id,await expireInactiveRoom(id)]));
-            await Promise.all(results.map(async ([id,deleted])=>{
-                if(deleted){delete rooms[id];return;}
-                // A room may have started while the expiry check was running; refresh its current state.
-                try{
-                    const latest=await mdb.ref('mp_rooms/'+id).get();
-                    if(latest.exists())rooms[id]=latest.val();
-                    else delete rooms[id];
-                }catch(e){}
-            }));
+            for(const [id,deleted] of results){
+                // Expired rooms must never be reintroduced into the public list by a failed write.
+                delete rooms[id];
+                if(!deleted)console.warn('[RoomExpiry] Expired room hidden from public list; backend deletion did not complete:',id);
+            }
         }
         let waiting=Object.entries(rooms).filter(([id,r])=>
             r && r.visibility==='public' && !r.tournamentId && r.type!=='tournament' && r.status==='waiting'
