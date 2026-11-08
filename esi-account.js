@@ -215,6 +215,19 @@
     throw new Error('ESI account service is still loading. Please refresh and try again.');
   }
 
+  async function waitForAuthReady(auth) {
+    return new Promise(resolve => {
+      let unsubscribe = () => {};
+      unsubscribe = auth.onAuthStateChanged(user => {
+        unsubscribe();
+        resolve(user || null);
+      }, () => {
+        unsubscribe();
+        resolve(null);
+      });
+    });
+  }
+
   async function signIn() {
     const button = document.querySelector('#esiGoogleAccount .esi-account-action');
     if (!button || button.disabled) return;
@@ -222,6 +235,7 @@
     button.textContent = 'Connecting…';
     try {
       const auth = await waitForAuth();
+      await waitForAuthReady(auth);
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       const current = auth.currentUser;
