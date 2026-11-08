@@ -153,10 +153,12 @@
     return true;
   }
 
-  async function activateCentralIdentity(credential) {
+  async function activateCentralIdentity(credential, sourceAuth) {
     const centralAuth = getCentralAuth();
     if (!centralAuth) return;
-    if (credential) {
+    const alreadyCentral = sourceAuth && sourceAuth.app && sourceAuth.app.options &&
+      sourceAuth.app.options.projectId === CENTRAL_CONFIG.projectId && sourceAuth.currentUser && !sourceAuth.currentUser.isAnonymous;
+    if (credential && !alreadyCentral) {
       await centralAuth.signInWithCredential(credential);
     }
     if (centralAuth.currentUser && centralAuth.currentUser.email) {
@@ -249,12 +251,12 @@
         try {
           const linked = await current.linkWithPopup(provider);
           const linkedCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(linked);
-          if (linkedCredential) await activateCentralIdentity(linkedCredential);
+          if (linkedCredential) await activateCentralIdentity(linkedCredential, auth);
         } catch (error) {
           if (error && error.code === 'auth/credential-already-in-use') {
             const existingSignIn = await auth.signInWithPopup(provider);
             const existingCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(existingSignIn);
-            if (existingCredential) await activateCentralIdentity(existingCredential);
+            if (existingCredential) await activateCentralIdentity(existingCredential, auth);
             window.ESIAccount.legacyTempDataWarning = true;
           } else if (error && (error.code === 'auth/popup-blocked' || error.code === 'auth/operation-not-supported-in-this-environment')) {
             await current.linkWithRedirect(provider);
@@ -267,7 +269,7 @@
         try {
           const signedIn = await auth.signInWithPopup(provider);
           const googleCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(signedIn);
-          if (googleCredential) await activateCentralIdentity(googleCredential);
+          if (googleCredential) await activateCentralIdentity(googleCredential, auth);
         } catch (error) {
           if (error && (error.code === 'auth/popup-blocked' || error.code === 'auth/operation-not-supported-in-this-environment')) {
             await auth.signInWithRedirect(provider);
@@ -315,7 +317,7 @@
       });
       if (result && result.user) {
         const redirectCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
-        if (redirectCredential) await activateCentralIdentity(redirectCredential);
+        if (redirectCredential) await activateCentralIdentity(redirectCredential, auth);
         setStatus('Google account connected.');
       } else if (auth.currentUser && !auth.currentUser.isAnonymous) {
         const centralAuth = getCentralAuth();
