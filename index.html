@@ -8,6 +8,25 @@ FULLY UPGRADED VERSION
 <html lang="en">
 
 <head>
+<!-- Keep existing Android app installations on the live ESI site when online.
+     The same installed app/WebView is reused; offline launches stay bundled. -->
+<script>
+(function () {
+  try {
+    if (!/ESIAndroid\\//i.test(navigator.userAgent) ||
+        location.hostname !== 'appassets.androidplatform.net') return;
+    var live = 'https://elitescholarinstitute.pages.dev';
+    fetch(live + '/sw.js?esi-live-check=' + Date.now(), {
+      method: 'GET', mode: 'no-cors', cache: 'no-store'
+    }).then(function () {
+      location.replace(live + (location.pathname || '/index.html') +
+        location.search + location.hash);
+    }).catch(function () {
+      // No live connection: continue using the bundled offline site.
+    });
+  } catch (_) {}
+})();
+</script>
 <!-- Existing Android installs can switch to the live website without APK reinstall.
      If the network is reachable, keep the same app/WebView but load all pages
      from the live origin; if offline, remain on the bundled offline homepage. -->
