@@ -5878,7 +5878,7 @@ function joinExistingMatch(matchId, roomId, asSpectator){
             renderTeamWaitingRoom(matchId, m);
             return;
         }
-        if(!m.teamMode && m.state==='waiting'){
+        if(!m.teamMode && (m.state==='waiting' || m.state==='generating')){
             renderWaitingRoom(matchId, m);
             return;
         }
