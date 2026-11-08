@@ -1,5 +1,5 @@
 /* Elite Scholar Institute service worker — offline shell + runtime cache */
-const CACHE_VERSION = 'esi-cache-36.2405';
+const CACHE_VERSION = 'esi-cache-36.2406';
 const APP_SHELL = [
   '/', '/index.html', '/logo.jpg', '/advert.png', '/esi.jpg', '/founder.jpg',
   '/manifest.json', '/offline.html', '/app.js', '/downloader.js',
@@ -26,7 +26,7 @@ const isGet = request => request.method === 'GET';
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_VERSION);
-    await Promise.all(APP_SHELL.map(async url => { try { const response = await fetch(new Request(url, { cache: 'reload' })); if (response.ok || response.type === 'opaque') await cache.put(url, response.clone()); } catch (_) {} }));
+    await Promise.all(APP_SHELL.map(async url => { try { const response = await fetch(new Request(url, { cache: 'no-cache' })); if (response.ok || response.type === 'opaque') await cache.put(url, response.clone()); } catch (_) {} }));
     await self.skipWaiting();
   })());
 });
@@ -61,5 +61,33 @@ self.addEventListener('fetch', event => {
     event.respondWith((async () => { try { const network = await fetch(request); if (network.ok) { const cache = await caches.open(CACHE_VERSION); cache.put(request, network.clone()).catch(() => {}); } return network; } catch (_) { const cache = await caches.open(CACHE_VERSION); return (await cache.match(request)) || (await cache.match('/index.html')) || (await cache.match('/offline.html')) || Response.error(); } })());
     return;
   }
-  event.respondWith((async () => { const cache = await caches.open(CACHE_VERSION); const cached = await cache.match(request); if (cached) { fetch(request).then(response => { if (response.ok) cache.put(request, response.clone()).catch(() => {}); }).catch(() => {}); return cached; } try { const response = await fetch(request); if (response.ok) cache.put(request, response.clone()).catch(() => {}); return response; } catch (_) { return Response.error(); } })());
+  // JavaScript and CSS are network-first so an installed ESI PWA sees code updates
+  // on the next page load. The HTTP cache may revalidate unchanged files with 304,
+  // avoiding a full transfer when the server supplies validators.
+  if (/\\.(?:js|mjs|css)$/i.test(url.pathname)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_VERSION);
+      try {
+        const fresh = await fetch(new Request(request, { cache: 'no-cache' }));
+        if (fresh.ok) cache.put(request, fresh.clone()).catch(() => {});
+        return fresh;
+      } catch (_) {
+        return (await cache.match(request)) || Response.error();
+      }
+    })());
+    return;
+  }
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_VERSION);
+    const cached = await cache.match(request);
+    if (cached) {
+      fetch(request).then(response => { if (response.ok) cache.put(request, response.clone()).catch(() => {}); }).catch(() => {});
+      return cached;
+    }
+    try {
+      const response = await fetch(request);
+      if (response.ok) cache.put(request, response.clone()).catch(() => {});
+      return response;
+    } catch (_) { return Response.error(); }
+  })());
 });
