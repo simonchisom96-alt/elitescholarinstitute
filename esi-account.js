@@ -216,7 +216,7 @@
   }
 
   async function waitForAuthReady(auth) {
-    return new Promise(resolve => {
+    const firstUser = await new Promise(resolve => {
       let unsubscribe = () => {};
       unsubscribe = auth.onAuthStateChanged(user => {
         unsubscribe();
@@ -226,6 +226,12 @@
         resolve(null);
       });
     });
+    if (firstUser || isHomePage()) return firstUser;
+    for (let i = 0; i < 30; i++) {
+      if (auth.currentUser) return auth.currentUser;
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    return auth.currentUser || null;
   }
 
   async function signIn() {
