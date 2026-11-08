@@ -271,9 +271,12 @@
 
   async function signOut() {
     try {
-      const auth = await waitForAuth();
-      await auth.signOut();
-      setStatus('Signed out of this ESI section. Your cloud records have not been deleted.');
+      await waitForAuth();
+      const accountApps = firebase.apps.filter(app =>
+        app.name === '[DEFAULT]' || (app.options && app.options.projectId === CENTRAL_CONFIG.projectId)
+      );
+      await Promise.all(accountApps.map(app => app.auth().signOut()));
+      setStatus('Signed out of your ESI Google account on this page. Your cloud records have not been deleted.');
     } catch (error) {
       console.error('[ESI Account] sign-out failed', error);
       setStatus('Could not sign out. Please try again.');
