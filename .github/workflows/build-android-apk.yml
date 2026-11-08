@@ -58,7 +58,6 @@ jobs:
           logo.jpg
           advert.png
           esi.jpg
-          founder.jpg
           manifest.json
           offline.html
           app.js
