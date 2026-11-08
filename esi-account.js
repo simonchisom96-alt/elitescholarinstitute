@@ -148,6 +148,7 @@
         return result;
       };
     }
+    window.ESIAccount.syncWarning = false;
     setStatus('Google account connected. Single-player history and saved performance have been backed up and will keep syncing.');
     return true;
   }
@@ -306,6 +307,9 @@
         }
       }
       refreshUI(auth.currentUser);
+      if (window.ESIAccount.syncWarning) {
+        setStatus('Google account connected, but single-player cloud backup needs the private database rule from FIREBASE_ACCOUNT_DATA_RULES.md.');
+      }
       auth.onAuthStateChanged(refreshUI);
     } catch (error) {
       setStatus('Account service is loading. Open this panel again in a moment.');
