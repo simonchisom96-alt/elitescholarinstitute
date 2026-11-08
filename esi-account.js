@@ -23,6 +23,8 @@
   }
 
   let firebaseSDKPromise = null;
+  // A skip is temporary: it lasts only until this document is reloaded.
+  let dismissedThisPage = false;
   function ensureFirebaseSDK() {
     if (window.firebase && firebase.auth && firebase.database) return Promise.resolve();
     if (firebaseSDKPromise) return firebaseSDKPromise;
@@ -99,7 +101,10 @@
     document.body.appendChild(root);
     root.querySelector('.esi-account-action:not(.secondary)').addEventListener('click', signIn);
     root.querySelector('.esi-signout').addEventListener('click', signOut);
-    root.querySelector('.secondary:not(.esi-signout)').addEventListener('click', () => { root.hidden = true; });
+    root.querySelector('.secondary:not(.esi-signout)').addEventListener('click', () => {
+      dismissedThisPage = true;
+      root.hidden = true;
+    });
   }
 
 
@@ -215,6 +220,10 @@
     if (!root) return;
     const signInButton = root.querySelector('.esi-account-action:not(.secondary)');
     const signOutButton = root.querySelector('.esi-signout');
+    if ((!user || user.isAnonymous) && dismissedThisPage) {
+      root.hidden = true;
+      return;
+    }
     if (user && !user.isAnonymous) {
       const profileNameField = document.getElementById('lbName') || document.getElementById('mpNameInput');
       if (profileNameField && !profileNameField.value && user.displayName) {
@@ -278,6 +287,9 @@
   async function signIn() {
     const button = document.querySelector('#esiGoogleAccount .esi-account-action');
     if (!button || button.disabled) return;
+    dismissedThisPage = false;
+    const root = document.getElementById('esiGoogleAccount');
+    if (root) root.hidden = false;
     button.disabled = true;
     button.textContent = 'Connecting…';
     try {
