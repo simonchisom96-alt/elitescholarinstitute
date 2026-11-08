@@ -27,11 +27,11 @@
     if (window.firebase && firebase.auth && firebase.database) return Promise.resolve();
     if (firebaseSDKPromise) return firebaseSDKPromise;
     firebaseSDKPromise = new Promise((resolve, reject) => {
-      const urls = [
-        'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
-        'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
-        'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js'
-      ];
+      const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+      const urls = [];
+      if (!window.firebase) urls.push(base + 'firebase-app-compat.js');
+      if (!window.firebase || !firebase.auth) urls.push(base + 'firebase-auth-compat.js');
+      if (!window.firebase || !firebase.database) urls.push(base + 'firebase-database-compat.js');
       let index = 0;
       const next = () => {
         if (window.firebase && firebase.auth && firebase.database) return resolve();
