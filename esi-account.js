@@ -22,6 +22,39 @@
     return p === '/' || /\/index\.html$/i.test(p);
   }
 
+  let firebaseSDKPromise = null;
+  function ensureFirebaseSDK() {
+    if (window.firebase && firebase.auth && firebase.database) return Promise.resolve();
+    if (firebaseSDKPromise) return firebaseSDKPromise;
+    firebaseSDKPromise = new Promise((resolve, reject) => {
+      const urls = [
+        'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
+        'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
+        'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js'
+      ];
+      let index = 0;
+      const next = () => {
+        if (window.firebase && firebase.auth && firebase.database) return resolve();
+        if (index >= urls.length) return reject(new Error('Firebase sign-in libraries could not be loaded. Check your connection and refresh.'));
+        const url = urls[index++];
+        if (document.querySelector('script[data-esi-firebase-sdk="' + url + '"]')) {
+          const wait = () => window.firebase && firebase.auth && firebase.database ? resolve() : setTimeout(wait, 100);
+          wait();
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = url;
+        script.async = false;
+        script.dataset.esiFirebaseSdk = url;
+        script.onload = next;
+        script.onerror = next;
+        document.head.appendChild(script);
+      };
+      next();
+    });
+    return firebaseSDKPromise;
+  }
+
   function getAuth() {
     if (!window.firebase || !firebase.auth) return null;
     if (isHomePage()) {
@@ -37,37 +70,36 @@
     if (document.getElementById('esiGoogleAccount')) return;
     const style = document.createElement('style');
     style.textContent = `
-      #esiGoogleAccount{position:fixed;right:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:99990;font:600 11px/1.35 Poppins,Arial,sans-serif;color:#fff}
-      #esiGoogleAccount .esi-account-toggle{border:1px solid #d8b43b;background:#04142f;color:#fff;border-radius:22px;padding:9px 13px;box-shadow:0 4px 16px #0005;cursor:pointer;max-width:190px}
-      #esiGoogleAccount .esi-account-panel{display:none;margin-top:7px;width:min(270px,calc(100vw - 24px));padding:13px;border:1px solid #b99732;border-radius:13px;background:#071831;box-shadow:0 8px 28px #0008}
-      #esiGoogleAccount.open .esi-account-panel{display:block}
-      #esiGoogleAccount .esi-account-title{font-weight:800;color:#ffd85a;font-size:13px;margin-bottom:5px}
-      #esiGoogleAccount .esi-account-copy{font-weight:400;color:#c5d2e8;font-size:10px;margin:0 0 10px}
-      #esiGoogleAccount .esi-account-action{width:100%;padding:10px;border:0;border-radius:8px;background:#ffd700;color:#071831;font-weight:800;font-size:11px;cursor:pointer}
-      #esiGoogleAccount .esi-account-action.secondary{margin-top:7px;background:#203452;color:#fff}
-      #esiGoogleAccount .esi-account-status{font-size:10px;color:#c5d2e8;overflow-wrap:anywhere;margin:5px 0 10px}
-      @media(max-width:520px){#esiGoogleAccount{right:8px;top:calc(8px + env(safe-area-inset-top,0px))}#esiGoogleAccount .esi-account-toggle{padding:8px 10px;font-size:10px}}
+      #esiGoogleAccount{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(2,9,22,.82);backdrop-filter:blur(7px);font:500 14px/1.5 Poppins,Arial,sans-serif;color:#fff}
+      #esiGoogleAccount[hidden]{display:none!important}
+      #esiGoogleAccount .esi-account-panel{display:block;width:min(430px,100%);padding:30px 24px 24px;border:1px solid #c9a43a;border-radius:22px;background:linear-gradient(155deg,#10284a,#04142f 72%);box-shadow:0 22px 80px #000a;text-align:center}
+      #esiGoogleAccount .esi-account-mark{width:58px;height:58px;display:grid;place-items:center;margin:0 auto 16px;border-radius:17px;background:#ffd700;color:#071831;font-size:27px;font-weight:900}
+      #esiGoogleAccount .esi-account-title{font-weight:800;color:#fff;font-size:23px;line-height:1.2;margin:0 0 9px}
+      #esiGoogleAccount .esi-account-copy{font-weight:400;color:#c5d2e8;font-size:13px;line-height:1.6;margin:0 auto 20px;max-width:330px}
+      #esiGoogleAccount .esi-account-action{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:50px;padding:13px 16px;border:0;border-radius:10px;background:#fff;color:#172033;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 3px 12px #0003}
+      #esiGoogleAccount .esi-account-action:disabled{opacity:.7;cursor:wait}
+      #esiGoogleAccount .esi-google-g{font-family:Arial,sans-serif;font-size:20px;font-weight:800;color:#4285f4}
+      #esiGoogleAccount .esi-account-action.secondary{margin-top:12px;min-height:42px;background:transparent;color:#c5d2e8;border:1px solid #526681;box-shadow:none;font-size:12px}
+      #esiGoogleAccount .esi-account-status{font-size:12px;color:#c5d2e8;overflow-wrap:anywhere;margin:14px 0 0}
+      @media(max-width:520px){#esiGoogleAccount{padding:16px}#esiGoogleAccount .esi-account-panel{padding:26px 19px 20px}#esiGoogleAccount .esi-account-title{font-size:21px}}
     `;
     document.head.appendChild(style);
     const root = document.createElement('div');
     root.id = 'esiGoogleAccount';
     root.innerHTML = `
-      <button class="esi-account-toggle" type="button" aria-expanded="false">👤 Google Account</button>
-      <div class="esi-account-panel">
-        <div class="esi-account-title">Your ESI Account</div>
-        <p class="esi-account-copy">Use your Google account to keep your ESI identity connected across devices.</p>
-        <div class="esi-account-status" aria-live="polite">Checking account…</div>
-        <button class="esi-account-action" type="button">Continue with Google</button>
-        <button class="esi-account-action secondary" type="button" style="display:none">Sign out</button>
+      <div class="esi-account-panel" role="dialog" aria-modal="true" aria-labelledby="esiAccountTitle">
+        <div class="esi-account-mark">ESI</div>
+        <h2 class="esi-account-title" id="esiAccountTitle">Sign in to Elite Scholar Institute</h2>
+        <p class="esi-account-copy">Use your Google account to secure your ESI profile and keep your learning progress connected across devices.</p>
+        <button class="esi-account-action" type="button"><span class="esi-google-g">G</span> <span>Continue with Google</span></button>
+        <div class="esi-account-status" aria-live="polite">Preparing secure sign-in…</div>
+        <button class="esi-account-action secondary" type="button">Continue without signing in</button>
+        <button class="esi-account-action secondary esi-signout" type="button" style="display:none">Sign out</button>
       </div>`;
     document.body.appendChild(root);
-    const toggle = root.querySelector('.esi-account-toggle');
-    toggle.addEventListener('click', () => {
-      root.classList.toggle('open');
-      toggle.setAttribute('aria-expanded', root.classList.contains('open') ? 'true' : 'false');
-    });
-    root.querySelector('.esi-account-action').addEventListener('click', signIn);
-    root.querySelector('.secondary').addEventListener('click', signOut);
+    root.querySelector('.esi-account-action:not(.secondary)').addEventListener('click', signIn);
+    root.querySelector('.esi-signout').addEventListener('click', signOut);
+    root.querySelector('.secondary:not(.esi-signout)').addEventListener('click', () => { root.hidden = true; });
   }
 
 
@@ -181,28 +213,27 @@
   function refreshUI(user) {
     const root = document.getElementById('esiGoogleAccount');
     if (!root) return;
-    const signInButton = root.querySelector('.esi-account-action');
-    const signOutButton = root.querySelector('.secondary');
-    const toggle = root.querySelector('.esi-account-toggle');
+    const signInButton = root.querySelector('.esi-account-action:not(.secondary)');
+    const signOutButton = root.querySelector('.esi-signout');
     if (user && !user.isAnonymous) {
       const profileNameField = document.getElementById('lbName') || document.getElementById('mpNameInput');
       if (profileNameField && !profileNameField.value && user.displayName) {
         profileNameField.value = user.displayName.replace(/[^A-Za-z0-9_ ]/g, '').replace(/\s+/g, ' ').trim().slice(0, profileNameField.maxLength || 10);
       }
       const label = user.displayName || user.email || 'Google account connected';
-      toggle.textContent = '✓ ' + label;
+      root.hidden = true;
       setStatus((user.email || label) + ' is connected to this ESI section.');
       signInButton.textContent = 'Google account connected';
       signInButton.disabled = true;
-      signOutButton.style.display = 'block';
+      signOutButton.style.display = 'flex';
     } else if (user && user.isAnonymous) {
-      toggle.textContent = '👤 Secure your ESI account';
+      root.hidden = false;
       setStatus('Your current progress is using a temporary account. Connect Google to secure this identity.');
       signInButton.textContent = 'Continue with Google';
       signInButton.disabled = false;
       signOutButton.style.display = 'none';
     } else {
-      toggle.textContent = '👤 Google Account';
+      root.hidden = false;
       setStatus('Sign in with Google to connect this ESI section to your account.');
       signInButton.textContent = 'Continue with Google';
       signInButton.disabled = false;
@@ -211,6 +242,12 @@
   }
 
   async function waitForAuth() {
+    await ensureFirebaseSDK();
+    if (isHomePage()) {
+      let app = firebase.apps.find(item => item.name === '[DEFAULT]');
+      if (!app) app = firebase.initializeApp(CENTRAL_CONFIG);
+      return app.auth();
+    }
     for (let i = 0; i < 100; i++) {
       const auth = getAuth();
       if (auth) return auth;
