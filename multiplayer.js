@@ -6,7 +6,7 @@
 (function(){
   const core = document.createElement('script');
   // Versioned URL forces clients with a stale cached loader/service-worker response to fetch the public-lobby code visibility fix.
-  core.src = './multiplayer-core.js?v=20261108-inactive-room-multi-membership';
+  core.src = './multiplayer-core.js?v=20261108-multiplayer-final';
   core.onload = function(){
     window.isUnlocked = function(){ return true; };
 
