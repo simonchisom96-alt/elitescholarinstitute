@@ -5,17 +5,10 @@ on:
     branches:
       - main
     paths:
+      # The Android WebView fetches HTML/JS/CSS from the live ESI site first.
+      # Rebuild the native APK only for native Android source or bundled logo changes.
       - 'android/**'
-      - 'app.js'
-      - 'sw.js'
-      - 'downloader.js'
-      - 'multiplayer-core.js'
-      - 'singleplay.js'
-      - 'esi-account.js'
-      - 'manifest.json'
       - 'logo.jpg'
-      - 'Textbooks.html'
-      - '.github/workflows/build-android-apk.yml'
   workflow_dispatch:
 
 permissions:
