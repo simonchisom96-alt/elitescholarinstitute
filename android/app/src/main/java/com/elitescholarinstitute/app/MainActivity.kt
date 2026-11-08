@@ -121,15 +121,20 @@ class MainActivity : ComponentActivity() {
         if (path.isEmpty()) return null
         val pathAndQuery = if (uri.query.isNullOrEmpty()) "/$path" else "/$path?" + uri.query
 
-        // Keep the APK homepage in sync with the live ESI site when online.
-        // If the network is unavailable, fall back to the bundled/cached copy.
-        if (path == "index.html") {
+        // Keep the installed APK's web app files synchronized with the live
+        // ESI website. HTML/JS/CSS/JSON are checked online first, so deploying
+        // a website update can update existing installs without a second APK.
+        // Prefer the last good network copy offline, then the APK-bundled file.
+        val extension = path.substringAfterLast('.', "").lowercase()
+        val liveUpdatable = extension in setOf("html", "htm", "js", "mjs", "css", "json")
+        if (liveUpdatable) {
             networkAsset(pathAndQuery, path)?.let { return it }
         }
 
-        bundledAsset(path)?.let { return it }
         cachedAsset(pathAndQuery, path)?.let { return it }
-        return networkAsset(pathAndQuery, path)
+        bundledAsset(path)?.let { return it }
+        if (!liveUpdatable) return networkAsset(pathAndQuery, path)
+        return null
     }
 
     private fun sanitizeDownloadName(name: String, url: String, mime: String): String {
