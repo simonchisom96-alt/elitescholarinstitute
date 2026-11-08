@@ -5759,8 +5759,7 @@ async function hostStartTeamWaitingMatch(matchId, m){
         const stateRef=mdb.ref('mp_matches/'+matchId+'/state');
         const claim=await stateRef.transaction(value=>value==='waiting'?'generating':undefined);
         if(!claim.committed){matchLocalState.startingMatch=false;return;}
-        // Every participant sees the same shared generation state.
-        await mdb.ref('mp_matches/'+matchId).update({});
+        // Every participant sees the shared generating state from the transaction.
         let questions = await fetchQuestionsForMatch(m.settings, null);
         let questionsPublic = questions.map(q=>({subject:q.subject, q:q.q, options:q.options}));
         let answerKey={};
