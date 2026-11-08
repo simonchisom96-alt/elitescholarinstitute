@@ -4444,52 +4444,26 @@ function showActiveRoomGuardNotice(){
 }
 
 async function ensureNoOtherActiveRoom(targetRoomId){
+    // Users may create and join multiple rooms. Keep the legacy activeRoomId as the
+    // most recently opened room for older UI code, while the activeRooms index records
+    // every room independently so leaving/expiring one cannot erase another.
     if(!MY_UID)return true;
-    const activeRef=mdb.ref('mp_users/'+MY_UID+'/activeRoomId');
+    if(!targetRoomId)return true;
     try{
-        const activeSnap=await activeRef.get();
-        const activeId=activeSnap.val();
-        if(activeId==='__quickmatch_search__' && activeId!==targetRoomId){
-            toast('Finish or cancel your current Quick Match search before opening another room.');
-            return false;
-        }
-        if(activeId && activeId!==targetRoomId){
-            // Do not treat currentRoomId as permission to open a second room. The same
-            // active room is allowed; a different one is blocked until the first is over.
-            const roomSnap=await mdb.ref('mp_rooms/'+activeId).get();
-            const activeRoom=roomSnap.val();
-            let stillActive=false;
-            if(activeRoom && (activeRoom.status==='waiting'||activeRoom.status==='starting')){
-                stillActive=true;
-            }else if(activeRoom && activeRoom.status==='in_progress' && activeRoom.matchId){
-                const matchSnap=await mdb.ref('mp_matches/'+activeRoom.matchId+'/state').get();
-                stillActive=matchSnap.val()!=='ended';
-            }
-            if(stillActive){
-                showActiveRoomGuardNotice();
-                return false;
-            }
-            // The old room was deleted or has ended. Clear only our own stale pointer.
-            await activeRef.transaction(value=>value===activeId?null:value);
-        }
-        if(targetRoomId){
-            // Atomic claim closes the fast double-tap / second-tab race between the
-            // initial check and entering a room.
-            const claim=await activeRef.transaction(value=>{
-                if(value==null || value===targetRoomId)return targetRoomId;
-                return;
-            });
-            if(!claim.committed || claim.snapshot.val()!==targetRoomId){
-                showActiveRoomGuardNotice();
-                return false;
-            }
-        }
+        const updates={};
+        updates['mp_users/'+MY_UID+'/activeRooms/'+targetRoomId+'/joinedAt']=firebase.database.ServerValue.TIMESTAMP;
+        updates['mp_users/'+MY_UID+'/activeRoomId']=targetRoomId;
+        await mdb.ref().update(updates);
         return true;
     }catch(e){
-        console.warn('[RoomGuard] Could not verify active room',e);
-        toast('Could not verify your current room. Please try again.');
+        console.warn('[RoomMembership] Could not register room membership',e);
+        toast('Could not open this room. Please try again.');
         return false;
     }
+}
+function touchRoomActivity(roomId){
+    if(!roomId)return;
+    mdb.ref('mp_rooms/'+roomId+'/lastActivityAt').set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
 }
 async function createRoom(){
     if(!ME){toast('Please wait for sign-in to finish.');return;}
@@ -4567,20 +4541,24 @@ async function expireInactiveRoom(roomId){
         const snap=await ref.get();
         if(!snap.exists())return false;
         const room=snap.val()||{};
-        // Never expire tournament rooms. Every other public room expires 60 minutes after creation,
-        // regardless of mode, occupancy, or whether a match has already started.
-        if(room.visibility!=='public' || room.tournamentId || room.type==='tournament')return false;
-        const createdAt=Number(room.createdAt)||0;
-        if(!createdAt || Date.now()-createdAt<60*60*1000)return false;
+        // Tournament rooms/matches are deliberately excluded. Ordinary public AND private
+        // rooms expire only after a full hour with no recorded room activity.
+        if(room.tournamentId || room.type==='tournament')return false;
+        const lastActivity=Number(room.lastActivityAt)||Number(room.createdAt)||0;
+        if(!lastActivity || Date.now()-lastActivity<60*60*1000)return false;
         const updates={};
-        Object.keys(room.players||{}).forEach(uid=>{
-            updates['mp_users/'+uid+'/activeRoomId']=null;
+        const memberUids=new Set([...Object.keys(room.players||{}),room.hostUid].filter(Boolean));
+        memberUids.forEach(uid=>{
+            updates['mp_users/'+uid+'/activeRooms/'+roomId]=null;
         });
         if(room.code)updates['mp_room_codes/'+String(room.code)]=null;
         updates['mp_rooms/'+roomId]=null;
         await mdb.ref().update(updates);
+        await Promise.all([...memberUids].map(uid=>
+            mdb.ref('mp_users/'+uid+'/activeRoomId').transaction(value=>value===roomId?null:value).catch(()=>{})
+        ));
         return true;
-    }catch(error){console.warn('[RoomExpiry] Could not clear expired public room',error);return false;}
+    }catch(error){console.warn('[RoomExpiry] Could not clear inactive room',error);return false;}
 }
 function syncRoomExpiryCountdown(roomId,room){
     const chatBox=$('lobbyChatMsgs');
@@ -4593,11 +4571,11 @@ function syncRoomExpiryCountdown(roomId,room){
         chatBox.parentNode.insertBefore(banner,chatBox);
     }
     const status=String(room.status||'waiting');
-    if(room.visibility!=='public' || room.tournamentId || room.type==='tournament'){banner.style.display='none';if(roomExpiryRoomId===roomId)stopRoomExpiryCountdown();return;}
-    const createdAt=Number(room.createdAt)||0;
+    if(room.tournamentId || room.type==='tournament'){banner.style.display='none';if(roomExpiryRoomId===roomId)stopRoomExpiryCountdown();return;}
+    const createdAt=Number(room.lastActivityAt)||Number(room.createdAt)||0;
     if(!createdAt){
         banner.style.display='block';
-        banner.textContent='This public room is automatically removed after 60 minutes.';
+        banner.textContent='This room is removed after 60 minutes without activity.';
         return;
     }
     if(roomExpiryRoomId!==roomId){
@@ -4609,7 +4587,7 @@ function syncRoomExpiryCountdown(roomId,room){
             if(!currentBanner)return;
             const remaining=60*60*1000-(Date.now()-createdAt);
             if(remaining<=0){
-                currentBanner.textContent='This public room has expired after 60 minutes.';
+                currentBanner.textContent='This inactive room has expired after 60 minutes.';
                 stopRoomExpiryCountdown();
                 expireInactiveRoom(roomId).then(deleted=>{
                     if(deleted && currentRoomId===roomId){leaveRoomLocalOnly();showScreen('rooms');toast('This inactive room was automatically deleted after 60 minutes.');}
@@ -4617,24 +4595,24 @@ function syncRoomExpiryCountdown(roomId,room){
                 return;
             }
             const minutes=Math.ceil(remaining/60000);
-            currentBanner.textContent='This public room expires after 60 minutes · '+minutes+' min remaining';
+            currentBanner.textContent='Inactive-room cleanup in '+minutes+' min if no one is active';
         },1000);
     }
     const remaining=60*60*1000-(Date.now()-createdAt);
     if(remaining<=0){
-        banner.textContent='This public room has expired after 60 minutes.';
+        banner.textContent='This inactive room has expired after 60 minutes.';
         expireInactiveRoom(roomId);
         return;
     }
     banner.style.display='block';
-    banner.textContent='This public room expires after 60 minutes · '+Math.ceil(remaining/60000)+' min remaining';
+    banner.textContent='Inactive-room cleanup in '+Math.ceil(remaining/60000)+' min if no one is active';
 }
 function enterLobby(roomId, asSpectator){
     currentRoomId=roomId;
     // Prediction votes are stored on the room node. Avoid repainting the entire lobby
     // (players, teams, controls and countdown) when the only change is a new vote.
     let lastLobbyStructuralSnapshot=null;
-    if(MY_UID) mdb.ref('mp_users/'+MY_UID+'/activeRoomId').set(roomId).catch(()=>{});
+    if(MY_UID){ const u=mdb.ref('mp_users/'+MY_UID); u.child('activeRoomId').set(roomId).catch(()=>{}); u.child('activeRooms/'+roomId+'/joinedAt').set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{}); }
     isLobbySpectating=!!asSpectator;
     if(roomUnsub)roomUnsub();
     if(predictionsUnsub){predictionsUnsub();predictionsUnsub=null;}
@@ -4657,11 +4635,13 @@ function enterLobby(roomId, asSpectator){
         lastLobbyRoomForPredictions=room;
         const structuralRoom={...room};
         delete structuralRoom.predictions;
+        delete structuralRoom.lastActivityAt;
         const structuralSnapshot=JSON.stringify(structuralRoom);
         if(lastLobbyStructuralSnapshot===structuralSnapshot){
             renderPredictionsPool(room);
             return;
         }
+        if(lastLobbyStructuralSnapshot!==null) touchRoomActivity(roomId);
         lastLobbyStructuralSnapshot=structuralSnapshot;
         renderLobby(roomId, room);
     };
@@ -4690,6 +4670,7 @@ function leaveRoomLocalOnly(){
     const leavingRoomId=currentRoomId;
     if(leavingRoomId && MY_UID){
         mdb.ref('mp_users/'+MY_UID+'/activeRoomId').transaction(v=>v===leavingRoomId?null:v).catch(()=>{});
+        mdb.ref('mp_users/'+MY_UID+'/activeRooms/'+leavingRoomId).remove().catch(()=>{});
     }
     if(roomUnsub){roomUnsub();roomUnsub=null;}
     if(lobbyChatUnsub){lobbyChatUnsub();lobbyChatUnsub=null;}
@@ -4741,6 +4722,7 @@ function renderPredictionsPool(room){
 }
 async function predictWinner(pick){
     if(!currentRoomId||!MY_UID)return;
+    touchRoomActivity(currentRoomId);
     await mdb.ref('mp_room_predictions/'+currentRoomId+'/'+MY_UID).set({pick, name:ME.username, avatarEmoji:ME.avatarEmoji||'🎓', ts:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{});
 }
 // Called once a match ends — pays out a small coin bonus to everyone (players or spectators)
@@ -4810,15 +4792,18 @@ async function leaveRoom(){
 }
 async function toggleReady(){
     if(!currentRoomId)return;
+    touchRoomActivity(currentRoomId);
     let snap=await mdb.ref('mp_rooms/'+currentRoomId+'/players/'+MY_UID+'/ready').get();
     await mdb.ref('mp_rooms/'+currentRoomId+'/players/'+MY_UID+'/ready').set(!snap.val());
 }
 async function joinTeam(team){
     if(!currentRoomId)return;
+    touchRoomActivity(currentRoomId);
     await mdb.ref('mp_rooms/'+currentRoomId+'/players/'+MY_UID+'/team').set(team);
 }
 async function hostStartMatch(){
     if(!currentRoomId)return;
+    touchRoomActivity(currentRoomId);
     let snap=await mdb.ref('mp_rooms/'+currentRoomId).get();
     let room=snap.val();if(!room)return;
     if(room.hostUid!==MY_UID){toast('Only the host can start the match.');return;}
@@ -5281,7 +5266,7 @@ function refreshPublicRooms(silent){
         const now=Date.now(), hour=60*60*1000;
         const expired=Object.entries(rooms).filter(([id,r])=>
             r && r.visibility==='public' && !r.tournamentId && r.type!=='tournament' &&
-            Number(r.createdAt)>0 && now-Number(r.createdAt)>=hour
+            Number(r.lastActivityAt||r.createdAt)>0 && now-Number(r.lastActivityAt||r.createdAt)>=hour
         );
         // Hide expired public rooms immediately in this listing, even if a delete write fails.
         // Cleanup covers duels, team rooms, occupied rooms and rooms with an active match.
@@ -5309,11 +5294,24 @@ function refreshPublicRooms(silent){
         renderPublicRoomsList(waiting, live);
     }).catch(()=>{ if(!silent){$('publicRoomsList').innerHTML='<div class="empty-hint">Could not load rooms.</div>';} });
 }
+// Cleanup every ordinary room type and visibility while the multiplayer app is open.
+// This is client-driven; a guaranteed deletion while every client is offline needs a scheduled backend job.
+async function cleanupInactiveRooms(){
+    try{
+        const snap=await mdb.ref('mp_rooms').get();
+        const rooms=snap.val()||{};
+        const now=Date.now(), hour=60*60*1000;
+        const expired=Object.entries(rooms).filter(([id,r])=>r && !r.tournamentId && r.type!=='tournament' &&
+            Number(r.lastActivityAt||r.createdAt)>0 && now-Number(r.lastActivityAt||r.createdAt)>=hour);
+        for(const [id] of expired) await expireInactiveRoom(id);
+    }catch(e){console.warn('[RoomExpiry] Cleanup scan failed',e);}
+}
+
 // While the multiplayer app is open, re-scan public rooms once a minute so expiry
 // does not depend on someone staying inside the specific room lobby.
 if(!window.__esiPublicRoomExpiryPoll){
     window.__esiPublicRoomExpiryPoll=setInterval(()=>{
-        if(MY_UID)refreshPublicRooms(true);
+        if(MY_UID){cleanupInactiveRooms();refreshPublicRooms(true);}
     },60000);
 }
 function renderPublicRoomsList(entries, liveEntries){
@@ -5662,10 +5660,15 @@ let LAST_FULL_QUESTIONS=null;
 // race from the other player's client can only ever succeed once; the loser just falls
 // through, and its own snapshot listener picks up the resulting state:'active' normally.
 async function tryStartWaitingMatch(matchId, m){
-    if(matchLocalState.startingMatch) return;
+    // One deterministic setter per match: the match host (the first assigned player).
+    // Other participants never run their own question-generation request.
+    if(m.hostUid!==MY_UID || matchLocalState.startingMatch) return;
     matchLocalState.startingMatch=true;
     let target=$('mWaitStatus');
     try{
+        const stateRef=mdb.ref('mp_matches/'+matchId+'/state');
+        const claim=await stateRef.transaction(value=>value==='waiting'?'generating':undefined);
+        if(!claim.committed){matchLocalState.startingMatch=false;return;}
         let onStatus = t=>{ if(target) target.textContent='🔎 '+t; };
         let questions = await fetchQuestionsForMatch(m.settings, onStatus);
         let questionsPublic = questions.map(q=>({subject:q.subject, q:q.q, options:q.options}));
@@ -5689,6 +5692,7 @@ async function tryStartWaitingMatch(matchId, m){
             // off briefly and let this same client try again automatically instead of leaving
             // both players stuck in the waiting room for the rest of the session.
             console.warn('[Match] tryStartWaitingMatch failed, will retry in 4s:', e && e.message);
+            mdb.ref('mp_matches/'+matchId+'/state').transaction(value=>value==='generating'?'waiting':undefined).catch(()=>{});
             if(target) target.textContent='⚠️ Hit a snag generating questions — retrying…';
             setTimeout(()=>{
                 matchLocalState.startingMatch=false;
@@ -6370,6 +6374,7 @@ function startOrUpdateTimer(matchId, m, qIdx){
 
 async function lockAnswer(selectedIdx){
     if(!currentMatchId)return;
+    if(currentRoomId)touchRoomActivity(currentRoomId);
     let qIdx=matchLocalState.lastQIdx;
     if(qIdx<0)return;
     if(matchLocalState.myLocked[qIdx])return;
