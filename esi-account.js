@@ -68,6 +68,80 @@
     root.querySelector('.secondary').addEventListener('click', signOut);
   }
 
+
+  function getCentralAuth() {
+    if (!window.firebase || !firebase.auth) return null;
+    let app = firebase.apps.find(item => item.options && item.options.projectId === CENTRAL_CONFIG.projectId);
+    if (!app) app = firebase.initializeApp(CENTRAL_CONFIG, 'esiCentralAccount');
+    return app.auth();
+  }
+
+  function mergeSavedValue(localValue, cloudValue) {
+    if (Array.isArray(localValue) && Array.isArray(cloudValue)) {
+      const seen = new Set();
+      return [...localValue, ...cloudValue].filter(item => {
+        const key = JSON.stringify(item);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+    if (localValue && cloudValue && typeof localValue === 'object' && typeof cloudValue === 'object' &&
+        !Array.isArray(localValue) && !Array.isArray(cloudValue)) {
+      const merged = { ...cloudValue };
+      Object.keys(localValue).forEach(key => {
+        merged[key] = Object.prototype.hasOwnProperty.call(cloudValue, key)
+          ? mergeSavedValue(localValue[key], cloudValue[key]) : localValue[key];
+      });
+      return merged;
+    }
+    return localValue !== null && localValue !== undefined ? localValue : cloudValue;
+  }
+
+  async function syncSinglePlayerData(centralAuth) {
+    const defaultApp = firebase.apps.find(item => item.name === '[DEFAULT]');
+    if (!defaultApp || !defaultApp.options || defaultApp.options.projectId !== 'leadersboard-7dacc') return;
+    if (!firebase.database || !centralAuth || !centralAuth.currentUser) return;
+    const uid = centralAuth.currentUser.uid;
+    const allowed = key => key === 'elite_store_v55' || key === 'elite_flagged_v55' ||
+      key === 'elite_seen_qs_v55' || key === 'elite_active_session_v55' ||
+      key === 'elite_lb_user_v55' || key.startsWith('elite_qs_history_v55_');
+    const local = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && allowed(key)) local[key] = localStorage.getItem(key);
+    }
+    const ref = centralAuth.app.database().ref('mp_users/' + uid + '/esiSoloData');
+    const snap = await ref.get();
+    const cloud = snap.exists() ? snap.val() || {} : {};
+    const merged = {};
+    const keys = new Set([...Object.keys(local), ...Object.keys(cloud)]);
+    keys.forEach(key => {
+      let localValue = null, cloudValue = null;
+      try { if (local[key] != null) localValue = JSON.parse(local[key]); } catch (_) { localValue = local[key]; }
+      try { if (cloud[key] != null) cloudValue = JSON.parse(cloud[key]); } catch (_) { cloudValue = cloud[key]; }
+      const value = mergeSavedValue(localValue, cloudValue);
+      const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+      merged[key] = serialized;
+      if (serialized != null) localStorage.setItem(key, serialized);
+    });
+    await ref.set(merged);
+    setStatus('Google account connected. Single-player history and saved performance have been backed up to your ESI account.');
+    return true;
+  }
+
+  async function activateCentralIdentity(credential) {
+    const centralAuth = getCentralAuth();
+    if (!centralAuth) return;
+    if (credential) {
+      const email = credential.providerId === 'google.com' ? null : null;
+      await centralAuth.signInWithCredential(credential);
+    }
+    if (centralAuth.currentUser && centralAuth.currentUser.email) {
+      await syncSinglePlayerData(centralAuth);
+    }
+  }
+
   function setStatus(message) {
     const el = document.querySelector('#esiGoogleAccount .esi-account-status');
     if (el) el.textContent = message;
@@ -122,7 +196,9 @@
       const current = auth.currentUser;
       if (current && current.isAnonymous) {
         try {
-          await current.linkWithPopup(provider);
+          const linked = await current.linkWithPopup(provider);
+          const linkedCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(linked);
+          if (linkedCredential) await activateCentralIdentity(linkedCredential);
         } catch (error) {
           if (error && error.code === 'auth/credential-already-in-use') {
             throw new Error('This Google account is already connected to a different ESI profile in this section. Your current temporary profile has been kept safe; do not clear app data. Account merging needs to be completed before switching.');
@@ -135,7 +211,9 @@
         }
       } else {
         try {
-          await auth.signInWithPopup(provider);
+          const signedIn = await auth.signInWithPopup(provider);
+          const googleCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(signedIn);
+          if (googleCredential) await activateCentralIdentity(googleCredential);
         } catch (error) {
           if (error && (error.code === 'auth/popup-blocked' || error.code === 'auth/operation-not-supported-in-this-environment')) {
             await auth.signInWithRedirect(provider);
@@ -174,7 +252,16 @@
         setStatus('Google sign-in did not finish. Please try again.');
         return null;
       });
-      if (result && result.user) setStatus('Google account connected.');
+      if (result && result.user) {
+        const redirectCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
+        if (redirectCredential) await activateCentralIdentity(redirectCredential);
+        setStatus('Google account connected.');
+      } else if (auth.currentUser && !auth.currentUser.isAnonymous) {
+        const centralAuth = getCentralAuth();
+        if (centralAuth && centralAuth.currentUser && centralAuth.currentUser.email === auth.currentUser.email) {
+          await syncSinglePlayerData(centralAuth).catch(error => console.warn('[ESI Account] solo sync unavailable', error));
+        }
+      }
       refreshUI(auth.currentUser);
       auth.onAuthStateChanged(refreshUI);
     } catch (error) {
