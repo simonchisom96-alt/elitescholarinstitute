@@ -2126,7 +2126,7 @@ let ignoredSearches=new Set();
 function refreshLiveSearches(){
     mdb.ref('mp_matchmaking_queue').get().then(snap=>{
         let all=snap.val()||{};
-        let entries=Object.entries(all).filter(([uid,t])=>uid!==MY_UID && !t.claimed && !ignoredSearches.has(uid));
+        let entries=Object.entries(all).filter(([uid,t])=>uid!==MY_UID && !t.claimed && !t.publicHidden && t.status!=='paired' && !ignoredSearches.has(uid));
         let el=$('liveSearchesList');if(!el)return;
         if(!entries.length){el.innerHTML='<div class="empty-hint">No one else is searching right now.</div>';return;}
         el.innerHTML=entries.map(([uid,t])=>{
@@ -2154,8 +2154,8 @@ async function joinLiveSearch(targetUid){
     let targetTicketRef=mdb.ref('mp_matchmaking_queue/'+targetUid);
     try{
         let result=await targetTicketRef.transaction(cur=>{
-            if(!cur || cur.claimed) return;
-            cur.claimed=true; cur.claimedBy=MY_UID;
+            if(!cur || cur.claimed || cur.publicHidden) return;
+            cur.claimed=true; cur.publicHidden=true; cur.status='pairing'; cur.claimedBy=MY_UID;
             return cur;
         });
         if(!result.committed || !result.snapshot.val() || result.snapshot.val().claimedBy!==MY_UID){
@@ -2179,7 +2179,7 @@ async function joinLiveSearch(targetUid){
         });
         let matchId=await beginMatchForRoom(roomId, opp.settings, [{uid:opp.uid,name:opp.name,team:'A'},{uid:MY_UID,name:ME.username,team:'B'}], undefined, 'qmSearchStatus');
         await mdb.ref('mp_rooms/'+roomId).update({status:'in_progress', matchId});
-        await targetTicketRef.update({roomId, matchId});
+        await targetTicketRef.update({roomId,matchId,status:'paired',publicHidden:true,pairedAt:firebase.database.ServerValue.TIMESTAMP});
         enterLobby(roomId);
     }catch(e){ console.warn('[LiveSearch] join failed', e); toast('Could not join that match — try another.'); }
 }
@@ -2233,8 +2233,8 @@ function openQuickMatchModal(){
 async function startQuickMatchSearch(){
     if(!ME)return;
     if(!(await ensureNoOtherActiveRoom()))return;
-    const searchLock=await mdb.ref('mp_users/'+MY_UID+'/activeRoomId').transaction(value=>value==null?'__quickmatch_search__':undefined);
-    if(!searchLock.committed){toast('Finish or leave your current room or match before starting Quick Match.');return;}
+    const searchLock=await mdb.ref('mp_users/'+MY_UID+'/quickMatchSearching').transaction(value=>value===true?undefined:true);
+    if(!searchLock.committed){toast('You already have a Quick Match search running.');return;}
     let settings={
         subjects:[...selSubjects.qm], topics:packTopicsForKey('qm'), difficulty:$('qmDiff').value, subMode:'standard',
         mode:$('qmMode').value, qcount:parseInt($('qmCount').value)||10,
@@ -2246,7 +2246,7 @@ async function startQuickMatchSearch(){
     let searchStartedAt=Date.now();
     $('qmSearchStatus').innerHTML='🔎 Searching for an opponent with matching settings… <button class="btn-g btn-sm" style="margin-top:8px" onclick="cancelQuickMatchSearch()">Cancel</button>';
     let myTicketRef=mdb.ref('mp_matchmaking_queue/'+MY_UID);
-    await myTicketRef.set({name:ME.username, uid:MY_UID, elo:ME.elo, settings, joinedAt:firebase.database.ServerValue.TIMESTAMP, claimed:false});
+    await myTicketRef.set({name:ME.username,uid:MY_UID,elo:ME.elo,settings,joinedAt:firebase.database.ServerValue.TIMESTAMP,claimed:false,publicHidden:false,status:'searching'});
 
     // After ~15s with no exact match, start also considering close-but-not-identical settings
     // (same mode, any difficulty/subject) so people don't wait forever for a rare combo.
@@ -2265,6 +2265,7 @@ async function startQuickMatchSearch(){
             cleanupQuickMatchListeners();
             qmSearching=false;
             mdb.ref('mp_matchmaking_queue/'+MY_UID).remove();
+            mdb.ref('mp_users/'+MY_UID+'/quickMatchSearching').set(false).catch(()=>{});
             try{ await spawnBotMatch(settings); }
             catch(e){
                 console.warn('[QuickMatch] bot fill failed', e);
@@ -2281,6 +2282,7 @@ async function startQuickMatchSearch(){
             clearInterval(timeoutHandle);
             cleanupQuickMatchListeners();
             mdb.ref('mp_matchmaking_queue/'+MY_UID).remove();
+            mdb.ref('mp_users/'+MY_UID+'/quickMatchSearching').set(false).catch(()=>{});
             qmSearching=false;
             closeModal('qmModal');
             enterLobby(t.roomId);
@@ -2333,8 +2335,9 @@ async function startQuickMatchSearch(){
                 });
                 let matchId=await beginMatchForRoom(roomId, opp.settings, [{uid:opp.uid,name:opp.name,team:'A'},{uid:MY_UID,name:ME.username,team:'B'}]);
                 await mdb.ref('mp_rooms/'+roomId).update({status:'in_progress', matchId});
-                await targetTicketRef.update({roomId, matchId});
+                await targetTicketRef.update({roomId,matchId,status:'paired',publicHidden:true,pairedAt:firebase.database.ServerValue.TIMESTAMP});
                 await mdb.ref('mp_matchmaking_queue/'+MY_UID).remove();
+                await mdb.ref('mp_users/'+MY_UID+'/quickMatchSearching').set(false);
                 closeModal('qmModal');
                 enterLobby(roomId);
             }
@@ -2355,7 +2358,7 @@ function cancelQuickMatchSearch(){
     cleanupQuickMatchListeners();
     if(MY_UID){
         mdb.ref('mp_matchmaking_queue/'+MY_UID).remove();
-        mdb.ref('mp_users/'+MY_UID+'/activeRoomId').transaction(value=>value==='__quickmatch_search__'?null:value).catch(()=>{});
+        mdb.ref('mp_users/'+MY_UID+'/quickMatchSearching').set(false).catch(()=>{});
     }
     $('qmSearchStatus').textContent='Search cancelled.';
 }
@@ -5151,7 +5154,7 @@ async function hostChangeTournamentTime(){
     let snap=await mdb.ref('mp_tournaments/'+currentTournamentId).get();
     let t=snap.val();if(!t||t.hostUid!==MY_UID)return;
     if(t.status!=='registration'){toast('Can\u2019t change the time once the tournament has started.');return;}
-    await mdb.ref('mp_tournaments/'+currentTournamentId).update({scheduledStart:newTime});
+    await mdb.ref('mp_tournaments/'+currentTournamentId).update({scheduledStart:newTime,graceUsed:false,graceAppliedAt:null});
     pushTournamentActivity(currentTournamentId, `🕐 Host changed the start time to ${new Date(newTime).toLocaleString()}.`);
     toast('Start time updated.');
 }
@@ -5646,7 +5649,7 @@ function showLoadingRetry(){
 
 window.addEventListener('beforeunload', ()=>{
     if(MY_UID) mdb.ref('mp_presence/'+MY_UID).update({online:false,lastChanged:firebase.database.ServerValue.TIMESTAMP});
-    if(qmSearching && MY_UID) mdb.ref('mp_matchmaking_queue/'+MY_UID).remove();
+    if(qmSearching && MY_UID){mdb.ref('mp_matchmaking_queue/'+MY_UID).remove();mdb.ref('mp_users/'+MY_UID+'/quickMatchSearching').set(false).catch(()=>{});}
 });
 
 // Route incoming ESI invitation links only after Firebase sign-in and the player's profile are ready.
