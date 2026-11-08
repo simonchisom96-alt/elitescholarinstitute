@@ -21,6 +21,6 @@ This rule allows each signed-in Google account to read/write only its own single
 
 The client code deliberately does not fall back to a public path if this rule is missing. Until the rule is merged and published, Google sign-in can succeed but the single-player cloud backup will report a database-permission warning. Existing local data is not deleted.
 
-## Android WebView Google sign-in domain
+## Google provider and authorized domains
 
-The Android shell starts at `https://appassets.androidplatform.net`. In Firebase Authentication → Settings → Authorized domains, add `appassets.androidplatform.net` to **both** `project-76067` and `leadersboard-7dacc`, in addition to the existing Pages domain. Keep the existing authorized domains; do not remove them.
+Enable the Google provider in Authentication → Sign-in method for **both** `project-76067` and `leadersboard-7dacc`, with a support email selected. Keep `elitescholarinstitute.pages.dev` authorized in both projects. The Android shell starts at `https://appassets.androidplatform.net`. In Firebase Authentication → Settings → Authorized domains, add `appassets.androidplatform.net` to **both** `project-76067` and `leadersboard-7dacc`, in addition to the existing Pages domain. Keep the existing authorized domains; do not remove them.
