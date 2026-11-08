@@ -11,10 +11,17 @@ async function scanTournamentLifecycle(){
             // Reuse the same single-arbiter rule as the detail view. Existing tournaments
             // are included because this scan reads the full live collection, not only new ones.
             const players=Object.values(t.players||{});
-            // A due tournament with fewer than two entrants can be advanced through its
-            // grace/deletion lifecycle by any connected ESI client; the transaction is safe
-            // against simultaneous scans. Starting a populated tournament remains player-led.
-            if(players.length<2){await rescheduleOrDeleteUnstartedTournament(tid,'Not enough players registered at the scheduled start.');continue;}
+            // Once the one-time grace has already been used, the next missed start deadline
+            // deletes the record regardless of visibility or who is currently online.
+            if(t.graceUsed){await rescheduleOrDeleteUnstartedTournament(tid,'The final rescheduled start time was missed.');continue;}
+            const presence=(await mdb.ref('mp_presence').get()).val()||{};
+            const onlineRegistered=players.some(p=>presence[p.uid]&&presence[p.uid].online);
+            // If nobody registered is online at the due time (or there are too few players),
+            // grant the one 24-hour grace. The atomic transaction prevents duplicate shifts.
+            if(players.length<2 || !onlineRegistered){
+                await rescheduleOrDeleteUnstartedTournament(tid,players.length<2?'Not enough players registered at the scheduled start.':'No registered participant was online at the scheduled start.');
+                continue;
+            }
             if(players.some(p=>p.uid===MY_UID))await checkTournamentAutoStart(tid,t);
         }
     }catch(e){console.warn('[TournamentExpiry] lifecycle scan failed',e);}
