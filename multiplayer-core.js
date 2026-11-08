@@ -11,8 +11,11 @@ async function scanTournamentLifecycle(){
             // Reuse the same single-arbiter rule as the detail view. Existing tournaments
             // are included because this scan reads the full live collection, not only new ones.
             const players=Object.values(t.players||{});
-            const arbiter=players.length?players.map(p=>p.uid).sort()[0]:t.hostUid;
-            if(arbiter===MY_UID)await checkTournamentAutoStart(tid,t);
+            // A due tournament with fewer than two entrants can be advanced through its
+            // grace/deletion lifecycle by any connected ESI client; the transaction is safe
+            // against simultaneous scans. Starting a populated tournament remains player-led.
+            if(players.length<2){await rescheduleOrDeleteUnstartedTournament(tid,'Not enough players registered at the scheduled start.');continue;}
+            if(players.some(p=>p.uid===MY_UID))await checkTournamentAutoStart(tid,t);
         }
     }catch(e){console.warn('[TournamentExpiry] lifecycle scan failed',e);}
     finally{tournamentLifecycleBusy=false;}
@@ -2181,7 +2184,14 @@ async function joinLiveSearch(targetUid){
         await mdb.ref('mp_rooms/'+roomId).update({status:'in_progress', matchId});
         await targetTicketRef.update({roomId,matchId,status:'paired',publicHidden:true,pairedAt:firebase.database.ServerValue.TIMESTAMP});
         enterLobby(roomId);
-    }catch(e){ console.warn('[LiveSearch] join failed', e); toast('Could not join that match — try another.'); }
+    }catch(e){
+        console.warn('[LiveSearch] join failed',e);
+        await targetTicketRef.transaction(cur=>{
+            if(cur && cur.claimedBy===MY_UID && !cur.roomId){cur.claimed=false;cur.publicHidden=false;cur.status='searching';cur.claimedBy=null;return cur;}
+        }).catch(()=>{});
+        toast('Could not join that match — try another.');
+        refreshLiveSearches();
+    }
 }
 async function spectateRoom(roomId){
     let snap=await mdb.ref('mp_rooms/'+roomId).get();
@@ -5233,7 +5243,9 @@ async function checkTournamentAutoStart(tid, t){
     if(t.status!=='registration' || !t.scheduledStart || serverNow()<t.scheduledStart) return;
     if(tAutoStartLock[tid]) return;
     let players=Object.values(t.players||{});
-    let arbiter=players.length?players.map(p=>p.uid).sort()[0]:t.hostUid;
+    const presence=(await mdb.ref('mp_presence').get()).val()||{};
+    const onlinePlayers=players.map(p=>p.uid).filter(uid=>presence[uid]&&presence[uid].online).sort();
+    let arbiter=onlinePlayers[0] || (players.length?players.map(p=>p.uid).sort()[0]:t.hostUid);
     if(arbiter!==MY_UID)return;
     tAutoStartLock[tid]=true;
     try{
