@@ -38,6 +38,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          node --check esi-account.js
           grep -m1 "const BUILD" app.js
           grep -m1 "CACHE_VERSION" sw.js
           grep -m1 "CACHE_NAME" downloader.js
