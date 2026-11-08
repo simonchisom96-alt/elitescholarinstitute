@@ -1,7 +1,7 @@
 /* Elite Scholar Institute service worker — offline shell + runtime cache */
 const CACHE_VERSION = 'esi-cache-36.2406';
 const APP_SHELL = [
-  '/', '/index.html', '/logo.jpg', '/advert.png', '/esi.jpg', '/founder.jpg',
+  '/', '/index.html', '/logo.jpg', '/advert.png', '/esi.jpg',
   '/manifest.json', '/offline.html', '/app.js', '/downloader.js',
   '/Textbooks.html', '/uniben.html', '/crstextbook.html', '/literaturetextbook.html',
   '/postutme.html', '/buk.html', '/imsu.html', '/oou.html', '/eksu.html', '/esut.html',
