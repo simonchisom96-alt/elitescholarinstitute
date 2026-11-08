@@ -3249,6 +3249,7 @@ async function scanTournamentLifecycle(){
     try{
         const snap=await mdb.ref('mp_tournaments').get();
         const all=snap.val()||{};
+        const presence=(await mdb.ref('mp_presence').get()).val()||{};
         for(const [tid,t] of Object.entries(all)){
             if(!t || t.status!=='registration' || !t.scheduledStart || serverNow()<Number(t.scheduledStart))continue;
             const players=Object.values(t.players||{});
@@ -3256,8 +3257,7 @@ async function scanTournamentLifecycle(){
                 await rescheduleOrDeleteUnstartedTournament(tid,'The final rescheduled start time was missed.');
                 continue;
             }
-            const presence=(await mdb.ref('mp_presence').get()).val()||{};
-            const onlineRegistered=players.some(p=>presence[p.uid]&&presence[p.uid].online);
+                        const onlineRegistered=players.some(p=>presence[p.uid]&&presence[p.uid].online);
             if(players.length<2 || !onlineRegistered){
                 await rescheduleOrDeleteUnstartedTournament(tid,players.length<2?'Not enough players registered at the scheduled start.':'No registered participant was online at the scheduled start.');
                 continue;
@@ -8518,8 +8518,7 @@ async function checkTournamentAutoStart(tid, t){
                 pushTournamentActivity(tid,'⚠️ '+removed.name+' was removed to keep the bracket even (odd number registered).');
                 sendNotif(removed.uid,'system','You were removed from "'+fresh.name+'" — the bracket needed an even number of players.');
             }
-            currentTournamentId=tid;
-            await startTournament(true);
+            await startTournament(true,tid);
         }
     }catch(e){console.warn('[Tournament] auto-start failed',e);}
     finally{tAutoStartLock[tid]=false;}
@@ -8638,9 +8637,10 @@ async function createTournamentMatch(tid, tagExtra, p1, p2, settings, gapSeconds
     return {matchId, roomId};
 }
 
-async function startTournament(isAutoTrigger){
-    if(!currentTournamentId)return;
-    let snap=await mdb.ref('mp_tournaments/'+currentTournamentId).get();
+async function startTournament(isAutoTrigger,tournamentIdOverride){
+    const targetTournamentId=tournamentIdOverride||currentTournamentId;
+    if(!targetTournamentId)return;
+    let snap=await mdb.ref('mp_tournaments/'+targetTournamentId).get();
     let t=snap.val();if(!t)return;
     if(!isAutoTrigger && t.hostUid!==MY_UID){toast('Only the host can start the tournament.');return;}
     let players=shuffleArr(Object.values(t.players||{}));
@@ -8659,28 +8659,28 @@ for(let pairIdx=0; pairIdx<size/2; pairIdx++){
         round0.push({p1uid:p.uid,p1name:p.name,p2uid:null,p2name:'BYE',matchId:null,roomId:null,status:'bye',winnerUid:p.uid});
     }else{
         let p1=players[pi++], p2=players[pi++];
-        let {matchId,roomId}=await createTournamentMatch(currentTournamentId, {tRound:0,tIdx:round0.length}, p1, p2, t.settings, gapSeconds);
+        let {matchId,roomId}=await createTournamentMatch(targetTournamentId, {tRound:0,tIdx:round0.length}, p1, p2, t.settings, gapSeconds);
         round0.push({p1uid:p1.uid,p1name:p1.name,p2uid:p2.uid,p2name:p2.name,matchId,roomId,status:'active',winnerUid:null});
     }
 }
             let roundDeadline=Date.now()+gapSeconds*1000;
             let pairText=round0.filter(m=>m.status==='active').map(m=>`${m.p1name} vs ${m.p2name}`).join(', ');
             let infoText=`📢 Round 1 is up now: ${pairText} — ⏱ both players in each pair must be ready and finish within ${gl} or that pair is disqualified.`;
-            await mdb.ref('mp_tournaments/'+currentTournamentId).update({status:'active', bracket:[round0], roundDeadline, nextMatchInfo:{text:infoText, deadline:roundDeadline, ts:Date.now()}});
-            pushTournamentActivity(currentTournamentId, infoText);
+            await mdb.ref('mp_tournaments/'+targetTournamentId).update({status:'active', bracket:[round0], roundDeadline, nextMatchInfo:{text:infoText, deadline:roundDeadline, ts:Date.now()}});
+            pushTournamentActivity(targetTournamentId, infoText);
         }else{
             let rrMatches=[];
             for(let i=0;i<players.length;i++){
                 for(let j=i+1;j<players.length;j++){
                     let p1=players[i], p2=players[j];
-                    let {matchId,roomId}=await createTournamentMatch(currentTournamentId, {tPair:rrMatches.length}, p1, p2, t.settings, gapSeconds);
+                    let {matchId,roomId}=await createTournamentMatch(targetTournamentId, {tPair:rrMatches.length}, p1, p2, t.settings, gapSeconds);
                     rrMatches.push({p1uid:p1.uid,p1name:p1.name,p2uid:p2.uid,p2name:p2.name,matchId,roomId,status:'active',winnerUid:null});
                 }
             }
             let roundDeadline=Date.now()+gapSeconds*1000;
             let infoText=`📢 Tournament is up now: ${rrMatches.length} match${rrMatches.length===1?'':'es'} running in parallel — ⏱ both players in each pair must be ready and finish within ${gl} or that pair is disqualified.`;
-            await mdb.ref('mp_tournaments/'+currentTournamentId).update({status:'active', rrMatches, roundDeadline, nextMatchInfo:{text:infoText, deadline:roundDeadline, ts:Date.now()}});
-            pushTournamentActivity(currentTournamentId, infoText);
+            await mdb.ref('mp_tournaments/'+targetTournamentId).update({status:'active', rrMatches, roundDeadline, nextMatchInfo:{text:infoText, deadline:roundDeadline, ts:Date.now()}});
+            pushTournamentActivity(targetTournamentId, infoText);
         }
         toast('Tournament started! Matches are live.');
     }catch(e){ console.warn(e); toast('Could not fully start tournament — try again.'); }
