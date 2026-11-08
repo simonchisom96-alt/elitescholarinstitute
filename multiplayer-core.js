@@ -4540,21 +4540,21 @@ function stopRoomExpiryCountdown(){
 async function expireInactiveRoom(roomId){
     try{
         const ref=mdb.ref('mp_rooms/'+roomId);
-        const snap=await ref.get();
-        if(!snap.exists())return false;
-        const room=snap.val()||{};
-        // Tournament rooms/matches are deliberately excluded. Ordinary public AND private
-        // rooms expire only after a full hour with no recorded room activity.
-        if(room.tournamentId || room.type==='tournament')return false;
-        const lastActivity=Number(room.lastActivityAt)||Number(room.createdAt)||0;
-        if(!lastActivity || Date.now()-lastActivity<60*60*1000)return false;
-        const updates={};
-        const memberUids=new Set([...Object.keys(room.players||{}),room.hostUid].filter(Boolean));
-        memberUids.forEach(uid=>{
-            updates['mp_users/'+uid+'/activeRooms/'+roomId]=null;
+        let roomBefore=null;
+        // Delete through a transaction so a simultaneous activity timestamp refresh wins
+        // over cleanup instead of an active room being removed from a stale read.
+        const claim=await ref.transaction(current=>{
+            if(!current || current.tournamentId || current.type==='tournament')return;
+            const lastActivity=Number(current.lastActivityAt)||Number(current.createdAt)||0;
+            if(!lastActivity || Date.now()-lastActivity<60*60*1000)return;
+            roomBefore=current;
+            return null;
         });
-        if(room.code)updates['mp_room_codes/'+String(room.code)]=null;
-        updates['mp_rooms/'+roomId]=null;
+        if(!claim.committed || !roomBefore)return false;
+        const updates={};
+        const memberUids=new Set([...Object.keys(roomBefore.players||{}),roomBefore.hostUid].filter(Boolean));
+        memberUids.forEach(uid=>{updates['mp_users/'+uid+'/activeRooms/'+roomId]=null;});
+        if(roomBefore.code)updates['mp_room_codes/'+String(roomBefore.code)]=null;
         await mdb.ref().update(updates);
         await Promise.all([...memberUids].map(uid=>
             mdb.ref('mp_users/'+uid+'/activeRoomId').transaction(value=>value===roomId?null:value).catch(()=>{})
