@@ -4140,7 +4140,7 @@ async function respondChallenge(accept){
     await mdb.ref('mp_rooms/'+roomId).set({
         hostUid:c.fromUid, hostName:c.fromName, type:'challenge', visibility:'private',
         settings:c.settings, teamMode:false, maxPlayers:2, powerups:true,
-        status:'starting', players, createdAt:firebase.database.ServerValue.TIMESTAMP
+        status:'starting', players, createdAt:firebase.database.ServerValue.TIMESTAMP, lastActivityAt:firebase.database.ServerValue.TIMESTAMP
     });
     let matchId=await beginMatchForRoom(roomId, c.settings, [{uid:c.fromUid,name:c.fromName,team:'A'},{uid:MY_UID,name:ME.username,team:'B'}]);
     await mdb.ref('mp_challenges/'+id).update({status:'accepted', matchId, roomId});
@@ -4531,9 +4531,11 @@ function autoBalanceTeam(players){
 let isLobbySpectating=false;
 let roomExpiryInterval=null;
 let roomExpiryRoomId=null;
+let roomExpiryActivityAt=0;
 function stopRoomExpiryCountdown(){
     if(roomExpiryInterval){clearInterval(roomExpiryInterval);roomExpiryInterval=null;}
     roomExpiryRoomId=null;
+    roomExpiryActivityAt=0;
 }
 async function expireInactiveRoom(roomId){
     try{
@@ -4578,9 +4580,10 @@ function syncRoomExpiryCountdown(roomId,room){
         banner.textContent='This room is removed after 60 minutes without activity.';
         return;
     }
-    if(roomExpiryRoomId!==roomId){
+    if(roomExpiryRoomId!==roomId || roomExpiryActivityAt!==createdAt){
         stopRoomExpiryCountdown();
         roomExpiryRoomId=roomId;
+        roomExpiryActivityAt=createdAt;
         roomExpiryInterval=setInterval(()=>{
             if(currentRoomId!==roomId){stopRoomExpiryCountdown();return;}
             const currentBanner=document.getElementById('lobbyRoomExpiryNotice');
@@ -5702,6 +5705,8 @@ async function tryStartWaitingMatch(matchId, m){
                 }).catch(()=>{});
             }, 4000);
         }
+    }finally{
+        matchLocalState.startingMatch=false;
     }
 }
 // Writes your own ready flag — the only field either player is allowed to touch on a
@@ -5749,9 +5754,13 @@ async function hostStartTeamWaitingMatch(matchId, m){
     if(matchLocalState.startingMatch) return;
     matchLocalState.startingMatch=true;
     try{
-        // Written to the match itself (not just shown locally) so every player and spectator
-        // sees "generating" at the same time, not just the host's own screen.
-        await mdb.ref('mp_matches/'+matchId).update({state:'generating'});
+        // Claim the generation transition atomically so two tabs on the host account cannot
+        // both generate a different question set for the same match.
+        const stateRef=mdb.ref('mp_matches/'+matchId+'/state');
+        const claim=await stateRef.transaction(value=>value==='waiting'?'generating':undefined);
+        if(!claim.committed){matchLocalState.startingMatch=false;return;}
+        // Every participant sees the same shared generation state.
+        await mdb.ref('mp_matches/'+matchId).update({});
         let questions = await fetchQuestionsForMatch(m.settings, null);
         let questionsPublic = questions.map(q=>({subject:q.subject, q:q.q, options:q.options}));
         let answerKey={};
