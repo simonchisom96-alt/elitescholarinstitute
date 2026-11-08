@@ -5651,9 +5651,9 @@ let LAST_FULL_QUESTIONS=null;
 // race from the other player's client can only ever succeed once; the loser just falls
 // through, and its own snapshot listener picks up the resulting state:'active' normally.
 async function tryStartWaitingMatch(matchId, m){
-    // One deterministic setter per match: the match host (the first assigned player).
-    // Other participants never run their own question-generation request.
-    if(m.hostUid!==MY_UID || matchLocalState.startingMatch) return;
+    // Any ready participant may win the shared database claim, but only one client
+    // can change waiting -> generating. This avoids a dependency on the host being online.
+    if(matchLocalState.startingMatch) return;
     matchLocalState.startingMatch=true;
     let target=$('mWaitStatus');
     try{
