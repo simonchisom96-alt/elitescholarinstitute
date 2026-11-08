@@ -4492,7 +4492,8 @@ async function createRoom(){
         hostUid:MY_UID, hostName:ME.username, type:'custom', visibility, code,
         settings, teamMode, teamSize, maxPlayers, powerups, status:'waiting',
         teamNames: teamMode?{A:'Team A',B:'Team B'}:null,
-        players, createdAt:firebase.database.ServerValue.TIMESTAMP
+        players, createdAt:firebase.database.ServerValue.TIMESTAMP,
+        lastActivityAt:firebase.database.ServerValue.TIMESTAMP
     });
     if(visibility==='private' && code) await mdb.ref('mp_room_codes/'+code).set(roomId);
     closeModal('crModal');
@@ -5714,6 +5715,7 @@ async function tryStartWaitingMatch(matchId, m){
 function markMatchReady(matchId){
     if(!matchId || !MY_UID) return;
     mdb.ref(`mp_matches/${matchId}/ready/${MY_UID}`).set(true).catch(e=>console.warn('[Match] markMatchReady failed:', e && e.message));
+    mdb.ref(`mp_matches/${matchId}/roomId`).get().then(snap=>{if(snap.val())touchRoomActivity(snap.val());}).catch(()=>{});
 }
 function renderWaitingRoom(matchId, m){
     let qcard=$('matchQuestionCard'), box=$('mWaitBox');
