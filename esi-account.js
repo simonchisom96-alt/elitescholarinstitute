@@ -180,6 +180,10 @@
     const signOutButton = root.querySelector('.secondary');
     const toggle = root.querySelector('.esi-account-toggle');
     if (user && !user.isAnonymous) {
+      const profileNameField = document.getElementById('lbName') || document.getElementById('mpNameInput');
+      if (profileNameField && !profileNameField.value && user.displayName) {
+        profileNameField.value = user.displayName.replace(/[^A-Za-z0-9_ ]/g, '').replace(/\\s+/g, ' ').trim().slice(0, profileNameField.maxLength || 10);
+      }
       const label = user.displayName || user.email || 'Google account connected';
       toggle.textContent = '✓ ' + label;
       setStatus((user.email || label) + ' is connected to this ESI section.');
