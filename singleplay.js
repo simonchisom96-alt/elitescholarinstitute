@@ -2656,14 +2656,19 @@ const auth = firebase.auth();
 // firebase-rules-leaderboard.json can actually verify "you may only touch your own
 // entry." Anonymous sign-in is invisible to the player — no login screen, same as before.
 let myUid = null;
-auth.signInAnonymously().catch(e=>{
-    let code = e && e.code ? e.code : 'unknown';
-    let msg = 'Sign-in failed: ' + code + (e && e.message ? (' — ' + e.message) : '');
-    console.error('[Auth]', msg);
-    try{ if(typeof toast==='function') toast(msg); }catch(_){}
-    alert(msg); // TEMP DEBUG — shows the real reason on-screen since phone Chrome has no console. Remove this alert() line once the leaderboard is confirmed working.
+auth.onAuthStateChanged(user=>{
+    if(user){
+        myUid = user.uid;
+        return;
+    }
+    myUid = null;
+    auth.signInAnonymously().catch(e=>{
+        let code = e && e.code ? e.code : 'unknown';
+        let msg = 'Sign-in failed: ' + code + (e && e.message ? (' — ' + e.message) : '');
+        console.error('[Auth]', msg);
+        try{ if(typeof toast==='function') toast(msg); }catch(_){}
+    });
 });
-auth.onAuthStateChanged(user=>{ myUid = user ? user.uid : null; });
 const FB_CACHE='elite_fb_cache_v1_';
 let fbHealthy=true;
 
