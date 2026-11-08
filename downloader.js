@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', function(){
     if(!raw || /PASTE_/i.test(raw)) return null;
     try {
       const clean = new URL(raw, location.href);
+      // WhatsApp order buttons share this CSS class; only intercept real PDF URLs.
+      if (!/^https?:$/.test(clean.protocol) || !/\.pdf$/i.test(clean.pathname)) return null;
       if (/ESIAndroid\//i.test(navigator.userAgent) && clean.origin === 'https://elitescholarinstitute.pages.dev') return location.origin + clean.pathname;
       return clean.origin + clean.pathname;
     } catch(e) { return null; }
