@@ -4,7 +4,14 @@ document.addEventListener('DOMContentLoaded', function(){
   const getPdfUrl = (btn) => {
     const card = btn.closest('.book-card');
     const owner = btn.closest('[data-url]');
-    const raw = (card && card.dataset.url) || (owner && owner.dataset.url) || btn.dataset.url || btn.getAttribute('href');
+    const href = btn.getAttribute('href') || '';
+    // A WhatsApp order link must always navigate normally, even when its parent
+    // card also carries a PDF data-url for a different button.
+    try {
+      const direct = new URL(href, location.href);
+      if (/^(wa\.me|api\.whatsapp\.com|web\.whatsapp\.com)$/i.test(direct.hostname)) return null;
+    } catch(_) {}
+    const raw = (card && card.dataset.url) || (owner && owner.dataset.url) || btn.dataset.url || href;
     if(!raw || /PASTE_/i.test(raw)) return null;
     try {
       const clean = new URL(raw, location.href);
