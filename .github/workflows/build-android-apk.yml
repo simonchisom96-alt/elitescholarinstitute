@@ -10,6 +10,8 @@ on:
       - 'sw.js'
       - 'downloader.js'
       - 'multiplayer-core.js'
+      - 'singleplay.js'
+      - 'esi-account.js'
       - 'manifest.json'
       - 'logo.jpg'
       - 'Textbooks.html'
