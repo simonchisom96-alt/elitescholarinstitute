@@ -111,7 +111,7 @@
       const key = localStorage.key(i);
       if (key && allowed(key)) local[key] = localStorage.getItem(key);
     }
-    const ref = centralAuth.app.database().ref('mp_users/' + uid + '/esiSoloData');
+    const ref = centralAuth.app.database().ref('esi_account_data/' + uid + '/singlePlayer');
     const snap = await ref.get();
     const cloud = snap.exists() ? snap.val() || {} : {};
     const merged = {};
