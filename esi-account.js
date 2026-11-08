@@ -24,8 +24,10 @@
 
   function getAuth() {
     if (!window.firebase || !firebase.auth) return null;
-    if (!firebase.apps.length && isHomePage()) {
-      firebase.initializeApp(CENTRAL_CONFIG);
+    if (isHomePage()) {
+      let app = firebase.apps.find(item => item.name === '[DEFAULT]');
+      if (!app) app = firebase.initializeApp(CENTRAL_CONFIG);
+      return app.auth();
     }
     if (!firebase.apps.length) return null;
     return firebase.app().auth();
