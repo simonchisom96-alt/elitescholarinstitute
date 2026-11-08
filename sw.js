@@ -19,7 +19,7 @@ const APP_SHELL = [
   '/governmentp.html', '/economicsp.html', '/accountingp.html', '/oau.html',
   '/notification.html', '/abu.html', '/futa.html', '/unilorin.html', '/unizik.html',
   '/password.js', '/credit.html', '/timetable1.jpg', '/timetable2.jpg', '/quiz1.html',
-  '/quiz.html', '/video.mp4', '/firebase-config.js', '/multiplayer.js', '/singleplay.js'
+  '/quiz.html', '/video.mp4', '/firebase-config.js', '/multiplayer.js', '/singleplay.js', '/esi-account.js'
 ];
 const isSameOrigin = request => new URL(request.url).origin === self.location.origin;
 const isGet = request => request.method === 'GET';
