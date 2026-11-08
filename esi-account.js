@@ -236,12 +236,12 @@
             const existingCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(existingSignIn);
             if (existingCredential) await activateCentralIdentity(existingCredential);
             window.ESIAccount.legacyTempDataWarning = true;
-          }
-          if (error && (error.code === 'auth/popup-blocked' || error.code === 'auth/operation-not-supported-in-this-environment')) {
+          } else if (error && (error.code === 'auth/popup-blocked' || error.code === 'auth/operation-not-supported-in-this-environment')) {
             await current.linkWithRedirect(provider);
             return;
+          } else {
+            throw error;
           }
-          throw error;
         }
       } else {
         try {
