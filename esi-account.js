@@ -205,7 +205,10 @@
           if (linkedCredential) await activateCentralIdentity(linkedCredential);
         } catch (error) {
           if (error && error.code === 'auth/credential-already-in-use') {
-            throw new Error('This Google account is already connected to a different ESI profile in this section. Your current temporary profile has been kept safe; do not clear app data. Account merging needs to be completed before switching.');
+            const existingSignIn = await auth.signInWithPopup(provider);
+            const existingCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(existingSignIn);
+            if (existingCredential) await activateCentralIdentity(existingCredential);
+            window.ESIAccount.legacyTempDataWarning = true;
           }
           if (error && (error.code === 'auth/popup-blocked' || error.code === 'auth/operation-not-supported-in-this-environment')) {
             await current.linkWithRedirect(provider);
@@ -229,7 +232,9 @@
       refreshUI(auth.currentUser);
       setStatus(window.ESIAccount.syncWarning
         ? 'Google account connected. Your current profile is safe, but single-player cloud backup was blocked by database permissions.'
-        : 'Google account connected. Your existing ESI identity has been retained where linking succeeded.');
+        : window.ESIAccount.legacyTempDataWarning
+          ? 'Google account connected. Existing account loaded. Any records from this device’s separate temporary profile still need migration; they have not been deleted.'
+          : 'Google account connected. Your existing ESI identity has been retained where linking succeeded.');
     } catch (error) {
       console.error('[ESI Account]', error);
       setStatus(error && error.message ? error.message : 'Google sign-in could not be completed. Please try again.');
