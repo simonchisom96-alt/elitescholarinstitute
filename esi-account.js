@@ -105,7 +105,8 @@
     const uid = centralAuth.currentUser.uid;
     const allowed = key => key === 'elite_store_v55' || key === 'elite_flagged_v55' ||
       key === 'elite_seen_qs_v55' || key === 'elite_active_session_v55' ||
-      key === 'elite_lb_user_v55' || key.startsWith('elite_qs_history_v55_');
+      key === 'elite_lb_user_v55' || key === 'esi_recent_topics_v1' ||
+      key.startsWith('elite_qs_history_v55_');
     const local = {};
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -126,7 +127,28 @@
       if (serialized != null) localStorage.setItem(key, serialized);
     });
     await ref.set(merged);
-    setStatus('Google account connected. Single-player history and saved performance have been backed up to your ESI account.');
+    if (!window.__esiSoloStorageSyncInstalled) {
+      window.__esiSoloStorageSyncInstalled = true;
+      const originalSetItem = Storage.prototype.setItem;
+      const originalRemoveItem = Storage.prototype.removeItem;
+      Storage.prototype.setItem = function (key, value) {
+        const result = originalSetItem.call(this, key, value);
+        if (this === window.localStorage && allowed(String(key)) && centralAuth.currentUser) {
+          const target = centralAuth.app.database().ref('esi_account_data/' + centralAuth.currentUser.uid + '/singlePlayer/' + key);
+          target.set(String(value)).catch(error => console.warn('[ESI Account] solo data sync failed', error));
+        }
+        return result;
+      };
+      Storage.prototype.removeItem = function (key) {
+        const result = originalRemoveItem.call(this, key);
+        if (this === window.localStorage && allowed(String(key)) && centralAuth.currentUser) {
+          const target = centralAuth.app.database().ref('esi_account_data/' + centralAuth.currentUser.uid + '/singlePlayer/' + key);
+          target.remove().catch(error => console.warn('[ESI Account] solo data removal sync failed', error));
+        }
+        return result;
+      };
+    }
+    setStatus('Google account connected. Single-player history and saved performance have been backed up and will keep syncing.');
     return true;
   }
 
