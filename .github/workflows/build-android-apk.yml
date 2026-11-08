@@ -139,6 +139,7 @@ jobs:
           multiplayer.js
           multiplayer-core.js
           singleplay.js
+          esi-account.js
           EOF
           sed -i 's/^[[:space:]]*//' /tmp/esi-shell.txt
           while IFS= read -r file; do
