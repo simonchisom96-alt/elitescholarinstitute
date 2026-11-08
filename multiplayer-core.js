@@ -5962,6 +5962,7 @@ function onMatchChatTyping(){
 }
 function sendMatchChat(){
     if(isSpectating){toast('Spectators can only chat before the match starts, in the lobby.');return;}
+    if(currentRoomId)touchRoomActivity(currentRoomId);
     let input=$('matchChatInput'); let text=sanitizeChatText(input.value).slice(0,300);
     if(!text||!currentMatchId||!ME)return;
     mdb.ref('mp_matches/'+currentMatchId+'/chat').push({from:MY_UID,fromName:ME.username,fromAvatar:ME.avatarEmoji||'🎓',text,sentAt:firebase.database.ServerValue.TIMESTAMP});
