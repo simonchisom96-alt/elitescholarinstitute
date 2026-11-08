@@ -8520,7 +8520,10 @@ async function checkTournamentAutoStart(tid, t){
             }
             await startTournament(true,tid);
         }
-    }catch(e){console.warn('[Tournament] auto-start failed',e);}
+    }catch(e){
+        console.warn('[Tournament] auto-start failed',e);
+        await rescheduleOrDeleteUnstartedTournament(tid,'Automatic tournament setup failed at the scheduled start.').catch(()=>{});
+    }
     finally{tAutoStartLock[tid]=false;}
 }
 // ===== 6-hourly reminder — fires (at most) once per 6h window while a registered player has
@@ -8648,6 +8651,7 @@ async function startTournament(isAutoTrigger,tournamentIdOverride){
     let btn=targetTournamentId===currentTournamentId?$('tStartBtn'):null; if(btn){btn.disabled=true;btn.textContent='Setting up matches…';}
     let gapSeconds=t.roundGapSeconds||10800;
     let gl=gapLabel(gapSeconds);
+    let started=false;
     try{
         if(t.format==='single_elim'){
             let size=1;while(size<players.length)size*=2;
@@ -8668,6 +8672,7 @@ for(let pairIdx=0; pairIdx<size/2; pairIdx++){
             let infoText=`📢 Round 1 is up now: ${pairText} — ⏱ both players in each pair must be ready and finish within ${gl} or that pair is disqualified.`;
             await mdb.ref('mp_tournaments/'+targetTournamentId).update({status:'active', bracket:[round0], roundDeadline, nextMatchInfo:{text:infoText, deadline:roundDeadline, ts:Date.now()}});
             pushTournamentActivity(targetTournamentId, infoText);
+            started=true;
         }else{
             let rrMatches=[];
             for(let i=0;i<players.length;i++){
@@ -8681,10 +8686,12 @@ for(let pairIdx=0; pairIdx<size/2; pairIdx++){
             let infoText=`📢 Tournament is up now: ${rrMatches.length} match${rrMatches.length===1?'':'es'} running in parallel — ⏱ both players in each pair must be ready and finish within ${gl} or that pair is disqualified.`;
             await mdb.ref('mp_tournaments/'+targetTournamentId).update({status:'active', rrMatches, roundDeadline, nextMatchInfo:{text:infoText, deadline:roundDeadline, ts:Date.now()}});
             pushTournamentActivity(targetTournamentId, infoText);
+            started=true;
         }
         if(targetTournamentId===currentTournamentId)toast('Tournament started! Matches are live.');
     }catch(e){ console.warn(e); if(targetTournamentId===currentTournamentId)toast('Could not fully start tournament — try again.'); }
     if(btn){btn.disabled=false;btn.textContent='Start Tournament (Host)';}
+    return started;
 }
 
 let tournamentAdvanceLock={};
