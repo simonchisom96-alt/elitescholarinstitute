@@ -64,7 +64,7 @@ self.addEventListener('fetch', event => {
   // JavaScript and CSS are network-first so an installed ESI PWA sees code updates
   // on the next page load. The HTTP cache may revalidate unchanged files with 304,
   // avoiding a full transfer when the server supplies validators.
-  if (/\\.(?:js|mjs|css)$/i.test(url.pathname)) {
+  if (/\.(?:js|mjs|css)$/i.test(url.pathname)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_VERSION);
       try {
