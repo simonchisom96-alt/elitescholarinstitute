@@ -4444,22 +4444,9 @@ function showActiveRoomGuardNotice(){
 }
 
 async function ensureNoOtherActiveRoom(targetRoomId){
-    // Users may create and join multiple rooms. Keep the legacy activeRoomId as the
-    // most recently opened room for older UI code, while the activeRooms index records
-    // every room independently so leaving/expiring one cannot erase another.
-    if(!MY_UID)return true;
-    if(!targetRoomId)return true;
-    try{
-        const updates={};
-        updates['mp_users/'+MY_UID+'/activeRooms/'+targetRoomId+'/joinedAt']=firebase.database.ServerValue.TIMESTAMP;
-        updates['mp_users/'+MY_UID+'/activeRoomId']=targetRoomId;
-        await mdb.ref().update(updates);
-        return true;
-    }catch(e){
-        console.warn('[RoomMembership] Could not register room membership',e);
-        toast('Could not open this room. Please try again.');
-        return false;
-    }
+    // No one-room limit. Membership is recorded only after the room/match is
+    // successfully opened, avoiding stale entries when a join attempt fails.
+    return true;
 }
 function touchRoomActivity(roomId){
     if(!roomId)return;
@@ -5844,7 +5831,7 @@ let isSpectating=false;
 function joinExistingMatch(matchId, roomId, asSpectator){
     currentMatchId=matchId;
     isSpectating=!!asSpectator;
-    if(MY_UID && roomId) mdb.ref('mp_users/'+MY_UID+'/activeRoomId').set(roomId).catch(()=>{});
+    if(MY_UID && roomId){ const userRef=mdb.ref('mp_users/'+MY_UID); userRef.child('activeRoomId').set(roomId).catch(()=>{}); userRef.child('activeRooms/'+roomId+'/joinedAt').set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{}); }
     clearInterval(matchLocalState.claimWinInterval);
     matchLocalState={timerHandle:null, myLocked:{}, lastQIdx:-1, reactionsSeen:new Set(), oppOfflineSince:null};
     if(pendingBotContext && pendingBotContext.matchId===matchId){
