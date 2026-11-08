@@ -3253,6 +3253,9 @@ async function scanTournamentLifecycle(){
         for(const [tid,t] of Object.entries(all)){
             if(!t || t.status!=='registration' || !t.scheduledStart || serverNow()<Number(t.scheduledStart))continue;
             const players=Object.values(t.players||{});
+            // Only a host or registered participant may run this cleanup, matching the
+            // existing per-tournament write permissions for both public and private entries.
+            if(t.hostUid!==MY_UID && !players.some(p=>p.uid===MY_UID))continue;
             if(t.graceUsed){
                 await rescheduleOrDeleteUnstartedTournament(tid,'The final rescheduled start time was missed.');
                 continue;
