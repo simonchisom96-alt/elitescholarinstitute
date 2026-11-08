@@ -73,7 +73,7 @@
       #esiGoogleAccount{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(2,9,22,.82);backdrop-filter:blur(7px);font:500 14px/1.5 Poppins,Arial,sans-serif;color:#fff}
       #esiGoogleAccount[hidden]{display:none!important}
       #esiGoogleAccount .esi-account-panel{display:block;width:min(430px,100%);padding:30px 24px 24px;border:1px solid #c9a43a;border-radius:22px;background:linear-gradient(155deg,#10284a,#04142f 72%);box-shadow:0 22px 80px #000a;text-align:center}
-      #esiGoogleAccount .esi-account-mark{width:58px;height:58px;display:grid;place-items:center;margin:0 auto 16px;border-radius:17px;background:#ffd700;color:#071831;font-size:27px;font-weight:900}
+      #esiGoogleAccount .esi-account-mark{display:block;width:104px;height:104px;object-fit:contain;margin:0 auto 18px;border-radius:18px;background:#fff;padding:5px;box-shadow:0 5px 20px #0004}
       #esiGoogleAccount .esi-account-title{font-weight:800;color:#fff;font-size:23px;line-height:1.2;margin:0 0 9px}
       #esiGoogleAccount .esi-account-copy{font-weight:400;color:#c5d2e8;font-size:13px;line-height:1.6;margin:0 auto 20px;max-width:330px}
       #esiGoogleAccount .esi-account-action{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:50px;padding:13px 16px;border:0;border-radius:10px;background:#fff;color:#172033;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 3px 12px #0003}
@@ -88,7 +88,7 @@
     root.id = 'esiGoogleAccount';
     root.innerHTML = `
       <div class="esi-account-panel" role="dialog" aria-modal="true" aria-labelledby="esiAccountTitle">
-        <div class="esi-account-mark">ESI</div>
+        <img class="esi-account-mark" src="./logo.jpg" alt="Elite Scholar Institute logo" width="104" height="104">
         <h2 class="esi-account-title" id="esiAccountTitle">Sign in to Elite Scholar Institute</h2>
         <p class="esi-account-copy">Use your Google account to secure your ESI profile and keep your learning progress connected across devices.</p>
         <button class="esi-account-action" type="button"><span class="esi-google-g">G</span> <span>Continue with Google</span></button>
