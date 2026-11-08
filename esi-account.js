@@ -134,11 +134,15 @@
     const centralAuth = getCentralAuth();
     if (!centralAuth) return;
     if (credential) {
-      const email = credential.providerId === 'google.com' ? null : null;
       await centralAuth.signInWithCredential(credential);
     }
     if (centralAuth.currentUser && centralAuth.currentUser.email) {
-      await syncSinglePlayerData(centralAuth);
+      try {
+        await syncSinglePlayerData(centralAuth);
+      } catch (error) {
+        console.warn('[ESI Account] Google identity connected; solo cloud backup needs database permission', error);
+        window.ESIAccount.syncWarning = true;
+      }
     }
   }
 
@@ -223,7 +227,9 @@
         }
       }
       refreshUI(auth.currentUser);
-      setStatus('Google account connected. Your existing ESI identity has been retained where linking succeeded.');
+      setStatus(window.ESIAccount.syncWarning
+        ? 'Google account connected. Your current profile is safe, but single-player cloud backup was blocked by database permissions.'
+        : 'Google account connected. Your existing ESI identity has been retained where linking succeeded.');
     } catch (error) {
       console.error('[ESI Account]', error);
       setStatus(error && error.message ? error.message : 'Google sign-in could not be completed. Please try again.');
@@ -259,7 +265,10 @@
       } else if (auth.currentUser && !auth.currentUser.isAnonymous) {
         const centralAuth = getCentralAuth();
         if (centralAuth && centralAuth.currentUser && centralAuth.currentUser.email === auth.currentUser.email) {
-          await syncSinglePlayerData(centralAuth).catch(error => console.warn('[ESI Account] solo sync unavailable', error));
+          await syncSinglePlayerData(centralAuth).catch(error => {
+            console.warn('[ESI Account] solo sync unavailable', error);
+            window.ESIAccount.syncWarning = true;
+          });
         }
       }
       refreshUI(auth.currentUser);
