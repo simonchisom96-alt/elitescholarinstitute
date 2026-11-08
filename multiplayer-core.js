@@ -8645,7 +8645,7 @@ async function startTournament(isAutoTrigger,tournamentIdOverride){
     if(!isAutoTrigger && t.hostUid!==MY_UID){toast('Only the host can start the tournament.');return;}
     let players=shuffleArr(Object.values(t.players||{}));
     if(players.length<2){toast('Need at least 2 registered players.');return;}
-    let btn=$('tStartBtn'); if(btn){btn.disabled=true;btn.textContent='Setting up matches…';}
+    let btn=targetTournamentId===currentTournamentId?$('tStartBtn'):null; if(btn){btn.disabled=true;btn.textContent='Setting up matches…';}
     let gapSeconds=t.roundGapSeconds||10800;
     let gl=gapLabel(gapSeconds);
     try{
@@ -8682,8 +8682,8 @@ for(let pairIdx=0; pairIdx<size/2; pairIdx++){
             await mdb.ref('mp_tournaments/'+targetTournamentId).update({status:'active', rrMatches, roundDeadline, nextMatchInfo:{text:infoText, deadline:roundDeadline, ts:Date.now()}});
             pushTournamentActivity(targetTournamentId, infoText);
         }
-        toast('Tournament started! Matches are live.');
-    }catch(e){ console.warn(e); toast('Could not fully start tournament — try again.'); }
+        if(targetTournamentId===currentTournamentId)toast('Tournament started! Matches are live.');
+    }catch(e){ console.warn(e); if(targetTournamentId===currentTournamentId)toast('Could not fully start tournament — try again.'); }
     if(btn){btn.disabled=false;btn.textContent='Start Tournament (Host)';}
 }
 
