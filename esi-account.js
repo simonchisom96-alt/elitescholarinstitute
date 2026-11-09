@@ -346,12 +346,17 @@
         profileNameField.value = user.displayName.replace(/[^A-Za-z0-9_ ]/g, '').replace(/\s+/g, ' ').trim().slice(0, profileNameField.maxLength || 10);
       }
       const label = user.displayName || user.email || 'Google account';
-      // Keep the sign-in panel visible on each fresh ESI visit, even when Firebase
-      // already has a persisted session. The user can reselect the same Google
-      // account to refresh their cloud-backed profile on this device.
-      root.hidden = false;
-      lockPageScroll(true);
-      setStatus((user.email || label) + ' is saved. Continue with Google to refresh your ESI information.');
+      // A persisted Google session must still show the prompt on a fresh visit.
+      // Once the user completes sign-in on this visit, dismiss the overlay and
+      // restore page scrolling instead of trapping them on the sign-in screen.
+      if (dismissedThisPage) {
+        root.hidden = true;
+        lockPageScroll(false);
+      } else {
+        root.hidden = false;
+        lockPageScroll(true);
+        setStatus((user.email || label) + ' is saved. Continue with Google to refresh your ESI information.');
+      }
       setGoogleButtonLabel(signInButton, 'Continue with Google');
       signInButton.disabled = false;
       signOutButton.style.display = 'none';
@@ -451,7 +456,12 @@
           throw error;
         }
       }
+      // Mark this visit as authenticated before refreshing UI. The sign-in
+      // prompt is a fresh-entry gate, not a post-authentication destination.
+      dismissedThisPage = true;
+      try { sessionStorage.setItem(PROMPT_SESSION_KEY, '1'); } catch (_) {}
       refreshUI(auth.currentUser);
+      lockPageScroll(false);
       setStatus(window.ESIAccount.syncWarning
         ? 'Google account connected. Your current profile is safe, but single-player cloud backup was blocked by database permissions.'
         : window.ESIAccount.legacyTempDataWarning
@@ -508,6 +518,8 @@
       if (result && result.user) {
         const redirectCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
         if (redirectCredential) await activateCentralIdentity(redirectCredential, auth);
+        dismissedThisPage = true;
+        try { sessionStorage.setItem(PROMPT_SESSION_KEY, '1'); } catch (_) {}
         setStatus('Google account connected.');
       } else if (auth.currentUser && !auth.currentUser.isAnonymous) {
         const centralAuth = getCentralAuth();
