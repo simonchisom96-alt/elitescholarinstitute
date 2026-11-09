@@ -205,9 +205,19 @@
   }
 
   async function syncSinglePlayerData(centralAuth) {
-    const soloApp = firebase.apps.find(item => item.name === 'esiLeaderboardAccount') ||
-      firebase.apps.find(item => item.name === '[DEFAULT]');
-    if (!soloApp || !soloApp.options || soloApp.options.projectId !== 'leadersboard-7dacc') return;
+    let soloApp = firebase.apps.find(item => item.name === 'esiLeaderboardAccount');
+    if (!soloApp) {
+      soloApp = firebase.initializeApp({
+        apiKey: 'AIzaSyD4wzJZUn5RFMWaj1IP5r2cNWFupYWV0',
+        authDomain: 'leadersboard-7dacc.firebaseapp.com',
+        databaseURL: 'https://leadersboard-7dacc-default-rtdb.firebaseio.com',
+        projectId: 'leadersboard-7dacc',
+        storageBucket: 'leadersboard-7dacc.firebasestorage.app',
+        messagingSenderId: '855741214857',
+        appId: '1:855741214857:web:d943c7c24d78ec581d5658'
+      }, 'esiLeaderboardAccount');
+    }
+    if (!soloApp.options || soloApp.options.projectId !== 'leadersboard-7dacc') return;
     if (!firebase.database || !centralAuth || !centralAuth.currentUser) return;
     const uid = centralAuth.currentUser.uid;
     // Back up all ESI-owned user state, not just the original quiz-history
