@@ -201,7 +201,7 @@
       });
       return merged;
     }
-    return localValue !== null && localValue !== undefined ? localValue : cloudValue;
+    return cloudValue !== null && cloudValue !== undefined ? cloudValue : localValue;
   }
 
   async function syncSinglePlayerData(centralAuth) {
@@ -266,26 +266,125 @@
     return true;
   }
 
+  // Capture a device's temporary anonymous profile BEFORE switching to an
+  // already-existing Google account. Firebase rules can still authorize reads
+  // while auth.currentUser is the anonymous owner of these UID-keyed records.
+  async function captureLegacyProfile(auth) {
+    const user = auth && auth.currentUser;
+    const projectId = auth && auth.app && auth.app.options && auth.app.options.projectId;
+    if (!user || !user.isAnonymous || !auth.app.database) return null;
+    const uid = user.uid;
+    const db = auth.app.database();
+    const month = new Date().toISOString().slice(0, 7);
+    const out = { projectId, uid, capturedAt: Date.now() };
+    const read = async path => {
+      try { const snap = await db.ref(path).get(); return snap.exists() ? snap.val() : null; }
+      catch (error) { console.warn('[ESI Account] legacy read unavailable:', path, error && error.message); return null; }
+    };
+    if (projectId === 'project-76067') {
+      out.mpUser = await read('mp_users/' + uid);
+      out.mpHistory = await read('mp_match_history/' + uid);
+      out.mpLeaderboard = await read('mp_global_lb/' + month + '/' + uid);
+      const lower = out.mpUser && out.mpUser.usernameLower;
+      if (lower) {
+        const registry = await read('mp_usernames/' + lower);
+        if (registry === uid) out.mpUsername = lower;
+      }
+    } else if (projectId === 'leadersboard-7dacc') {
+      out.soloLeaderboard = await read('leaderboard/' + month + '/' + uid);
+      let soloName = null;
+      try { soloName = JSON.parse(localStorage.getItem('elite_lb_user_v55') || 'null'); } catch (_) {}
+      const lower = soloName && soloName.name ? String(soloName.name).trim().toLowerCase() : '';
+      if (lower) {
+        const registry = await read('leaderboard_names/' + lower);
+        if (registry && registry.uid === uid) out.soloName = { lower, value: registry };
+      }
+    }
+    return out;
+  }
+
+  // Restore only into the newly authenticated Google UID. Existing Google
+  // profile values win; missing fields and history rows are recovered from
+  // the old anonymous profile without deleting the source record.
+  async function restoreLegacyProfile(auth, legacy) {
+    const user = auth && auth.currentUser;
+    if (!legacy || !user || user.isAnonymous || legacy.uid === user.uid) return;
+    const projectId = auth.app && auth.app.options && auth.app.options.projectId;
+    if (legacy.projectId !== projectId) return;
+    const db = auth.app.database();
+    const uid = user.uid;
+    const read = async path => {
+      try { const snap = await db.ref(path).get(); return snap.exists() ? snap.val() : null; }
+      catch (_) { return null; }
+    };
+    const writes = {};
+    if (projectId === 'project-76067') {
+      const current = await read('mp_users/' + uid);
+      if (legacy.mpUser) {
+        const profile = { ...legacy.mpUser, ...(current || {}), uid };
+        if (current && current.username) profile.username = current.username;
+        if (current && current.usernameLower) profile.usernameLower = current.usernameLower;
+        writes['mp_users/' + uid] = profile;
+      }
+      if (legacy.mpHistory) {
+        const currentHistory = await read('mp_match_history/' + uid) || {};
+        writes['mp_match_history/' + uid] = { ...legacy.mpHistory, ...currentHistory };
+      }
+      if (legacy.mpLeaderboard && !(await read('mp_global_lb/' + new Date().toISOString().slice(0,7) + '/' + uid))) {
+        writes['mp_global_lb/' + new Date().toISOString().slice(0,7) + '/' + uid] = { ...legacy.mpLeaderboard, uid };
+      }
+      if (legacy.mpUsername) {
+        const existingNameOwner = await read('mp_usernames/' + legacy.mpUsername);
+        const profile = writes['mp_users/' + uid] || current;
+        if ((!existingNameOwner || existingNameOwner === legacy.uid || existingNameOwner === uid) &&
+            profile && (!current || !current.usernameLower || current.usernameLower === legacy.mpUsername)) {
+          writes['mp_usernames/' + legacy.mpUsername] = uid;
+        }
+      }
+    } else if (projectId === 'leadersboard-7dacc') {
+      const month = new Date().toISOString().slice(0,7);
+      const current = await read('leaderboard/' + month + '/' + uid);
+      if (legacy.soloLeaderboard && !current) {
+        writes['leaderboard/' + month + '/' + uid] = { ...legacy.soloLeaderboard };
+      }
+      if (legacy.soloName) {
+        const currentName = await read('leaderboard_names/' + legacy.soloName.lower);
+        if (!currentName || currentName.uid === legacy.uid || currentName.uid === uid) {
+          writes['leaderboard_names/' + legacy.soloName.lower] = { ...legacy.soloName.value, uid };
+        }
+      }
+    }
+    if (Object.keys(writes).length) await db.ref().update(writes);
+    console.info('[ESI Account] legacy profile migration completed for', projectId);
+  }
+
   async function connectCredentialToProject(auth, credential) {
     if (!auth || !credential) return null;
     const current = auth.currentUser;
     if (current && !current.isAnonymous) {
-      // Re-authenticate into the account the user selected on this visit. This also
-      // switches projects consistently if they intentionally choose another Gmail.
       const signed = await auth.signInWithCredential(credential);
       return signed.user;
     }
+    let legacy = null;
     if (current && current.isAnonymous) {
       try {
         const linked = await current.linkWithCredential(credential);
         return linked.user;
       } catch (error) {
         if (!error || error.code !== 'auth/credential-already-in-use') throw error;
-        // This Google account already owns a profile in this project. Sign into that
-        // profile; never overwrite or delete the older anonymous profile.
+        // Preserve the anonymous user's recoverable profile data before the
+        // credential sign-in replaces auth.currentUser with the Google UID.
+        legacy = await captureLegacyProfile(auth);
       }
     }
     const signed = await auth.signInWithCredential(credential);
+    if (legacy) {
+      try { await restoreLegacyProfile(auth, legacy); }
+      catch (error) {
+        console.warn('[ESI Account] legacy profile restore needs rule support:', error);
+        window.ESIAccount.legacyMigrationWarning = true;
+      }
+    }
     return signed.user;
   }
 
@@ -463,10 +562,10 @@
       refreshUI(auth.currentUser);
       lockPageScroll(false);
       setStatus(window.ESIAccount.syncWarning
-        ? 'Google account connected. Your current profile is safe, but single-player cloud backup was blocked by database permissions.'
-        : window.ESIAccount.legacyTempDataWarning
-          ? 'Google account connected. Existing account loaded. Any records from this device’s separate temporary profile still need migration; they have not been deleted.'
-          : 'Google account connected. Your existing ESI identity has been retained where linking succeeded.');
+        ? 'Google account connected, but single-player cloud sync was blocked. Your local records have not been deleted.'
+        : window.ESIAccount.legacyMigrationWarning
+          ? 'Google account connected. Some older profile records could not be migrated; they remain in the previous profile.'
+          : 'Google account connected. Your saved ESI account data has been restored where available.');
     } catch (error) {
       console.error('[ESI Account]', error);
       setStatus(error && error.message ? error.message : 'Google sign-in could not be completed. Please try again.');
