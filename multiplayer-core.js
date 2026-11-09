@@ -2649,13 +2649,18 @@ global.ESITopics = {
   messagingSenderId: "625734125340",
   appId: "1:625734125340:web:66f843e0b1e41f7baa5cd9"
 };
+    let mpApp;
     try{
-        firebase.initializeApp(firebaseConfig);
+        mpApp = firebase.apps.find(app => app.name === 'esiCentralAccount') ||
+            firebase.initializeApp(firebaseConfig, 'esiCentralAccount');
     }catch(e){
-        console.error('[Firebase] main app init failed:', e);
+        console.error('[Firebase] shared account app init failed:', e);
+        mpApp = firebase.app('esiCentralAccount');
     }
-    const mdb = firebase.database();
-    const mauth = firebase.auth();
+    // All multiplayer records and authentication now use the same persistent
+    // Firebase app identity used by the site-wide Google account layer.
+    const mdb = mpApp.database();
+    const mauth = mpApp.auth();
 
     // ===== QUESTION BANK Firebase — SAME shared bank the single-player app reads/writes.
     // Multiplayer only ever READS full question objects (incl. answer) here, then strips
