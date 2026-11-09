@@ -98,7 +98,7 @@
       <div class="esi-account-panel" role="dialog" aria-modal="true" aria-labelledby="esiAccountTitle">
         <img class="esi-account-mark" src="./logo.jpg" alt="Elite Scholar Institute logo" width="104" height="104">
         <h2 class="esi-account-title" id="esiAccountTitle">SIGN INTO ELITE SCHOLAR INSTITUTE</h2>
-        <p class="esi-account-copy">Use your Google account to secure your ESI profile and keep your learning progress connected across devices.</p>
+        <p class="esi-account-copy">Sign in with the Google account you use for ESI. Your saved profile and progress can then stay connected across the website, app and your other devices.</p>
         <button class="esi-account-action" type="button"><svg class="esi-google-g" viewBox="0 0 48 48" role="img" aria-label="Google" xmlns="http://www.w3.org/2000/svg">
           <path fill="#4285F4" d="M43.6 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h11c-.5 2.7-2 5-4.3 6.5l7 5.4c4.1-3.8 6.5-9.4 6.5-15.9z"/>
           <path fill="#34A853" d="M24 44c5.9 0 10.9-2 14.5-5.4l-7-5.4c-2 1.3-4.5 2.1-7.5 2.1-5.8 0-10.7-3.9-12.5-9.1l-7.2 5.6C8.2 39 15.5 44 24 44z"/>
@@ -248,12 +248,15 @@
       if (profileNameField && !profileNameField.value && user.displayName) {
         profileNameField.value = user.displayName.replace(/[^A-Za-z0-9_ ]/g, '').replace(/\s+/g, ' ').trim().slice(0, profileNameField.maxLength || 10);
       }
-      const label = user.displayName || user.email || 'Google account connected';
-      root.hidden = true;
-      setStatus((user.email || label) + ' is connected to this ESI section.');
-      setGoogleButtonLabel(signInButton, 'Google account connected');
-      signInButton.disabled = true;
-      signOutButton.style.display = 'flex';
+      const label = user.displayName || user.email || 'Google account';
+      // Keep the sign-in panel visible on each fresh ESI visit, even when Firebase
+      // already has a persisted session. The user can reselect the same Google
+      // account to refresh their cloud-backed profile on this device.
+      root.hidden = false;
+      setStatus((user.email || label) + ' is saved. Continue with Google to refresh your ESI information.');
+      setGoogleButtonLabel(signInButton, 'Continue with Google');
+      signInButton.disabled = false;
+      signOutButton.style.display = 'none';
     } else if (user && user.isAnonymous) {
       root.hidden = false;
       setStatus('Your current progress is using a temporary account. Connect Google to secure this identity.');
@@ -379,6 +382,12 @@
   async function init() {
     let promptAlreadyShown = false;
     try {
+      // The homepage is the entry point for a fresh website visit and every
+      // normal APK launch. Reset the per-visit prompt there; other page changes
+      // during the same visit do not repeatedly interrupt navigation.
+      if (isHomePage()) {
+        sessionStorage.removeItem(PROMPT_SESSION_KEY);
+      }
       promptAlreadyShown = sessionStorage.getItem(PROMPT_SESSION_KEY) === '1';
       if (!promptAlreadyShown) sessionStorage.setItem(PROMPT_SESSION_KEY, '1');
     } catch (_) {}
