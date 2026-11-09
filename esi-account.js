@@ -378,6 +378,12 @@
         const item = allRooms[id];
         if (containsLegacyUid(item, uid)) out.mpRooms[id] = item;
       });
+      const allChallenges = await read('mp_challenges') || {};
+      out.mpChallenges = {};
+      Object.keys(allChallenges).forEach(id => {
+        const item = allChallenges[id];
+        if (containsLegacyUid(item, uid)) out.mpChallenges[id] = item;
+      });
       // Keep match state reachable from rooms, tournament brackets and challenges.
       out.mpMatches = {};
       const referencedMatchIds = new Set();
@@ -388,12 +394,6 @@
         const match = await read('mp_matches/' + matchId);
         if (match && containsLegacyUid(match, uid)) out.mpMatches[matchId] = match;
       }
-      const allChallenges = await read('mp_challenges') || {};
-      out.mpChallenges = {};
-      Object.keys(allChallenges).forEach(id => {
-        const item = allChallenges[id];
-        if (containsLegacyUid(item, uid)) out.mpChallenges[id] = item;
-      });
       // Read only this player's room-prediction branches; root-wide access is
       // intentionally not required by the private room-prediction rules.
       out.mpRoomPredictions = {};
