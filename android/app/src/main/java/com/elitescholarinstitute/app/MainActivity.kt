@@ -40,6 +40,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
 
+// Keep native Android source build-ready without CI-time source rewriting.
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private var authPopup: Dialog? = null
