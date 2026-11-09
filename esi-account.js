@@ -290,6 +290,26 @@
     return false;
   }
 
+  function mergeMatchHistory(oldHistory, currentHistory) {
+    const combined = { ...(oldHistory || {}), ...(currentHistory || {}) };
+    const byMatch = new Map();
+    Object.entries(combined).forEach(([key, entry]) => {
+      if (!entry || typeof entry !== 'object') { byMatch.set(key, entry); return; }
+      const identity = entry.matchId ? 'match:' + entry.matchId :
+        (entry.ts != null && entry.opponentUid ? 'fallback:' + entry.opponentUid + ':' + entry.ts : 'key:' + key);
+      const previous = byMatch.get(identity);
+      // Current Google-account copy wins field conflicts; old-only details survive.
+      byMatch.set(identity, previous ? { ...entry, ...previous } : entry);
+    });
+    const result = {};
+    byMatch.forEach((entry, identity) => {
+      const key = identity.startsWith('key:') ? identity.slice(4) :
+        (entry && entry.matchId ? entry.matchId : identity.replace(/^fallback:/, ''));
+      result[key] = entry;
+    });
+    return result;
+  }
+
   function collectMatchIds(value, output) {
     if (!value || typeof value !== 'object') return;
     if (Array.isArray(value)) {
@@ -454,24 +474,28 @@
         ['username','usernameLower','avatarEmoji','favoriteSubject','equippedNameColor','equippedTitle','equippedEffect','equippedFrame'].forEach(key => {
           if (oldProfile[key] != null && oldProfile[key] !== '') profile[key] = oldProfile[key];
         });
-        ['achievements','shopOwned','flaggedQuestions','activeRooms','hiddenTournaments'].forEach(key => {
+        ['achievements','shopOwned','flaggedQuestions','activeRooms','hiddenTournaments','dailyMissions'].forEach(key => {
           profile[key] = mergeSavedValue(oldProfile[key] || {}, newProfile[key] || {});
         });
-        ['elo','wins','losses','draws','totalMatches','bestStreak','xp','level','coins','teamContribSum','teamContribCount'].forEach(key => {
+        ['elo','wins','losses','draws','totalMatches','bestStreak','currentWinStreak','xp','level','coins','teamContribSum','teamContribCount','perfectCount','loginStreak'].forEach(key => {
           const oldValue = Number(oldProfile[key] || 0);
           const newValue = Number(newProfile[key] || 0);
           if (Number.isFinite(oldValue) && Number.isFinite(newValue)) {
-            profile[key] = (key === 'elo' || key === 'level' || key === 'bestStreak')
+            profile[key] = (key === 'elo' || key === 'level' || key === 'bestStreak' || key === 'currentWinStreak' || key === 'loginStreak')
               ? Math.max(oldValue, newValue) : oldValue + newValue;
           }
         });
         profile.createdAt = Math.min(Number(oldProfile.createdAt) || Date.now(), Number(newProfile.createdAt) || Date.now());
+        if (oldProfile.firstEverMatchAt || newProfile.firstEverMatchAt) {
+          profile.firstEverMatchAt = Math.min(Number(oldProfile.firstEverMatchAt) || Infinity, Number(newProfile.firstEverMatchAt) || Infinity);
+        }
+        profile.lastLoginDate = [oldProfile.lastLoginDate, newProfile.lastLoginDate].filter(Boolean).sort().pop() || null;
         profile.uid = uid;
         writes['mp_users/' + uid] = profile;
       }
       if (legacy.mpHistory) {
         const currentHistory = await read('mp_match_history/' + uid) || {};
-        writes['mp_match_history/' + uid] = { ...legacy.mpHistory, ...currentHistory };
+        writes['mp_match_history/' + uid] = mergeMatchHistory(legacy.mpHistory, currentHistory);
       }
       if (legacy.mpFriends) {
         const currentFriends = await read('mp_friends/' + uid) || {};
