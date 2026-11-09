@@ -440,14 +440,25 @@
         if (registry === uid) out.mpUsername = lower;
       }
     } else if (projectId === 'leadersboard-7dacc') {
-      // Solo leaderboard rows are partitioned by month. Keep the complete
-      // history so an account link never strands earlier monthly rankings.
-      const allSoloMonths = await read('leaderboard') || {};
+      // Leaderboard security rules allow a player to read their own UID row,
+      // not necessarily the entire public leaderboard root. Read monthly rows
+      // by UID instead of requesting /leaderboard (which can be denied and
+      // silently lose the old profile during credential-already-in-use migration).
       out.soloLeaderboards = {};
-      Object.keys(allSoloMonths).forEach(monthKey => {
-        if (allSoloMonths[monthKey] && allSoloMonths[monthKey][uid]) {
-          out.soloLeaderboards[monthKey] = allSoloMonths[monthKey][uid];
-        }
+      const monthKeys = [];
+      const cursor = new Date();
+      cursor.setUTCDate(1);
+      for (let offset = 0; offset < 36; offset++) {
+        const key = cursor.toISOString().slice(0, 7);
+        monthKeys.push(key);
+        cursor.setUTCMonth(cursor.getUTCMonth() - 1);
+      }
+      const soloRows = await Promise.all(monthKeys.map(async monthKey => ({
+        monthKey,
+        row: await read('leaderboard/' + monthKey + '/' + uid)
+      })));
+      soloRows.forEach(({ monthKey, row }) => {
+        if (row && typeof row === 'object') out.soloLeaderboards[monthKey] = row;
       });
       out.soloLeaderboard = out.soloLeaderboards[month] || null;
       let soloName = null;
