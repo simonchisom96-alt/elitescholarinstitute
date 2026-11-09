@@ -317,10 +317,14 @@
     const uid = user.uid;
     const db = auth.app.database();
     const month = new Date().toISOString().slice(0, 7);
-    const out = { projectId, uid, capturedAt: Date.now() };
+    const out = { projectId, uid, capturedAt: Date.now(), captureWarnings: [] };
     const read = async path => {
       try { const snap = await db.ref(path).get(); return snap.exists() ? snap.val() : null; }
-      catch (error) { console.warn('[ESI Account] legacy read unavailable:', path, error && error.message); return null; }
+      catch (error) {
+        out.captureWarnings.push(path);
+        console.warn('[ESI Account] legacy read unavailable:', path, error && error.message);
+        return null;
+      }
     };
     if (projectId === 'project-76067') {
       out.mpUser = await read('mp_users/' + uid);
@@ -577,6 +581,9 @@
         // Preserve the anonymous user's recoverable profile data before the
         // credential sign-in replaces auth.currentUser with the Google UID.
         legacy = await captureLegacyProfile(auth);
+        if (legacy.captureWarnings && legacy.captureWarnings.length) {
+          window.ESIAccount.legacyMigrationWarning = true;
+        }
       }
     }
     const signed = await auth.signInWithCredential(credential);
