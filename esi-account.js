@@ -23,7 +23,8 @@
   }
 
   let firebaseSDKPromise = null;
-  // A skip is temporary: it lasts only until this document is reloaded.
+  // One account prompt per website visit (tab session), shared by home, solo and multiplayer pages.
+  const PROMPT_SESSION_KEY = 'esi_account_prompt_seen_v1';
   let dismissedThisPage = false;
   function ensureFirebaseSDK() {
     if (window.firebase && firebase.auth && firebase.database) return Promise.resolve();
@@ -368,7 +369,17 @@
   }
 
   async function init() {
+    let promptAlreadyShown = false;
+    try {
+      promptAlreadyShown = sessionStorage.getItem(PROMPT_SESSION_KEY) === '1';
+      if (!promptAlreadyShown) sessionStorage.setItem(PROMPT_SESSION_KEY, '1');
+    } catch (_) {}
+    dismissedThisPage = promptAlreadyShown;
     ensureUI();
+    if (promptAlreadyShown) {
+      const existingRoot = document.getElementById('esiGoogleAccount');
+      if (existingRoot) existingRoot.hidden = true;
+    }
     try {
       const auth = await waitForAuth();
       const result = await auth.getRedirectResult().catch(error => {
@@ -389,7 +400,15 @@
           });
         }
       }
-      refreshUI(auth.currentUser);
+      const centralAuth = getCentralAuth();
+      const centralUser = centralAuth ? await waitForAuthReady(centralAuth) : null;
+      if (centralUser && !centralUser.isAnonymous) {
+        dismissedThisPage = true;
+        try { sessionStorage.setItem(PROMPT_SESSION_KEY, '1'); } catch (_) {}
+        refreshUI(centralUser);
+      } else {
+        refreshUI(auth.currentUser);
+      }
       if (window.ESIAccount.syncWarning) {
         setStatus('Google account connected, but single-player cloud backup needs the private database rule from FIREBASE_ACCOUNT_DATA_RULES.md.');
       }
