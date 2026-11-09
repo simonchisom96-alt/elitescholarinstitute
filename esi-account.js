@@ -396,7 +396,7 @@
       }
       if (!alreadyMigrated) {
         const rows = legacy.mpLeaderboards || (legacy.mpLeaderboard ? { [new Date().toISOString().slice(0,7)]: legacy.mpLeaderboard } : {});
-        Object.keys(rows).forEach(monthKey => {
+        for (const monthKey of Object.keys(rows)) {
           const path = 'mp_global_lb/' + monthKey + '/' + uid;
           const oldRow = rows[monthKey] || {};
           const newRow = await read(path) || {};
@@ -405,7 +405,7 @@
             mergedRow[key] = Number(oldRow[key] || 0) + Number(newRow[key] || 0);
           });
           writes[path] = mergedRow;
-        });
+        }
       }
       if (legacy.mpUsername && !alreadyMigrated) {
         const existingNameOwner = await read('mp_usernames/' + legacy.mpUsername);
