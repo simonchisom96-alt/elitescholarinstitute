@@ -3,6 +3,15 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val esiKeystorePath = System.getenv("ESI_KEYSTORE_PATH")
+val esiKeystorePassword = System.getenv("ESI_KEYSTORE_PASSWORD")
+val esiKeyAlias = System.getenv("ESI_KEY_ALIAS")
+val esiKeyPassword = System.getenv("ESI_KEY_PASSWORD")
+val esiSigningReady = !esiKeystorePath.isNullOrBlank() &&
+    !esiKeystorePassword.isNullOrBlank() &&
+    !esiKeyAlias.isNullOrBlank() &&
+    !esiKeyPassword.isNullOrBlank()
+
 android {
     namespace = "com.elitescholarinstitute.app"
     compileSdk = 35
@@ -11,12 +20,31 @@ android {
         applicationId = "com.elitescholarinstitute.app"
         minSdk = 23
         targetSdk = 35
-        versionCode = 362417
-        versionName = "4.17"
+        versionCode = 362418
+        versionName = "4.18"
+    }
+
+    signingConfigs {
+        if (esiSigningReady) {
+            create("esiPermanent") {
+                storeFile = file(esiKeystorePath!!)
+                storePassword = esiKeystorePassword!!
+                keyAlias = esiKeyAlias!!
+                keyPassword = esiKeyPassword!!
+            }
+        }
     }
 
     buildTypes {
+        debug {
+            if (esiSigningReady) {
+                signingConfig = signingConfigs.getByName("esiPermanent")
+            }
+        }
         release {
+            if (esiSigningReady) {
+                signingConfig = signingConfigs.getByName("esiPermanent")
+            }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
