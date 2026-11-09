@@ -76,14 +76,14 @@
       #esiGoogleAccount[hidden]{display:none!important}
       #esiGoogleAccount .esi-account-panel{display:block;width:min(430px,100%);padding:30px 24px 24px;border:1px solid #c9a43a;border-radius:22px;background:linear-gradient(155deg,#10284a,#04142f 72%);box-shadow:0 22px 80px #000a;text-align:center}
       #esiGoogleAccount .esi-account-mark{display:block;width:104px;height:104px;object-fit:contain;margin:0 auto 18px;border-radius:18px;background:#fff;padding:5px;box-shadow:0 5px 20px #0004}
-      #esiGoogleAccount .esi-account-title{font-weight:800;color:#fff;font-size:23px;line-height:1.2;margin:0 0 9px}
+      #esiGoogleAccount .esi-account-title{font-weight:800;color:#fff;font-size:20.93px;line-height:1.2;margin:0 0 9px;text-transform:uppercase}
       #esiGoogleAccount .esi-account-copy{font-weight:400;color:#c5d2e8;font-size:13px;line-height:1.6;margin:0 auto 20px;max-width:330px}
       #esiGoogleAccount .esi-account-action{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:50px;padding:13px 16px;border:0;border-radius:10px;background:#fff;color:#172033;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 3px 12px #0003}
       #esiGoogleAccount .esi-account-action:disabled{opacity:.7;cursor:wait}
-      #esiGoogleAccount .esi-google-g{display:block;flex:0 0 21px;width:21px;height:21px}
+      #esiGoogleAccount .esi-google-g{display:block;flex:0 0 22px;width:22px;height:22px;min-width:22px;min-height:22px;overflow:visible;position:relative;z-index:1} #esiGoogleAccount .esi-account-action:not(.secondary){display:flex;flex-direction:row;align-items:center;justify-content:center;gap:11px;overflow:visible;white-space:nowrap} #esiGoogleAccount .esi-account-action:not(.secondary) span:last-child{display:inline-block;line-height:1.25}
       #esiGoogleAccount .esi-account-action.secondary{margin-top:12px;min-height:42px;background:transparent;color:#c5d2e8;border:1px solid #526681;box-shadow:none;font-size:12px}
       #esiGoogleAccount .esi-account-status{font-size:12px;color:#c5d2e8;overflow-wrap:anywhere;margin:14px 0 0}
-      @media(max-width:520px){#esiGoogleAccount{padding:16px}#esiGoogleAccount .esi-account-panel{padding:26px 19px 20px}#esiGoogleAccount .esi-account-title{font-size:21px}}
+      @media(max-width:520px){#esiGoogleAccount{padding:16px}#esiGoogleAccount .esi-account-panel{padding:26px 19px 20px}#esiGoogleAccount .esi-account-title{font-size:19.11px}}
     `;
     document.head.appendChild(style);
     const root = document.createElement('div');
@@ -91,7 +91,7 @@
     root.innerHTML = `
       <div class="esi-account-panel" role="dialog" aria-modal="true" aria-labelledby="esiAccountTitle">
         <img class="esi-account-mark" src="./logo.jpg" alt="Elite Scholar Institute logo" width="104" height="104">
-        <h2 class="esi-account-title" id="esiAccountTitle">Sign in to Elite Scholar Institute</h2>
+        <h2 class="esi-account-title" id="esiAccountTitle">SIGN IN TO ELITE SCHOLAR INSTITUTE</h2>
         <p class="esi-account-copy">Use your Google account to secure your ESI profile and keep your learning progress connected across devices.</p>
         <button class="esi-account-action" type="button"><svg class="esi-google-g" viewBox="0 0 48 48" role="img" aria-label="Google" xmlns="http://www.w3.org/2000/svg">
           <path fill="#4285F4" d="M43.6 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h11c-.5 2.7-2 5-4.3 6.5l7 5.4c4.1-3.8 6.5-9.4 6.5-15.9z"/>
