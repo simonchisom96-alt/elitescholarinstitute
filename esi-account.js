@@ -100,7 +100,7 @@
       <div class="esi-account-panel" role="dialog" aria-modal="true" aria-labelledby="esiAccountTitle">
         <img class="esi-account-mark" src="./logo.jpg" alt="Elite Scholar Institute logo" width="104" height="104">
         <h2 class="esi-account-title" id="esiAccountTitle">SIGN INTO ELITE SCHOLAR INSTITUTE</h2>
-        <p class="esi-account-copy">Sign in with the Google account you use for ESI. Your saved profile and progress can then stay connected across the website, app and your other devices.</p>
+        <p class="esi-account-copy">Choose your Google account every time you open ESI. Your saved profile, leaderboard name, progress and supported multiplayer records will be refreshed from your account and kept in sync across the website, APK and your other devices.</p>
         <button class="esi-account-action" type="button"><svg class="esi-google-g" viewBox="0 0 48 48" role="img" aria-label="Google" xmlns="http://www.w3.org/2000/svg">
           <path fill="#4285F4" d="M43.6 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h11c-.5 2.7-2 5-4.3 6.5l7 5.4c4.1-3.8 6.5-9.4 6.5-15.9z"/>
           <path fill="#34A853" d="M24 44c5.9 0 10.9-2 14.5-5.4l-7-5.4c-2 1.3-4.5 2.1-7.5 2.1-5.8 0-10.7-3.9-12.5-9.1l-7.2 5.6C8.2 39 15.5 44 24 44z"/>
