@@ -509,7 +509,9 @@
       }
       if (legacy.mpHistory) {
         const currentHistory = await read('mp_match_history/' + uid) || {};
-        writes['mp_match_history/' + uid] = mergeMatchHistory(legacy.mpHistory, currentHistory);
+        writes['mp_match_history/' + uid] = mergeMatchHistory(
+          remapLegacyUid(legacy.mpHistory, legacy.uid, uid), currentHistory
+        );
       }
       if (legacy.mpFriends) {
         const currentFriends = await read('mp_friends/' + uid) || {};
@@ -525,7 +527,9 @@
       }
       if (legacy.mpNotifications) {
         const currentNotifications = await read('mp_notifications/' + uid) || {};
-        writes['mp_notifications/' + uid] = { ...legacy.mpNotifications, ...currentNotifications };
+        writes['mp_notifications/' + uid] = mergeSavedValue(
+          remapLegacyUid(legacy.mpNotifications, legacy.uid, uid), currentNotifications
+        );
       }
       // Restore event records under the Google UID, merging existing account data.
       // Source records are deliberately retained as a recovery copy.
