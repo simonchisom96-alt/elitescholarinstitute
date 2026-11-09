@@ -909,7 +909,10 @@
     try {
       await waitForAuth();
       const accountApps = firebase.apps.filter(app =>
-        app.name === '[DEFAULT]' || (app.options && app.options.projectId === CENTRAL_CONFIG.projectId)
+        app.options && (
+          app.options.projectId === CENTRAL_CONFIG.projectId ||
+          app.options.projectId === 'leadersboard-7dacc'
+        )
       );
       await Promise.all(accountApps.map(app => app.auth().signOut()));
       setStatus('Signed out of your ESI Google account on this page. Your cloud records have not been deleted.');
