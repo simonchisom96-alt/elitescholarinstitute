@@ -944,10 +944,25 @@
       }
       const centralAuth = getCentralAuth();
       const centralUser = centralAuth ? await waitForAuthReady(centralAuth) : null;
-      if (centralUser && !centralUser.isAnonymous) {
+      const authProjectId = auth.app && auth.app.options && auth.app.options.projectId;
+      const isSeparateSoloProject = authProjectId === 'leadersboard-7dacc';
+      const soloIdentityMatches = !isSeparateSoloProject ||
+        (!!auth.currentUser && !auth.currentUser.isAnonymous &&
+          !!centralUser && !!centralUser.email &&
+          auth.currentUser.email === centralUser.email);
+      if (centralUser && !centralUser.isAnonymous && soloIdentityMatches) {
         dismissedThisPage = true;
         try { sessionStorage.setItem(PROMPT_SESSION_KEY, '1'); } catch (_) {}
         refreshUI(centralUser);
+      } else if (centralUser && !centralUser.isAnonymous && isSeparateSoloProject) {
+        // The site-wide Google identity may already exist while this browser's
+        // Single Player Firebase project is still anonymous or signed into another
+        // Gmail. Keep the section gate visible until this project uses that same Gmail.
+        dismissedThisPage = false;
+        refreshUI(auth.currentUser);
+        setStatus(auth.currentUser && !auth.currentUser.isAnonymous
+          ? 'Single Player is signed into a different Google account. Continue with the same ESI Gmail to unify your progress.'
+          : 'Your ESI Google account is already connected. Continue with that same Gmail to connect Single Player too.');
       } else {
         refreshUI(auth.currentUser);
       }
