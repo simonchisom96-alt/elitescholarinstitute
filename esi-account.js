@@ -290,6 +290,18 @@
     return false;
   }
 
+  function collectMatchIds(value, output) {
+    if (!value || typeof value !== 'object') return;
+    if (Array.isArray(value)) {
+      value.forEach(item => collectMatchIds(item, output));
+      return;
+    }
+    Object.keys(value).forEach(key => {
+      if (key === 'matchId' && typeof value[key] === 'string' && value[key]) output.add(value[key]);
+      else collectMatchIds(value[key], output);
+    });
+  }
+
   function remapLegacyUid(value, oldUid, newUid) {
     if (Array.isArray(value)) return value.map(item => remapLegacyUid(item, oldUid, newUid));
     if (!value || typeof value !== 'object') return value === oldUid ? newUid : value;
@@ -346,10 +358,13 @@
         const item = allRooms[id];
         if (containsLegacyUid(item, uid)) out.mpRooms[id] = item;
       });
-      // Keep live match state reachable when a migrated room points to it.
+      // Keep match state reachable from rooms, tournament brackets and challenges.
       out.mpMatches = {};
-      const liveMatchIds = new Set(Object.values(out.mpRooms).map(room => room && room.matchId).filter(Boolean));
-      for (const matchId of liveMatchIds) {
+      const referencedMatchIds = new Set();
+      collectMatchIds(out.mpRooms, referencedMatchIds);
+      collectMatchIds(out.mpTournaments, referencedMatchIds);
+      collectMatchIds(out.mpChallenges, referencedMatchIds);
+      for (const matchId of referencedMatchIds) {
         const match = await read('mp_matches/' + matchId);
         if (match && containsLegacyUid(match, uid)) out.mpMatches[matchId] = match;
       }
