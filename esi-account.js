@@ -301,14 +301,31 @@
       out.mpFriends = await read('mp_friends/' + uid);
       out.mpFriendRequests = await read('mp_friend_requests/' + uid);
       out.mpFriendRequestsSent = await read('mp_friend_requests_sent/' + uid);
-      out.mpLeaderboard = await read('mp_global_lb/' + month + '/' + uid);
+      // Preserve every monthly leaderboard row, not just the current month.
+      const allMpMonths = await read('mp_global_lb') || {};
+      out.mpLeaderboards = {};
+      Object.keys(allMpMonths).forEach(monthKey => {
+        if (allMpMonths[monthKey] && allMpMonths[monthKey][uid]) {
+          out.mpLeaderboards[monthKey] = allMpMonths[monthKey][uid];
+        }
+      });
+      out.mpLeaderboard = out.mpLeaderboards[month] || null;
       const lower = out.mpUser && out.mpUser.usernameLower;
       if (lower) {
         const registry = await read('mp_usernames/' + lower);
         if (registry === uid) out.mpUsername = lower;
       }
     } else if (projectId === 'leadersboard-7dacc') {
-      out.soloLeaderboard = await read('leaderboard/' + month + '/' + uid);
+      // Solo leaderboard rows are partitioned by month. Keep the complete
+      // history so an account link never strands earlier monthly rankings.
+      const allSoloMonths = await read('leaderboard') || {};
+      out.soloLeaderboards = {};
+      Object.keys(allSoloMonths).forEach(monthKey => {
+        if (allSoloMonths[monthKey] && allSoloMonths[monthKey][uid]) {
+          out.soloLeaderboards[monthKey] = allSoloMonths[monthKey][uid];
+        }
+      });
+      out.soloLeaderboard = out.soloLeaderboards[month] || null;
       let soloName = null;
       try { soloName = JSON.parse(localStorage.getItem('elite_lb_user_v55') || 'null'); } catch (_) {}
       const lower = soloName && soloName.name ? String(soloName.name).trim().toLowerCase() : '';
@@ -336,11 +353,29 @@
     };
     const writes = {};
     if (projectId === 'project-76067') {
+      // A fresh Google profile may already exist with default zero values.
+      // Those defaults must not erase the old anonymous player's progress.
+      const markerRef = db.ref('mp_users/' + uid + '/accountMigrations/' + legacy.uid);
+      const markerSnap = await markerRef.get().catch(() => null);
+      const alreadyMigrated = !!(markerSnap && markerSnap.exists());
       const current = await read('mp_users/' + uid);
-      if (legacy.mpUser) {
-        const profile = { ...legacy.mpUser, ...(current || {}), uid };
-        if (current && current.username) profile.username = current.username;
-        if (current && current.usernameLower) profile.usernameLower = current.usernameLower;
+      if (legacy.mpUser && !alreadyMigrated) {
+        const oldProfile = legacy.mpUser || {};
+        const newProfile = current || {};
+        const profile = { ...oldProfile, ...newProfile, uid };
+        const preserveOldIfEmpty = ['username','usernameLower','avatarEmoji','favoriteSubject','equippedNameColor','equippedTitle','equippedEffect','equippedFrame'];
+        preserveOldIfEmpty.forEach(key => {
+          if ((profile[key] == null || profile[key] === '') && oldProfile[key] != null) profile[key] = oldProfile[key];
+        });
+        ['elo','wins','losses','draws','totalMatches','bestStreak','xp','level','coins','teamContribSum','teamContribCount'].forEach(key => {
+          const oldValue = Number(oldProfile[key] || 0);
+          const newValue = Number(newProfile[key] || 0);
+          if (Number.isFinite(oldValue) && Number.isFinite(newValue)) {
+            profile[key] = key === 'elo' ? Math.max(oldValue, newValue) : oldValue + newValue;
+          }
+        });
+        profile.createdAt = Math.min(Number(oldProfile.createdAt) || Date.now(), Number(newProfile.createdAt) || Date.now());
+        profile.uid = uid;
         writes['mp_users/' + uid] = profile;
       }
       if (legacy.mpHistory) {
@@ -359,10 +394,16 @@
         const currentSent = await read('mp_friend_requests_sent/' + uid) || {};
         writes['mp_friend_requests_sent/' + uid] = { ...legacy.mpFriendRequestsSent, ...currentSent };
       }
-      if (legacy.mpLeaderboard && !(await read('mp_global_lb/' + new Date().toISOString().slice(0,7) + '/' + uid))) {
-        writes['mp_global_lb/' + new Date().toISOString().slice(0,7) + '/' + uid] = { ...legacy.mpLeaderboard, uid };
+      if (!alreadyMigrated) {
+        const rows = legacy.mpLeaderboards || (legacy.mpLeaderboard ? { [new Date().toISOString().slice(0,7)]: legacy.mpLeaderboard } : {});
+        Object.keys(rows).forEach(monthKey => {
+          const path = 'mp_global_lb/' + monthKey + '/' + uid;
+          const oldRow = rows[monthKey] || {};
+          const newRow = current && current.username ? current : {};
+          writes[path] = { ...oldRow, ...oldRow, uid, name: (newRow.username || oldRow.name || '') };
+        });
       }
-      if (legacy.mpUsername) {
+      if (legacy.mpUsername && !alreadyMigrated) {
         const existingNameOwner = await read('mp_usernames/' + legacy.mpUsername);
         const profile = writes['mp_users/' + uid] || current;
         if ((!existingNameOwner || existingNameOwner === legacy.uid || existingNameOwner === uid) &&
@@ -370,17 +411,22 @@
           writes['mp_usernames/' + legacy.mpUsername] = uid;
         }
       }
+      if (!alreadyMigrated) writes['mp_users/' + uid + '/accountMigrations/' + legacy.uid] = { migratedAt: Date.now(), sourceUid: legacy.uid };
     } else if (projectId === 'leadersboard-7dacc') {
-      const month = new Date().toISOString().slice(0,7);
-      const current = await read('leaderboard/' + month + '/' + uid);
-      if (legacy.soloLeaderboard && !current) {
-        writes['leaderboard/' + month + '/' + uid] = { ...legacy.soloLeaderboard };
-      }
-      if (legacy.soloName) {
-        const currentName = await read('leaderboard_names/' + legacy.soloName.lower);
-        if (!currentName || currentName.uid === legacy.uid || currentName.uid === uid) {
-          writes['leaderboard_names/' + legacy.soloName.lower] = { ...legacy.soloName.value, uid };
+      const alreadyMigrated = !!(await read('esi_account_migrations/' + uid + '/' + legacy.uid));
+      if (!alreadyMigrated) {
+        const rows = legacy.soloLeaderboards || (legacy.soloLeaderboard ? { [new Date().toISOString().slice(0,7)]: legacy.soloLeaderboard } : {});
+        Object.keys(rows).forEach(monthKey => {
+          const path = 'leaderboard/' + monthKey + '/' + uid;
+          writes[path] = { ...(rows[monthKey] || {}), uid };
+        });
+        if (legacy.soloName) {
+          const currentName = null;
+          if (!currentName || currentName.uid === legacy.uid || currentName.uid === uid) {
+            writes['leaderboard_names/' + legacy.soloName.lower] = { ...legacy.soloName.value, uid };
+          }
         }
+        writes['esi_account_migrations/' + uid + '/' + legacy.uid] = { migratedAt: Date.now(), sourceUid: legacy.uid };
       }
     }
     if (Object.keys(writes).length) await db.ref().update(writes);
