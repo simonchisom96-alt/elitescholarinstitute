@@ -65,10 +65,12 @@
       if (!app) app = firebase.initializeApp(CENTRAL_CONFIG);
       return app.auth();
     }
+    // Single-player uses its own Firebase project, but the same Google credential
+    // is linked into this project and the central multiplayer project at sign-in.
+    const soloApp = firebase.apps.find(item => item.name === 'esiLeaderboardAccount');
+    if (soloApp) return soloApp.auth();
     const defaultApp = firebase.apps.find(item => item.name === '[DEFAULT]');
-    // Keep the solo app's own anonymous identity available for credential linking,
-    // but use the stable shared app for multiplayer and all other central-project pages.
-    if (defaultApp && defaultApp.options && defaultApp.options.projectId !== CENTRAL_CONFIG.projectId) {
+    if (defaultApp && defaultApp.options && defaultApp.options.projectId === 'leadersboard-7dacc') {
       return defaultApp.auth();
     }
     return getCentralAuth();
@@ -206,19 +208,53 @@
     return true;
   }
 
+  async function connectCredentialToProject(auth, credential) {
+    if (!auth || !credential) return null;
+    const current = auth.currentUser;
+    if (current && !current.isAnonymous && current.providerData.some(p => p.providerId === 'google.com')) {
+      // The selected Google identity is already active in this Firebase project.
+      return current;
+    }
+    if (current && current.isAnonymous) {
+      try {
+        const linked = await current.linkWithCredential(credential);
+        return linked.user;
+      } catch (error) {
+        if (!error || error.code !== 'auth/credential-already-in-use') throw error;
+        // This Google account already owns a profile in this project. Sign into that
+        // profile; never overwrite or delete the older anonymous profile.
+      }
+    }
+    const signed = await auth.signInWithCredential(credential);
+    return signed.user;
+  }
+
   async function activateCentralIdentity(credential, sourceAuth) {
     const centralAuth = getCentralAuth();
-    if (!centralAuth) return;
-    const alreadyCentral = sourceAuth && sourceAuth.app && sourceAuth.app.options &&
-      sourceAuth.app.options.projectId === CENTRAL_CONFIG.projectId && sourceAuth.currentUser && !sourceAuth.currentUser.isAnonymous;
-    if (credential && !alreadyCentral) {
-      await centralAuth.signInWithCredential(credential);
-    }
+    if (!centralAuth || !credential) return;
+    // Apply the same Google credential to both ESI identity stores. Linking preserves
+    // an existing anonymous UID where possible; an already-used Google credential
+    // resolves to its existing account instead of creating a duplicate.
+    await connectCredentialToProject(centralAuth, credential);
+
+    const soloApp = firebase.apps.find(item => item.name === 'esiLeaderboardAccount') ||
+      firebase.initializeApp({
+        apiKey: 'AIzaSyD4wzJZUn5RFMWaj1IP5r2cNWFupYWV0',
+        authDomain: 'leadersboard-7dacc.firebaseapp.com',
+        databaseURL: 'https://leadersboard-7dacc-default-rtdb.firebaseio.com',
+        projectId: 'leadersboard-7dacc',
+        storageBucket: 'leadersboard-7dacc.firebasestorage.app',
+        messagingSenderId: '855741214857',
+        appId: '1:855741214857:web:d943c7c24d78ec581d5658'
+      }, 'esiLeaderboardAccount');
+    const soloAuth = soloApp.auth();
+    await connectCredentialToProject(soloAuth, credential);
+
     if (centralAuth.currentUser && centralAuth.currentUser.email) {
       try {
         await syncSinglePlayerData(centralAuth);
       } catch (error) {
-        console.warn('[ESI Account] Google identity connected; solo cloud backup needs database permission', error);
+        console.warn('[ESI Account] solo cloud backup needs database permission', error);
         window.ESIAccount.syncWarning = true;
       }
     }
