@@ -154,8 +154,9 @@
   }
 
   async function syncSinglePlayerData(centralAuth) {
-    const defaultApp = firebase.apps.find(item => item.name === '[DEFAULT]');
-    if (!defaultApp || !defaultApp.options || defaultApp.options.projectId !== 'leadersboard-7dacc') return;
+    const soloApp = firebase.apps.find(item => item.name === 'esiLeaderboardAccount') ||
+      firebase.apps.find(item => item.name === '[DEFAULT]');
+    if (!soloApp || !soloApp.options || soloApp.options.projectId !== 'leadersboard-7dacc') return;
     if (!firebase.database || !centralAuth || !centralAuth.currentUser) return;
     const uid = centralAuth.currentUser.uid;
     const allowed = key => key === 'elite_store_v55' || key === 'elite_flagged_v55' ||
