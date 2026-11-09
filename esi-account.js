@@ -116,7 +116,10 @@
 
   function getCentralAuth() {
     if (!window.firebase || !firebase.auth) return null;
-    let app = firebase.apps.find(item => item.options && item.options.projectId === CENTRAL_CONFIG.projectId);
+    // Use one stable named Firebase app for the shared ESI identity on every page.
+    // The multiplayer page may also have a default app for legacy anonymous sessions;
+    // sign-in credentials are bridged into this stable app by activateCentralIdentity().
+    let app = firebase.apps.find(item => item.name === 'esiCentralAccount');
     if (!app) app = firebase.initializeApp(CENTRAL_CONFIG, 'esiCentralAccount');
     return app.auth();
   }
