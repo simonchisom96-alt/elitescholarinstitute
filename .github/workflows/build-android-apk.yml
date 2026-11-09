@@ -62,8 +62,8 @@ jobs:
           grep -m1 "CACHE_VERSION" sw.js
           grep -m1 "CACHE_NAME" downloader.js
           grep -E "versionCode|versionName" android/app/build.gradle.kts
-          grep -q 'versionCode = 362423' android/app/build.gradle.kts
-          grep -q 'versionName = "4.23"' android/app/build.gradle.kts
+          grep -q 'versionCode = 362424' android/app/build.gradle.kts
+          grep -q 'versionName = "4.24"' android/app/build.gradle.kts
           test -f Englishtextbook.html
 
       - name: Bundle defined ESI offline shell
@@ -188,8 +188,8 @@ jobs:
           grep -q 'allowFileAccess = true' "$TARGET"
           grep -q 'setDownloadListener' "$TARGET"
           grep -q 'downloadUrl' "$TARGET"
-          grep -q 'versionCode = 362423' android/app/build.gradle.kts
-          grep -q 'versionName = "4.23"' android/app/build.gradle.kts
+          grep -q 'versionCode = 362424' android/app/build.gradle.kts
+          grep -q 'versionName = "4.24"' android/app/build.gradle.kts
           echo "Android source passed the targeted pre-build checks."
 
       - name: Set up JDK 17
@@ -215,13 +215,16 @@ jobs:
           test -s android/app/build/outputs/apk/debug/app-debug.apk
           mkdir -p release
           cp android/app/build/outputs/apk/debug/app-debug.apk release/ESI.apk
+          SDK_ZIPALIGN=$(find "$ANDROID_HOME/build-tools" -name zipalign -type f | sort -V | tail -1)
+          test -n "$SDK_ZIPALIGN"
+          "$SDK_ZIPALIGN" -c -v 4 release/ESI.apk
           SDK_AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1)
           BADGING=$("$SDK_AAPT2" dump badging release/ESI.apk)
           echo "$BADGING"
           EXPECTED_CODE=$(sed -n 's/.*versionCode = \([0-9][0-9]*\).*/\1/p' android/app/build.gradle.kts | head -1)
           EXPECTED_NAME=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' android/app/build.gradle.kts | head -1)
-          test "$EXPECTED_CODE" = "362423"
-          test "$EXPECTED_NAME" = "4.23"
+          test "$EXPECTED_CODE" = "362424"
+          test "$EXPECTED_NAME" = "4.24"
           echo "$BADGING" | grep -E "package: name='com.elitescholarinstitute.app'.*versionCode='$EXPECTED_CODE'.*versionName='$EXPECTED_NAME'"
           echo "APK SHA-256: $(sha256sum release/ESI.apk | cut -d' ' -f1)"
           echo "APK bytes: $(wc -c < release/ESI.apk)"
@@ -241,10 +244,21 @@ jobs:
             echo "::warning::This debug-signed APK cannot update an installation signed with a different certificate."
           fi
 
+      - name: Install APK on clean Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          script: |
+            adb install -r release/ESI.apk
+            adb shell monkey -p com.elitescholarinstitute.app 1
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ESI-APK-v4.23
+          name: ESI-APK-v4.24
           path: release/ESI.apk
           if-no-files-found: error
           retention-days: 30
@@ -255,8 +269,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="esi-v4.23-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          TAG="esi-v4.24-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
           gh release create "$TAG" release/ESI.apk \
-            --title "ESI Android APK v4.23" \
-            --notes "ESI Android APK v4.23. Built from commit ${GITHUB_SHA}." \
+            --title "ESI Android APK v4.24" \
+            --notes "ESI Android APK v4.24. Built from commit ${GITHUB_SHA}." \
             --latest
