@@ -7780,7 +7780,10 @@ async function openLB(){
         statusEl.style.color=healthy?'var(--success)':'var(--error)';
     }
 
-    let meId=MY_UID;
+    const myMPName=String(ME&&ME.username||'').trim().toLowerCase();
+    const isMyMPEntry=e=>!!e&&(e.uid===MY_UID || (!!myMPName && String(e.name||'').trim().toLowerCase()===myMPName));
+    // Multiplayer has its own globally unique username, separate from Single-player.
+    // Match by that username as a cross-device fallback when an auth UID changes.
     // Canonical order is already highest formula output -> lowest. Never infer rank from visual position.
     const first=all[0]||null;
     const second=all[1]||null;
@@ -7790,13 +7793,13 @@ async function openLB(){
     // Rank is determined above and never by visual position.
     let podiumHtml=`<div style="display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;align-items:stretch;margin:12px 0">`;
 
-    if(second)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(192,192,192,0.15);padding:10px 6px;border-radius:12px;border:1px solid #c0c0c0;word-break:break-word"><div style="font-size:20px">🥈</div><div style="font-size:11px;font-weight:800;line-height:1.2;color:var(--text)">${esc(second.name)}${second.uid===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">ELO ${second.elo} • ${second.wins}W/${second.losses}L</div></div>`;
+    if(second)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(192,192,192,0.15);padding:10px 6px;border-radius:12px;border:1px solid #c0c0c0;word-break:break-word"><div style="font-size:20px">🥈</div><div style="font-size:11px;font-weight:800;line-height:1.2;color:var(--text)">${esc(second.name)}${isMyMPEntry(second)?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">ELO ${second.elo} • ${second.wins}W/${second.losses}L</div></div>`;
     else podiumHtml+=`<div></div>`;
 
-    if(first)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:linear-gradient(180deg,rgba(255,215,0,0.28),rgba(255,215,0,0.08));padding:14px 6px;border-radius:14px;border:1.5px solid gold;word-break:break-word"><div style="font-size:26px">🥇</div><div style="font-size:12px;font-weight:900;line-height:1.2;color:var(--text)">${esc(first.name)}${first.uid===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">ELO ${first.elo} • ${first.wins}W/${first.losses}L</div></div>`;
+    if(first)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:linear-gradient(180deg,rgba(255,215,0,0.28),rgba(255,215,0,0.08));padding:14px 6px;border-radius:14px;border:1.5px solid gold;word-break:break-word"><div style="font-size:26px">🥇</div><div style="font-size:12px;font-weight:900;line-height:1.2;color:var(--text)">${esc(first.name)}${isMyMPEntry(first)?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">ELO ${first.elo} • ${first.wins}W/${first.losses}L</div></div>`;
     else podiumHtml+=`<div></div>`;
 
-    if(third)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(205,127,50,0.15);padding:10px 6px;border-radius:12px;border:1px solid #cd7f32;word-break:break-word"><div style="font-size:20px">🥉</div><div style="font-size:11px;font-weight:800;line-height:1.2;color:var(--text)">${esc(third.name)}${third.uid===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">ELO ${third.elo} • ${third.wins}W/${third.losses}L</div></div>`;
+    if(third)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(205,127,50,0.15);padding:10px 6px;border-radius:12px;border:1px solid #cd7f32;word-break:break-word"><div style="font-size:20px">🥉</div><div style="font-size:11px;font-weight:800;line-height:1.2;color:var(--text)">${esc(third.name)}${isMyMPEntry(third)?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">ELO ${third.elo} • ${third.wins}W/${third.losses}L</div></div>`;
     else podiumHtml+=`<div></div>`;
 
     podiumHtml+=`</div>`;
@@ -7808,7 +7811,7 @@ async function openLB(){
         let matches=e.totalMatches||0;
         let wr=matches?Math.round((e.wins/matches)*100):0;
         let contribTxt=(e.avgTeamContrib!==null&&e.avgTeamContrib!==undefined)?e.avgTeamContrib+'%':'—';
-        let isMe=e.uid===meId;
+        let isMe=isMyMPEntry(e);
         let nameCell=isMe
             ? `${e.avatarEmoji||'🎓'} <span style="${nameColorStyle(e)}">${esc(e.name)}</span> (you)`
             : `<span style="cursor:pointer" title="Tap to add friend" onclick="sendFriendRequestByUid('${e.uid}','${esc(e.name).replace(/'/g,"\\'")}')">${e.avatarEmoji||'🎓'} <span style="${nameColorStyle(e)}">${esc(e.name)}</span></span>`;
