@@ -533,7 +533,7 @@
           if (existingRaw === null && googleName) {
             const cleaned = String(googleName)
               .replace(/[^A-Za-z ]/g, '')
-              .replace(/\\s+/g, ' ')
+              .replace(/\s+/g, ' ')
               .trim()
               .slice(0, 25);
             if ((cleaned.match(/[A-Za-z]/g) || []).length >= 3) {
