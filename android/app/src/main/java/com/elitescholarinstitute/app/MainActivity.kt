@@ -357,7 +357,7 @@ class MainActivity : ComponentActivity() {
                 pendingDownloadOutput?.close()
                 pendingDownloadName = name.substringAfterLast('/').ifBlank { "download" }
                 pendingDownloadMime = mime.ifBlank { "application/octet-stream" }
-                pendingDownloadOutput = FileOutputStream(File(cacheDir, "esi-download-$${System.nanoTime()}.part"), false)
+                pendingDownloadOutput = FileOutputStream(File(cacheDir, "esi-download-${System.nanoTime()}.part"), false)
             }
         }
 
@@ -378,7 +378,7 @@ class MainActivity : ComponentActivity() {
                 pendingDownloadOutput?.flush()
                 pendingDownloadOutput?.close()
                 pendingDownloadOutput = null
-                temp = File(cacheDir, "esi-download-temp-$${System.nanoTime()}.bin")
+                temp = File(cacheDir, "esi-download-temp-${System.nanoTime()}.bin")
                 throwIfNoPendingDownload(temp)
                 name = pendingDownloadName
                 mime = pendingDownloadMime
