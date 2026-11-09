@@ -363,9 +363,14 @@
         const oldProfile = legacy.mpUser || {};
         const newProfile = current || {};
         const profile = { ...oldProfile, ...newProfile, uid };
-        const preserveOldIfEmpty = ['username','usernameLower','avatarEmoji','favoriteSubject','equippedNameColor','equippedTitle','equippedEffect','equippedFrame'];
-        preserveOldIfEmpty.forEach(key => {
-          if ((profile[key] == null || profile[key] === '') && oldProfile[key] != null) profile[key] = oldProfile[key];
+        // Keep the established anonymous profile identity and merge nested
+        // progress collections instead of letting a freshly-created empty
+        // Google profile replace achievements, owned items or flagged questions.
+        ['username','usernameLower','avatarEmoji','favoriteSubject','equippedNameColor','equippedTitle','equippedEffect','equippedFrame'].forEach(key => {
+          if (oldProfile[key] != null && oldProfile[key] !== '') profile[key] = oldProfile[key];
+        });
+        ['achievements','shopOwned','flaggedQuestions','activeRooms','hiddenTournaments'].forEach(key => {
+          profile[key] = mergeSavedValue(oldProfile[key] || {}, newProfile[key] || {});
         });
         ['elo','wins','losses','draws','totalMatches','bestStreak','xp','level','coins','teamContribSum','teamContribCount'].forEach(key => {
           const oldValue = Number(oldProfile[key] || 0);
@@ -410,9 +415,20 @@
       if (legacy.mpUsername && !alreadyMigrated) {
         const existingNameOwner = await read('mp_usernames/' + legacy.mpUsername);
         const profile = writes['mp_users/' + uid] || current;
-        if ((!existingNameOwner || existingNameOwner === legacy.uid || existingNameOwner === uid) &&
-            profile && (!current || !current.usernameLower || current.usernameLower === legacy.mpUsername)) {
+        if (existingNameOwner === legacy.uid || existingNameOwner === uid) {
+          // The old globally-reserved username is the established multiplayer
+          // identity. Move its reservation to the Google UID and release only
+          // the target profile's previous reservation if it belongs to that UID.
+          if (current && current.usernameLower && current.usernameLower !== legacy.mpUsername) {
+            const previousOwner = await read('mp_usernames/' + current.usernameLower);
+            if (previousOwner === uid) writes['mp_usernames/' + current.usernameLower] = null;
+          }
           writes['mp_usernames/' + legacy.mpUsername] = uid;
+          if (profile) {
+            profile.usernameLower = legacy.mpUsername;
+            profile.username = legacy.mpUser && legacy.mpUser.username || profile.username;
+          }
+          if (writes['mp_users/' + uid]) writes['mp_users/' + uid] = profile;
         }
       }
       if (!alreadyMigrated) writes['mp_users/' + uid + '/accountMigrations/' + legacy.uid] = { migratedAt: Date.now(), sourceUid: legacy.uid };
