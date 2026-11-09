@@ -524,6 +524,26 @@
     if (centralAuth.currentUser && centralAuth.currentUser.email) {
       try {
         await syncSinglePlayerData(centralAuth);
+
+        // Only reserve a default solo name after cloud data has been restored.
+        // This preserves any username already saved locally or in the Google account backup.
+        try {
+          const existingRaw = localStorage.getItem('elite_lb_user_v55');
+          const googleName = centralAuth.currentUser && centralAuth.currentUser.displayName;
+          if (existingRaw === null && googleName) {
+            const cleaned = String(googleName)
+              .replace(/[^A-Za-z ]/g, '')
+              .replace(/\\s+/g, ' ')
+              .trim()
+              .slice(0, 25);
+            if ((cleaned.match(/[A-Za-z]/g) || []).length >= 3) {
+              localStorage.setItem('elite_lb_user_v55', JSON.stringify({ name: cleaned }));
+              console.log('[ESI Account] Auto-set solo username from Google displayName:', cleaned);
+            }
+          }
+        } catch (nameError) {
+          console.warn('[ESI Account] could not auto-set solo name from displayName', nameError);
+        }
       } catch (error) {
         console.warn('[ESI Account] solo cloud backup needs database permission', error);
         window.ESIAccount.syncWarning = true;
