@@ -65,8 +65,13 @@
       if (!app) app = firebase.initializeApp(CENTRAL_CONFIG);
       return app.auth();
     }
-    if (!firebase.apps.length) return null;
-    return firebase.app().auth();
+    const defaultApp = firebase.apps.find(item => item.name === '[DEFAULT]');
+    // Keep the solo app's own anonymous identity available for credential linking,
+    // but use the stable shared app for multiplayer and all other central-project pages.
+    if (defaultApp && defaultApp.options && defaultApp.options.projectId !== CENTRAL_CONFIG.projectId) {
+      return defaultApp.auth();
+    }
+    return getCentralAuth();
   }
 
   function ensureUI() {
