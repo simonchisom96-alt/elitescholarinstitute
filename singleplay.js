@@ -3620,17 +3620,20 @@ async function openLB(){
         }
     }catch(e){}
 
-    let meId=myUid;
+    const myLBName=(getLBUser()&&getLBUser().name||'').trim().toLowerCase();
+    const isMyLBEntry=e=>!!e&&(e.id===myUid || (!!myLBName && String(e.name||'').trim().toLowerCase()===myLBName));
+    // The globally unique Single-player username is the cross-device identity fallback.
+    // Firebase UIDs can change when an anonymous profile is linked to an existing Google account.
     // Canonical order is already highest formula output -> lowest. Never infer rank from visual position.
     const first=all[0]||null;
     const second=all[1]||null;
     const third=all[2]||null;
     let podiumHtml=`<div style="display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;align-items:stretch;margin:12px 0">`;
-    if(second)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(192,192,192,0.15);padding:10px 6px;border-radius:12px;border:1px solid #c0c0c0;word-break:break-word"><div style="font-size:20px">🥈</div><div style="font-size:11px;font-weight:800;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${second.name}${second.id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${second.avgScore}% • ${second.avgSpeed}s<br>${second.quizCount}×</div></div>`;
+    if(second)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(192,192,192,0.15);padding:10px 6px;border-radius:12px;border:1px solid #c0c0c0;word-break:break-word"><div style="font-size:20px">🥈</div><div style="font-size:11px;font-weight:800;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${second.name}${isMyLBEntry(second)?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${second.avgScore}% • ${second.avgSpeed}s<br>${second.quizCount}×</div></div>`;
     else podiumHtml+=`<div></div>`;
-    if(first)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:linear-gradient(180deg,rgba(255,215,0,0.28),rgba(255,215,0,0.08));padding:14px 6px;border-radius:14px;border:1.5px solid gold;word-break:break-word"><div style="font-size:26px">🥇</div><div style="font-size:12px;font-weight:900;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${first.name}${first.id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${first.avgScore}% • ${first.avgSpeed}s • ${first.quizCount}×</div><div style="font-size:8px;color:var(--muted)">${first.rankScore.toFixed(1)} pts</div></div>`;
+    if(first)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:linear-gradient(180deg,rgba(255,215,0,0.28),rgba(255,215,0,0.08));padding:14px 6px;border-radius:14px;border:1.5px solid gold;word-break:break-word"><div style="font-size:26px">🥇</div><div style="font-size:12px;font-weight:900;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${first.name}${isMyLBEntry(first)?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${first.avgScore}% • ${first.avgSpeed}s • ${first.quizCount}×</div><div style="font-size:8px;color:var(--muted)">${first.rankScore.toFixed(1)} pts</div></div>`;
     else podiumHtml+=`<div></div>`;
-    if(third)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(205,127,50,0.15);padding:10px 6px;border-radius:12px;border:1px solid #cd7f32;word-break:break-word"><div style="font-size:20px">🥉</div><div style="font-size:11px;font-weight:800;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${third.name}${third.id===meId?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${third.avgScore}% • ${third.avgSpeed}s<br>${third.quizCount}×</div></div>`;
+    if(third)podiumHtml+=`<div style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:rgba(205,127,50,0.15);padding:10px 6px;border-radius:12px;border:1px solid #cd7f32;word-break:break-word"><div style="font-size:20px">🥉</div><div style="font-size:11px;font-weight:800;line-height:1.2;white-space:normal;word-break:break-word;color:var(--text)">${third.name}${isMyLBEntry(third)?' (you)':''}</div><div style="font-size:9px;margin-top:4px;color:var(--muted)">${third.avgScore}% • ${third.avgSpeed}s<br>${third.quizCount}×</div></div>`;
     else podiumHtml+=`<div></div>`;
     podiumHtml+=`</div>`;
 
@@ -3642,7 +3645,7 @@ async function openLB(){
     }
 
     $('lbBody').innerHTML=all.map((u,idx)=>{
-        let isMe=u.id===meId;
+        let isMe=isMyLBEntry(u);
         let title=u.rank===1?'🥇 1ST':u.rank===2?'🥈 2ND':u.rank===3?'🥉 3RD':`#${u.rank}`;
         let rowClass=isMe?'class="me"':'';
         return `<tr ${rowClass}>
