@@ -20,8 +20,8 @@ android {
         applicationId = "com.elitescholarinstitute.app"
         minSdk = 23
         targetSdk = 35
-        versionCode = 362423
-        versionName = "4.23"
+        versionCode = 362424
+        versionName = "4.24"
     }
 
     signingConfigs {
