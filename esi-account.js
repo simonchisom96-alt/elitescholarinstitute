@@ -67,12 +67,20 @@
     }
     // Single-player uses its own Firebase project, but the same Google credential
     // is linked into this project and the central multiplayer project at sign-in.
-    const soloApp = firebase.apps.find(item => item.name === 'esiLeaderboardAccount');
-    if (soloApp) return soloApp.auth();
-    const defaultApp = firebase.apps.find(item => item.name === '[DEFAULT]');
-    if (defaultApp && defaultApp.options && defaultApp.options.projectId === 'leadersboard-7dacc') {
-      return defaultApp.auth();
-    }
+    const soloApps = firebase.apps.filter(item =>
+      item.options && item.options.projectId === 'leadersboard-7dacc'
+    );
+    // If older builds created two app instances for this project, prefer the
+    // one already signed into the Google account instead of an empty duplicate.
+    const signedInSoloApp = soloApps.find(item => {
+      const user = item.auth().currentUser;
+      return user && !user.isAnonymous;
+    });
+    if (signedInSoloApp) return signedInSoloApp.auth();
+    const defaultSoloApp = soloApps.find(item => item.name === '[DEFAULT]');
+    if (defaultSoloApp) return defaultSoloApp.auth();
+    const namedSoloApp = soloApps.find(item => item.name === 'esiLeaderboardAccount');
+    if (namedSoloApp) return namedSoloApp.auth();
     return getCentralAuth();
   }
 
@@ -205,7 +213,10 @@
   }
 
   async function syncSinglePlayerData(centralAuth) {
-    let soloApp = firebase.apps.find(item => item.name === 'esiLeaderboardAccount');
+    let soloApp = firebase.apps.find(item => item.options &&
+      item.options.projectId === 'leadersboard-7dacc' && item.auth().currentUser && !item.auth().currentUser.isAnonymous) ||
+      firebase.apps.find(item => item.options && item.options.projectId === 'leadersboard-7dacc' && item.name === '[DEFAULT]') ||
+      firebase.apps.find(item => item.name === 'esiLeaderboardAccount');
     if (!soloApp) {
       soloApp = firebase.initializeApp({
         apiKey: 'AIzaSyD4JwzZUn5RFMWaj1IP5r2cNWFupaeYWV0',
@@ -677,6 +688,9 @@
     // Creating a second app for the same project would strand its anonymous UID.
     const soloApp = (sourceAuth && sourceAuth.app && sourceAuth.app.options &&
       sourceAuth.app.options.projectId === 'leadersboard-7dacc' ? sourceAuth.app : null) ||
+      firebase.apps.find(item => item.options && item.options.projectId === 'leadersboard-7dacc' &&
+        item.auth().currentUser && !item.auth().currentUser.isAnonymous) ||
+      firebase.apps.find(item => item.options && item.options.projectId === 'leadersboard-7dacc' && item.name === '[DEFAULT]') ||
       firebase.apps.find(item => item.options && item.options.projectId === 'leadersboard-7dacc') ||
       firebase.initializeApp({
         apiKey: 'AIzaSyD4JwzZUn5RFMWaj1IP5r2cNWFupaeYWV0',
