@@ -301,6 +301,7 @@
       out.mpFriends = await read('mp_friends/' + uid);
       out.mpFriendRequests = await read('mp_friend_requests/' + uid);
       out.mpFriendRequestsSent = await read('mp_friend_requests_sent/' + uid);
+      out.mpNotifications = await read('mp_notifications/' + uid);
       // Preserve every monthly leaderboard row, not just the current month.
       const allMpMonths = await read('mp_global_lb') || {};
       out.mpLeaderboards = {};
@@ -399,6 +400,10 @@
       if (legacy.mpFriendRequestsSent) {
         const currentSent = await read('mp_friend_requests_sent/' + uid) || {};
         writes['mp_friend_requests_sent/' + uid] = { ...legacy.mpFriendRequestsSent, ...currentSent };
+      }
+      if (legacy.mpNotifications) {
+        const currentNotifications = await read('mp_notifications/' + uid) || {};
+        writes['mp_notifications/' + uid] = { ...legacy.mpNotifications, ...currentNotifications };
       }
       if (!alreadyMigrated) {
         const rows = legacy.mpLeaderboards || (legacy.mpLeaderboard ? { [new Date().toISOString().slice(0,7)]: legacy.mpLeaderboard } : {});
