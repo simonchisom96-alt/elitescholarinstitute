@@ -41,6 +41,7 @@ import java.net.URL
 import java.security.MessageDigest
 
 // Keep native Android source build-ready without CI-time source rewriting.
+// Website HTML, JavaScript, CSS and JSON are refreshed file-by-file at runtime.
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private var authPopup: Dialog? = null
