@@ -280,6 +280,33 @@
     return true;
   }
 
+  // Walk account-owned multiplayer structures without changing unrelated players.
+  function containsLegacyUid(value, uid) {
+    if (value === uid) return true;
+    if (Array.isArray(value)) return value.some(item => containsLegacyUid(item, uid));
+    if (value && typeof value === 'object') {
+      return Object.keys(value).some(key => key === uid || containsLegacyUid(value[key], uid));
+    }
+    return false;
+  }
+
+  function remapLegacyUid(value, oldUid, newUid) {
+    if (Array.isArray(value)) return value.map(item => remapLegacyUid(item, oldUid, newUid));
+    if (!value || typeof value !== 'object') return value === oldUid ? newUid : value;
+    const out = {};
+    Object.keys(value).forEach(key => {
+      const nextKey = key === oldUid ? newUid : key;
+      const nextValue = remapLegacyUid(value[key], oldUid, newUid);
+      if (Object.prototype.hasOwnProperty.call(out, nextKey) && out[nextKey] && nextValue &&
+          typeof out[nextKey] === 'object' && typeof nextValue === 'object') {
+        out[nextKey] = mergeSavedValue(out[nextKey], nextValue);
+      } else {
+        out[nextKey] = nextValue;
+      }
+    });
+    return out;
+  }
+
   // Capture a device's temporary anonymous profile BEFORE switching to an
   // already-existing Google account. Firebase rules can still authorize reads
   // while auth.currentUser is the anonymous owner of these UID-keyed records.
@@ -302,6 +329,31 @@
       out.mpFriendRequests = await read('mp_friend_requests/' + uid);
       out.mpFriendRequestsSent = await read('mp_friend_requests_sent/' + uid);
       out.mpNotifications = await read('mp_notifications/' + uid);
+      // Preserve tournament, room and challenge participation tied to this temporary UID.
+      const allTournaments = await read('mp_tournaments') || {};
+      out.mpTournaments = {};
+      Object.keys(allTournaments).forEach(id => {
+        const item = allTournaments[id];
+        if (containsLegacyUid(item, uid)) out.mpTournaments[id] = item;
+      });
+      const allRooms = await read('mp_rooms') || {};
+      out.mpRooms = {};
+      Object.keys(allRooms).forEach(id => {
+        const item = allRooms[id];
+        if (containsLegacyUid(item, uid)) out.mpRooms[id] = item;
+      });
+      const allChallenges = await read('mp_challenges') || {};
+      out.mpChallenges = {};
+      Object.keys(allChallenges).forEach(id => {
+        const item = allChallenges[id];
+        if (containsLegacyUid(item, uid)) out.mpChallenges[id] = item;
+      });
+      // Direct-message IDs are deterministic from the two participant UIDs.
+      const allChats = await read('mp_chats') || {};
+      out.mpChats = {};
+      Object.keys(allChats).forEach(id => {
+        if (id.split('_').includes(uid)) out.mpChats[id] = allChats[id];
+      });
       // Preserve every monthly leaderboard row, not just the current month.
       const allMpMonths = await read('mp_global_lb') || {};
       out.mpLeaderboards = {};
@@ -404,6 +456,32 @@
       if (legacy.mpNotifications) {
         const currentNotifications = await read('mp_notifications/' + uid) || {};
         writes['mp_notifications/' + uid] = { ...legacy.mpNotifications, ...currentNotifications };
+      }
+      // Restore event records under the Google UID, merging existing account data.
+      // Source records are deliberately retained as a recovery copy.
+      if (!alreadyMigrated) {
+        for (const [id, oldTournament] of Object.entries(legacy.mpTournaments || {})) {
+          const target = 'mp_tournaments/' + id;
+          const currentTournament = await read(target) || {};
+          writes[target] = mergeSavedValue(remapLegacyUid(oldTournament, legacy.uid, uid), currentTournament);
+        }
+        for (const [id, oldRoom] of Object.entries(legacy.mpRooms || {})) {
+          const target = 'mp_rooms/' + id;
+          const currentRoom = await read(target) || {};
+          writes[target] = mergeSavedValue(remapLegacyUid(oldRoom, legacy.uid, uid), currentRoom);
+        }
+        for (const [id, oldChallenge] of Object.entries(legacy.mpChallenges || {})) {
+          const target = 'mp_challenges/' + id;
+          const currentChallenge = await read(target) || {};
+          writes[target] = mergeSavedValue(remapLegacyUid(oldChallenge, legacy.uid, uid), currentChallenge);
+        }
+        for (const [oldChatId, oldChat] of Object.entries(legacy.mpChats || {})) {
+          const participants = oldChatId.split('_');
+          const newChatId = participants.map(participant => participant === legacy.uid ? uid : participant).sort().join('_');
+          const target = 'mp_chats/' + newChatId;
+          const currentChat = await read(target) || {};
+          writes[target] = mergeSavedValue(remapLegacyUid(oldChat, legacy.uid, uid), currentChat);
+        }
       }
       if (!alreadyMigrated) {
         const rows = legacy.mpLeaderboards || (legacy.mpLeaderboard ? { [new Date().toISOString().slice(0,7)]: legacy.mpLeaderboard } : {});
