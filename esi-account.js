@@ -346,6 +346,13 @@
         const item = allRooms[id];
         if (containsLegacyUid(item, uid)) out.mpRooms[id] = item;
       });
+      // Keep live match state reachable when a migrated room points to it.
+      out.mpMatches = {};
+      const liveMatchIds = new Set(Object.values(out.mpRooms).map(room => room && room.matchId).filter(Boolean));
+      for (const matchId of liveMatchIds) {
+        const match = await read('mp_matches/' + matchId);
+        if (match && containsLegacyUid(match, uid)) out.mpMatches[matchId] = match;
+      }
       const allChallenges = await read('mp_challenges') || {};
       out.mpChallenges = {};
       Object.keys(allChallenges).forEach(id => {
@@ -473,6 +480,11 @@
           const target = 'mp_rooms/' + id;
           const currentRoom = await read(target) || {};
           writes[target] = mergeSavedValue(remapLegacyUid(oldRoom, legacy.uid, uid), currentRoom);
+        }
+        for (const [id, oldMatch] of Object.entries(legacy.mpMatches || {})) {
+          const target = 'mp_matches/' + id;
+          const currentMatch = await read(target) || {};
+          writes[target] = mergeSavedValue(remapLegacyUid(oldMatch, legacy.uid, uid), currentMatch);
         }
         for (const [id, oldChallenge] of Object.entries(legacy.mpChallenges || {})) {
           const target = 'mp_challenges/' + id;
