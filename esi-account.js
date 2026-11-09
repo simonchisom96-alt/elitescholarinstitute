@@ -212,9 +212,11 @@
   async function connectCredentialToProject(auth, credential) {
     if (!auth || !credential) return null;
     const current = auth.currentUser;
-    if (current && !current.isAnonymous && current.providerData.some(p => p.providerId === 'google.com')) {
-      // The selected Google identity is already active in this Firebase project.
-      return current;
+    if (current && !current.isAnonymous) {
+      // Re-authenticate into the account the user selected on this visit. This also
+      // switches projects consistently if they intentionally choose another Gmail.
+      const signed = await auth.signInWithCredential(credential);
+      return signed.user;
     }
     if (current && current.isAnonymous) {
       try {
