@@ -376,7 +376,8 @@
           const oldValue = Number(oldProfile[key] || 0);
           const newValue = Number(newProfile[key] || 0);
           if (Number.isFinite(oldValue) && Number.isFinite(newValue)) {
-            profile[key] = key === 'elo' ? Math.max(oldValue, newValue) : oldValue + newValue;
+            profile[key] = (key === 'elo' || key === 'level' || key === 'bestStreak')
+              ? Math.max(oldValue, newValue) : oldValue + newValue;
           }
         });
         profile.createdAt = Math.min(Number(oldProfile.createdAt) || Date.now(), Number(newProfile.createdAt) || Date.now());
@@ -405,7 +406,9 @@
           const path = 'mp_global_lb/' + monthKey + '/' + uid;
           const oldRow = rows[monthKey] || {};
           const newRow = await read(path) || {};
-          const mergedRow = { ...oldRow, ...newRow, uid, name: (newRow.name || (current && current.username) || oldRow.name || '') };
+          const canonicalName = (writes['mp_users/' + uid] && writes['mp_users/' + uid].username) || (current && current.username) || oldRow.name || newRow.name || '';
+          const mergedRow = { ...oldRow, ...newRow, uid, name: canonicalName };
+          mergedRow.elo = Math.max(Number(oldRow.elo || 0), Number(newRow.elo || 0));
           ['wins','losses','draws','totalMatches'].forEach(key => {
             mergedRow[key] = Number(oldRow[key] || 0) + Number(newRow[key] || 0);
           });
@@ -440,7 +443,7 @@
           const path = 'leaderboard/' + monthKey + '/' + uid;
           const oldRow = rows[monthKey] || {};
           const newRow = await read(path) || {};
-          const mergedRow = { ...oldRow, ...newRow, uid, name: newRow.name || oldRow.name };
+          const mergedRow = { ...oldRow, ...newRow, uid, name: oldRow.name || newRow.name };
           ['quizCount','totalScore','totalSpeed','totalOps'].forEach(key => {
             mergedRow[key] = Number(oldRow[key] || 0) + Number(newRow[key] || 0);
           });
