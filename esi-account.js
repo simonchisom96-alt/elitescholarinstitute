@@ -76,13 +76,47 @@
     return getCentralAuth();
   }
 
+  let pageScrollLockState = null;
+  function lockPageScroll(locked) {
+    if (locked) {
+      if (pageScrollLockState || !document.body) return;
+      const body = document.body;
+      const html = document.documentElement;
+      pageScrollLockState = {
+        bodyOverflow: body.style.overflow,
+        bodyPosition: body.style.position,
+        bodyTop: body.style.top,
+        bodyWidth: body.style.width,
+        htmlOverflow: html.style.overflow,
+        scrollY: window.scrollY || window.pageYOffset || 0
+      };
+      html.style.overflow = 'hidden';
+      body.style.overflow = 'hidden';
+      body.style.position = 'fixed';
+      body.style.top = '-' + pageScrollLockState.scrollY + 'px';
+      body.style.width = '100%';
+      return;
+    }
+    if (!pageScrollLockState || !document.body) return;
+    const state = pageScrollLockState;
+    pageScrollLockState = null;
+    const body = document.body;
+    const html = document.documentElement;
+    html.style.overflow = state.htmlOverflow;
+    body.style.overflow = state.bodyOverflow;
+    body.style.position = state.bodyPosition;
+    body.style.top = state.bodyTop;
+    body.style.width = state.bodyWidth;
+    window.scrollTo(0, state.scrollY);
+  }
+
   function ensureUI() {
     if (document.getElementById('esiGoogleAccount')) return;
     const style = document.createElement('style');
     style.textContent = `
-      #esiGoogleAccount{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(2,9,22,.82);backdrop-filter:blur(7px);font:500 14px/1.5 Poppins,Arial,sans-serif;color:#fff}
+      #esiGoogleAccount{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(2,9,22,.82);backdrop-filter:blur(7px);font:500 14px/1.5 Poppins,Arial,sans-serif;color:#fff;overscroll-behavior:none;touch-action:none}
       #esiGoogleAccount[hidden]{display:none!important}
-      #esiGoogleAccount .esi-account-panel{display:block;width:min(430px,100%);padding:30px 24px 24px;border:1px solid #c9a43a;border-radius:22px;background:linear-gradient(155deg,#10284a,#04142f 72%);box-shadow:0 22px 80px #000a;text-align:center}
+      #esiGoogleAccount .esi-account-panel{display:block;width:min(430px,100%);max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;padding:30px 24px 24px;border:1px solid #c9a43a;border-radius:22px;background:linear-gradient(155deg,#10284a,#04142f 72%);box-shadow:0 22px 80px #000a;text-align:center}
       #esiGoogleAccount .esi-account-mark{display:block;width:104px;height:104px;object-fit:cover;object-position:center;margin:0 auto 18px;border-radius:50%;background:transparent;padding:0;border:2px solid #c9a43a;box-shadow:0 5px 20px #0006;overflow:hidden}
       #esiGoogleAccount .esi-account-title{font-weight:800;color:#fff;font-size:19.05px;line-height:1.2;margin:0 0 9px;text-transform:uppercase}
       #esiGoogleAccount .esi-account-copy{font-weight:400;color:#c5d2e8;font-size:13px;line-height:1.6;margin:0 auto 20px;max-width:330px}
@@ -112,11 +146,13 @@
         <button class="esi-account-action secondary esi-signout" type="button" style="display:none">Sign out</button>
       </div>`;
     document.body.appendChild(root);
+    lockPageScroll(true);
     root.querySelector('.esi-account-action:not(.secondary)').addEventListener('click', signIn);
     root.querySelector('.esi-signout').addEventListener('click', signOut);
     root.querySelector('.secondary:not(.esi-signout)').addEventListener('click', () => {
       dismissedThisPage = true;
       root.hidden = true;
+      lockPageScroll(false);
     });
   }
 
@@ -286,6 +322,7 @@
     const signOutButton = root.querySelector('.esi-signout');
     if ((!user || user.isAnonymous) && dismissedThisPage) {
       root.hidden = true;
+      lockPageScroll(false);
       return;
     }
     if (user && !user.isAnonymous) {
@@ -298,18 +335,21 @@
       // already has a persisted session. The user can reselect the same Google
       // account to refresh their cloud-backed profile on this device.
       root.hidden = false;
+      lockPageScroll(true);
       setStatus((user.email || label) + ' is saved. Continue with Google to refresh your ESI information.');
       setGoogleButtonLabel(signInButton, 'Continue with Google');
       signInButton.disabled = false;
       signOutButton.style.display = 'none';
     } else if (user && user.isAnonymous) {
       root.hidden = false;
+      lockPageScroll(true);
       setStatus('Your current progress is using a temporary account. Connect Google to secure this identity.');
       setGoogleButtonLabel(signInButton, 'Continue with Google');
       signInButton.disabled = false;
       signOutButton.style.display = 'none';
     } else {
       root.hidden = false;
+      lockPageScroll(true);
       setStatus('Sign in with Google to connect this ESI section to your account.');
       setGoogleButtonLabel(signInButton, 'Continue with Google');
       signInButton.disabled = false;
@@ -441,6 +481,7 @@
     if (promptAlreadyShown) {
       const existingRoot = document.getElementById('esiGoogleAccount');
       if (existingRoot) existingRoot.hidden = true;
+      lockPageScroll(false);
     }
     try {
       const auth = await waitForAuth();
