@@ -77,6 +77,20 @@
   }
 
   let pageScrollLockState = null;
+  let pageScrollGuardsInstalled = false;
+  function installPageScrollGuards() {
+    if (pageScrollGuardsInstalled) return;
+    pageScrollGuardsInstalled = true;
+    // The overlay must not allow touch/wheel gestures to reach the page beneath it.
+    // Gestures that start inside the sign-in panel remain available for panel scrolling.
+    const isInsidePanel = target => !!(target && target.closest && target.closest('#esiGoogleAccount .esi-account-panel'));
+    document.addEventListener('touchmove', event => {
+      if (pageScrollLockState && !isInsidePanel(event.target)) event.preventDefault();
+    }, { passive: false, capture: true });
+    document.addEventListener('wheel', event => {
+      if (pageScrollLockState && !isInsidePanel(event.target)) event.preventDefault();
+    }, { passive: false, capture: true });
+  }
   function lockPageScroll(locked) {
     if (locked) {
       if (pageScrollLockState || !document.body) return;
@@ -146,6 +160,7 @@
         <button class="esi-account-action secondary esi-signout" type="button" style="display:none">Sign out</button>
       </div>`;
     document.body.appendChild(root);
+    installPageScrollGuards();
     lockPageScroll(true);
     root.querySelector('.esi-account-action:not(.secondary)').addEventListener('click', signIn);
     root.querySelector('.esi-signout').addEventListener('click', signOut);
