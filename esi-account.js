@@ -688,15 +688,14 @@
     // resolves to its existing account instead of creating a duplicate.
     await connectCredentialToProject(centralAuth, credential);
 
-    // Reuse the actual Single Player Firebase app if it is already running.
-    // Creating a second app for the same project would strand its anonymous UID.
-    const soloApp = (sourceAuth && sourceAuth.app && sourceAuth.app.options &&
-      sourceAuth.app.options.projectId === 'leadersboard-7dacc' ? sourceAuth.app : null) ||
-      firebase.apps.find(item => item.options && item.options.projectId === 'leadersboard-7dacc' &&
-        item.auth().currentUser && !item.auth().currentUser.isAnonymous) ||
-      firebase.apps.find(item => item.options && item.options.projectId === 'leadersboard-7dacc' && item.name === '[DEFAULT]') ||
-      firebase.apps.find(item => item.options && item.options.projectId === 'leadersboard-7dacc') ||
-      firebase.initializeApp({
+    // Every app instance for the Single Player Firebase project must use
+    // the same Google identity. Older builds may have created both a default
+    // and a named app, each with its own anonymous UID and recoverable records.
+    let soloApps = firebase.apps.filter(item =>
+      item.options && item.options.projectId === 'leadersboard-7dacc'
+    );
+    if (!soloApps.length) {
+      const soloApp = firebase.initializeApp({
         apiKey: 'AIzaSyD4JwzZUn5RFMWaj1IP5r2cNWFupaeYWV0',
         authDomain: 'leadersboard-7dacc.firebaseapp.com',
         databaseURL: 'https://leadersboard-7dacc-default-rtdb.firebaseio.com',
@@ -705,8 +704,11 @@
         messagingSenderId: '855741214857',
         appId: '1:855741214857:web:d943c7c24d78ec581d5658'
       }, 'esiLeaderboardAccount');
-    const soloAuth = soloApp.auth();
-    if (soloAuth !== sourceAuth) await connectCredentialToProject(soloAuth, credential);
+      soloApps = [soloApp];
+    }
+    for (const soloApp of soloApps) {
+      await connectCredentialToProject(soloApp.auth(), credential);
+    }
 
     if (centralAuth.currentUser && centralAuth.currentUser.email) {
       try {
