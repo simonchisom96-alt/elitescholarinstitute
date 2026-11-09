@@ -75,7 +75,7 @@
       #esiGoogleAccount{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(2,9,22,.82);backdrop-filter:blur(7px);font:500 14px/1.5 Poppins,Arial,sans-serif;color:#fff}
       #esiGoogleAccount[hidden]{display:none!important}
       #esiGoogleAccount .esi-account-panel{display:block;width:min(430px,100%);padding:30px 24px 24px;border:1px solid #c9a43a;border-radius:22px;background:linear-gradient(155deg,#10284a,#04142f 72%);box-shadow:0 22px 80px #000a;text-align:center}
-      #esiGoogleAccount .esi-account-mark{display:block;width:104px;height:104px;object-fit:contain;margin:0 auto 18px;border-radius:18px;background:#fff;padding:5px;box-shadow:0 5px 20px #0004}
+      #esiGoogleAccount .esi-account-mark{display:block;width:104px;height:104px;object-fit:cover;object-position:center;margin:0 auto 18px;border-radius:50%;background:transparent;padding:0;border:2px solid #c9a43a;box-shadow:0 5px 20px #0006;overflow:hidden}
       #esiGoogleAccount .esi-account-title{font-weight:800;color:#fff;font-size:20.93px;line-height:1.2;margin:0 0 9px;text-transform:uppercase}
       #esiGoogleAccount .esi-account-copy{font-weight:400;color:#c5d2e8;font-size:13px;line-height:1.6;margin:0 auto 20px;max-width:330px}
       #esiGoogleAccount .esi-account-action{box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:50px;padding:13px 16px;border:0;border-radius:10px;background:#fff;color:#172033;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 3px 12px #0003}
