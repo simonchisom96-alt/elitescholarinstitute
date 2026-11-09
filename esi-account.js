@@ -234,7 +234,11 @@
       let localValue = null, cloudValue = null;
       try { if (local[key] != null) localValue = JSON.parse(local[key]); } catch (_) { localValue = local[key]; }
       try { if (cloud[key] != null) cloudValue = JSON.parse(cloud[key]); } catch (_) { cloudValue = cloud[key]; }
-      const value = mergeSavedValue(localValue, cloudValue);
+      // The globally reserved solo username belongs to the Google account,
+      // not to whichever browser happens to be signing in. Prefer its cloud copy
+      // when present; histories and ordinary settings still merge both ways.
+      const value = key === 'elite_lb_user_v55' && cloudValue != null
+        ? cloudValue : mergeSavedValue(localValue, cloudValue);
       const serialized = typeof value === 'string' ? value : JSON.stringify(value);
       merged[key] = serialized;
       if (serialized != null) localStorage.setItem(key, serialized);
