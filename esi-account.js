@@ -348,11 +348,11 @@
         const item = allChallenges[id];
         if (containsLegacyUid(item, uid)) out.mpChallenges[id] = item;
       });
-      // Direct-message IDs are deterministic from the two participant UIDs.
-      const allChats = await read('mp_chats') || {};
-      out.mpChats = {};
-      Object.keys(allChats).forEach(id => {
-        if (id.split('_').includes(uid)) out.mpChats[id] = allChats[id];
+      const allRoomPredictions = await read('mp_room_predictions') || {};
+      out.mpRoomPredictions = {};
+      Object.keys(allRoomPredictions).forEach(id => {
+        const item = allRoomPredictions[id];
+        if (containsLegacyUid(item, uid)) out.mpRoomPredictions[id] = item;
       });
       // Preserve every monthly leaderboard row, not just the current month.
       const allMpMonths = await read('mp_global_lb') || {};
@@ -475,13 +475,25 @@
           const currentChallenge = await read(target) || {};
           writes[target] = mergeSavedValue(remapLegacyUid(oldChallenge, legacy.uid, uid), currentChallenge);
         }
-        for (const [oldChatId, oldChat] of Object.entries(legacy.mpChats || {})) {
-          const participants = oldChatId.split('_');
-          const newChatId = participants.map(participant => participant === legacy.uid ? uid : participant).sort().join('_');
-          const target = 'mp_chats/' + newChatId;
-          const currentChat = await read(target) || {};
-          writes[target] = mergeSavedValue(remapLegacyUid(oldChat, legacy.uid, uid), currentChat);
+        for (const [id, oldPrediction] of Object.entries(legacy.mpRoomPredictions || {})) {
+          const target = 'mp_room_predictions/' + id;
+          const currentPrediction = await read(target) || {};
+          writes[target] = mergeSavedValue(remapLegacyUid(oldPrediction, legacy.uid, uid), currentPrediction);
         }
+        // Keep the reciprocal side of each friendship pointing at the canonical UID.
+        Object.keys(legacy.mpFriends || {}).forEach(friendUid => {
+          writes['mp_friends/' + friendUid + '/' + uid] = true;
+          writes['mp_friends/' + friendUid + '/' + legacy.uid] = null;
+        });
+        // Rebuild the counterpart indexes for requests involving the old identity.
+        Object.entries(legacy.mpFriendRequestsSent || {}).forEach(([friendUid, request]) => {
+          writes['mp_friend_requests/' + friendUid + '/' + uid] = remapLegacyUid(request, legacy.uid, uid);
+          writes['mp_friend_requests/' + friendUid + '/' + legacy.uid] = null;
+        });
+        Object.entries(legacy.mpFriendRequests || {}).forEach(([friendUid, request]) => {
+          writes['mp_friend_requests_sent/' + friendUid + '/' + uid] = remapLegacyUid(request, legacy.uid, uid);
+          writes['mp_friend_requests_sent/' + friendUid + '/' + legacy.uid] = null;
+        });
       }
       if (!alreadyMigrated) {
         const rows = legacy.mpLeaderboards || (legacy.mpLeaderboard ? { [new Date().toISOString().slice(0,7)]: legacy.mpLeaderboard } : {});
