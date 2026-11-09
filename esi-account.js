@@ -595,6 +595,9 @@
             mergedRow[key] = Number(oldRow[key] || 0) + Number(newRow[key] || 0);
           });
           writes[path] = mergedRow;
+          // Remove the old UID's public leaderboard row in the same atomic
+          // migration so one person cannot appear twice in monthly rankings.
+          writes['mp_global_lb/' + monthKey + '/' + legacy.uid] = null;
         }
       }
       if (legacy.mpUsername && !alreadyMigrated) {
@@ -634,6 +637,8 @@
             mergedRow.avgSpeed = +(mergedRow.totalSpeed / mergedRow.quizCount).toFixed(1);
           }
           writes[path] = mergedRow;
+          // Keep the migrated account as the sole active leaderboard identity.
+          writes['leaderboard/' + monthKey + '/' + legacy.uid] = null;
         }
         if (legacy.soloName) {
           const currentName = await read('leaderboard_names/' + legacy.soloName.lower);
