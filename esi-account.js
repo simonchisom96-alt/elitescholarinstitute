@@ -76,14 +76,14 @@
       #esiGoogleAccount[hidden]{display:none!important}
       #esiGoogleAccount .esi-account-panel{display:block;width:min(430px,100%);padding:30px 24px 24px;border:1px solid #c9a43a;border-radius:22px;background:linear-gradient(155deg,#10284a,#04142f 72%);box-shadow:0 22px 80px #000a;text-align:center}
       #esiGoogleAccount .esi-account-mark{display:block;width:104px;height:104px;object-fit:cover;object-position:center;margin:0 auto 18px;border-radius:50%;background:transparent;padding:0;border:2px solid #c9a43a;box-shadow:0 5px 20px #0006;overflow:hidden}
-      #esiGoogleAccount .esi-account-title{font-weight:800;color:#fff;font-size:20.93px;line-height:1.2;margin:0 0 9px;text-transform:uppercase}
+      #esiGoogleAccount .esi-account-title{font-weight:800;color:#fff;font-size:19.05px;line-height:1.2;margin:0 0 9px;text-transform:uppercase}
       #esiGoogleAccount .esi-account-copy{font-weight:400;color:#c5d2e8;font-size:13px;line-height:1.6;margin:0 auto 20px;max-width:330px}
       #esiGoogleAccount .esi-account-action{box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:50px;padding:13px 16px;border:0;border-radius:10px;background:#fff;color:#172033;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 3px 12px #0003}
       #esiGoogleAccount .esi-account-action:disabled{opacity:.7;cursor:wait}
       #esiGoogleAccount .esi-google-g{display:block;flex:0 0 22px;width:22px;height:22px;min-width:22px;min-height:22px;overflow:visible;position:relative;z-index:1} #esiGoogleAccount .esi-account-action:not(.secondary){display:flex;flex-direction:row;align-items:center;justify-content:center;gap:11px;overflow:visible;white-space:nowrap} #esiGoogleAccount .esi-account-action:not(.secondary) span:last-child{display:inline-block;line-height:1.25}
       #esiGoogleAccount .esi-account-action.secondary{margin-top:12px;min-height:42px;background:transparent;color:#c5d2e8;border:1px solid #526681;box-shadow:none;font-size:12px}
       #esiGoogleAccount .esi-account-status{font-size:12px;color:#c5d2e8;overflow-wrap:anywhere;margin:14px 0 0}
-      @media(max-width:520px){#esiGoogleAccount{padding:16px}#esiGoogleAccount .esi-account-panel{padding:26px 19px 20px}#esiGoogleAccount .esi-account-title{font-size:19.11px}}
+      @media(max-width:520px){#esiGoogleAccount{padding:16px}#esiGoogleAccount .esi-account-panel{padding:26px 19px 20px}#esiGoogleAccount .esi-account-title{font-size:17.39px}}
     `;
     document.head.appendChild(style);
     const root = document.createElement('div');
@@ -91,14 +91,14 @@
     root.innerHTML = `
       <div class="esi-account-panel" role="dialog" aria-modal="true" aria-labelledby="esiAccountTitle">
         <img class="esi-account-mark" src="./logo.jpg" alt="Elite Scholar Institute logo" width="104" height="104">
-        <h2 class="esi-account-title" id="esiAccountTitle">SIGN IN TO ELITE SCHOLAR INSTITUTE</h2>
+        <h2 class="esi-account-title" id="esiAccountTitle">SIGN INTO ELITE SCHOLAR INSTITUTE</h2>
         <p class="esi-account-copy">Use your Google account to secure your ESI profile and keep your learning progress connected across devices.</p>
         <button class="esi-account-action" type="button"><svg class="esi-google-g" viewBox="0 0 48 48" role="img" aria-label="Google" xmlns="http://www.w3.org/2000/svg">
           <path fill="#4285F4" d="M43.6 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h11c-.5 2.7-2 5-4.3 6.5l7 5.4c4.1-3.8 6.5-9.4 6.5-15.9z"/>
           <path fill="#34A853" d="M24 44c5.9 0 10.9-2 14.5-5.4l-7-5.4c-2 1.3-4.5 2.1-7.5 2.1-5.8 0-10.7-3.9-12.5-9.1l-7.2 5.6C8.2 39 15.5 44 24 44z"/>
           <path fill="#FBBC05" d="M11.5 26.2c-.5-1.3-.8-2.7-.8-4.2s.3-2.9.8-4.2l-7.2-5.6C2.8 15.3 2 18.5 2 22s.8 6.7 2.3 9.8l7.2-5.6z"/>
           <path fill="#EA4335" d="M24 8.7c3.2 0 6.1 1.1 8.4 3.3l6.3-6.3C34.9 2.2 29.9 0 24 0 15.5 0 8.2 5 4.3 12.2l7.2 5.6C13.3 12.6 18.2 8.7 24 8.7z"/>
-        </svg> <span>Continue with Google</span></button>
+        </svg> <span class="esi-google-label">Continue with Google</span></button>
         <div class="esi-account-status" aria-live="polite">Preparing secure sign-in…</div>
         <button class="esi-account-action secondary" type="button">Continue without signing in</button>
         <button class="esi-account-action secondary esi-signout" type="button" style="display:none">Sign out</button>
@@ -215,6 +215,11 @@
     }
   }
 
+  function setGoogleButtonLabel(button, message) {
+    const label = button && button.querySelector('.esi-google-label');
+    if (label) label.textContent = message;
+  }
+
   function setStatus(message) {
     const el = document.querySelector('#esiGoogleAccount .esi-account-status');
     if (el) el.textContent = message;
@@ -237,19 +242,19 @@
       const label = user.displayName || user.email || 'Google account connected';
       root.hidden = true;
       setStatus((user.email || label) + ' is connected to this ESI section.');
-      signInButton.textContent = 'Google account connected';
+      setGoogleButtonLabel(signInButton, 'Google account connected');
       signInButton.disabled = true;
       signOutButton.style.display = 'flex';
     } else if (user && user.isAnonymous) {
       root.hidden = false;
       setStatus('Your current progress is using a temporary account. Connect Google to secure this identity.');
-      signInButton.textContent = 'Continue with Google';
+      setGoogleButtonLabel(signInButton, 'Continue with Google');
       signInButton.disabled = false;
       signOutButton.style.display = 'none';
     } else {
       root.hidden = false;
       setStatus('Sign in with Google to connect this ESI section to your account.');
-      signInButton.textContent = 'Continue with Google';
+      setGoogleButtonLabel(signInButton, 'Continue with Google');
       signInButton.disabled = false;
       signOutButton.style.display = 'none';
     }
@@ -296,7 +301,7 @@
     const root = document.getElementById('esiGoogleAccount');
     if (root) root.hidden = false;
     button.disabled = true;
-    button.textContent = 'Connecting…';
+    setGoogleButtonLabel(button, 'Connecting…');
     try {
       const auth = await waitForAuth();
       await waitForAuthReady(auth);
@@ -344,7 +349,7 @@
       console.error('[ESI Account]', error);
       setStatus(error && error.message ? error.message : 'Google sign-in could not be completed. Please try again.');
       button.disabled = false;
-      button.textContent = 'Continue with Google';
+      setGoogleButtonLabel(button, 'Continue with Google');
     }
   }
 
