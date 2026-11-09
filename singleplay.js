@@ -2649,9 +2649,12 @@ const firebaseConfig = {
   messagingSenderId: "855741214857",
   appId: "1:855741214857:web:d943c7c24d78ec581d5658"
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const auth = firebase.auth();
+// Keep the leaderboard database and auth on a named app so the shared ESI
+// account layer can link the same Google identity into this project safely.
+const soloApp = firebase.apps.find(app => app.name === 'esiLeaderboardAccount') ||
+    firebase.initializeApp(firebaseConfig, 'esiLeaderboardAccount');
+const db = soloApp.database();
+const auth = soloApp.auth();
 // Every leaderboard write is keyed by this uid (never by a client-invented id) so
 // firebase-rules-leaderboard.json can actually verify "you may only touch your own
 // entry." Anonymous sign-in is invisible to the player — no login screen, same as before.
