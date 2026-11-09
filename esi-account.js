@@ -399,8 +399,12 @@
         Object.keys(rows).forEach(monthKey => {
           const path = 'mp_global_lb/' + monthKey + '/' + uid;
           const oldRow = rows[monthKey] || {};
-          const newRow = current && current.username ? current : {};
-          writes[path] = { ...oldRow, ...oldRow, uid, name: (newRow.username || oldRow.name || '') };
+          const newRow = await read(path) || {};
+          const mergedRow = { ...oldRow, ...newRow, uid, name: (newRow.name || (current && current.username) || oldRow.name || '') };
+          ['wins','losses','draws','totalMatches'].forEach(key => {
+            mergedRow[key] = Number(oldRow[key] || 0) + Number(newRow[key] || 0);
+          });
+          writes[path] = mergedRow;
         });
       }
       if (legacy.mpUsername && !alreadyMigrated) {
@@ -416,17 +420,26 @@
       const alreadyMigrated = !!(await read('esi_account_migrations/' + uid + '/' + legacy.uid));
       if (!alreadyMigrated) {
         const rows = legacy.soloLeaderboards || (legacy.soloLeaderboard ? { [new Date().toISOString().slice(0,7)]: legacy.soloLeaderboard } : {});
-        Object.keys(rows).forEach(monthKey => {
+        for (const monthKey of Object.keys(rows)) {
           const path = 'leaderboard/' + monthKey + '/' + uid;
-          writes[path] = { ...(rows[monthKey] || {}), uid };
-        });
+          const oldRow = rows[monthKey] || {};
+          const newRow = await read(path) || {};
+          const mergedRow = { ...oldRow, ...newRow, uid, name: newRow.name || oldRow.name };
+          ['quizCount','totalScore','totalSpeed','totalOps'].forEach(key => {
+            mergedRow[key] = Number(oldRow[key] || 0) + Number(newRow[key] || 0);
+          });
+          if (mergedRow.quizCount) {
+            mergedRow.avgScore = +(mergedRow.totalScore / mergedRow.quizCount).toFixed(1);
+            mergedRow.avgSpeed = +(mergedRow.totalSpeed / mergedRow.quizCount).toFixed(1);
+          }
+          writes[path] = mergedRow;
+        }
         if (legacy.soloName) {
-          const currentName = null;
+          const currentName = await read('leaderboard_names/' + legacy.soloName.lower);
           if (!currentName || currentName.uid === legacy.uid || currentName.uid === uid) {
             writes['leaderboard_names/' + legacy.soloName.lower] = { ...legacy.soloName.value, uid };
           }
         }
-        writes['esi_account_migrations/' + uid + '/' + legacy.uid] = { migratedAt: Date.now(), sourceUid: legacy.uid };
       }
     }
     if (Object.keys(writes).length) await db.ref().update(writes);
