@@ -2662,6 +2662,14 @@ let myUid = null;
 auth.onAuthStateChanged(user=>{
     if(user){
         myUid = user.uid;
+        // HaniLearn-style identity recovery: the authenticated UID is the
+        // durable profile key. A fresh browser/WebView may have no localStorage,
+        // so recover the existing leaderboard name from the UID-owned row.
+        if (!user.isAnonymous) {
+            restoreLeaderboardIdentity(user).catch(error =>
+                console.warn('[Leaderboard] profile restore unavailable:', error && error.message)
+            );
+        }
         return;
     }
     myUid = null;
@@ -3497,6 +3505,32 @@ function backToRes(){
 // the fix that makes "secure leaderboard rules" possible at all.)
 function getLBUser(){try{return JSON.parse(localStorage.getItem(LB_USER)||'null')}catch{return null}}
 
+// Restore a returning player's leaderboard identity from the existing
+// UID-keyed database row. This avoids treating another browser or the APK's
+// separate WebView storage as a brand-new leaderboard account.
+async function restoreLeaderboardIdentity(user){
+    if(!user || user.isAnonymous || !user.uid) return false;
+    const current = getLBUser();
+    if(current && current.name) return true;
+    try{
+        const snap = await db.ref(`${LB_PATH}/${curMonth()}/${user.uid}`).get();
+        if(!snap.exists()) return false;
+        const row = snap.val() || {};
+        const name = typeof row.name === 'string' ? row.name.trim().slice(0,25) : '';
+        if(!name) return false;
+        localStorage.setItem(LB_USER, JSON.stringify({name}));
+        const modal = $('nameModal');
+        if(modal) modal.classList.remove('active');
+        const error = $('nameErr');
+        if(error) error.style.display = 'none';
+        console.log('[Leaderboard] Restored existing identity for authenticated UID:', user.uid);
+        return true;
+    }catch(error){
+        console.warn('[Leaderboard] Could not restore UID-owned profile:', error && error.message);
+        return false;
+    }
+}
+
 async function confirmLBName(){
     let nRaw=$('lbName').value.trim();
     let err=$('nameErr');
@@ -3544,6 +3578,10 @@ function calcRankingScore(entry){
 async function updateGlobalLB(score,avgSpeedPerQ,totalOps=1,isAuto=false){
     if(IS_REDO){return;}
     let u=getLBUser();
+    if(!u && auth.currentUser && !auth.currentUser.isAnonymous){
+        await restoreLeaderboardIdentity(auth.currentUser);
+        u=getLBUser();
+    }
     if(!u){
         $('nameModal').classList.add('active');
         let check=setInterval(()=>{let nu=getLBUser();if(nu){clearInterval(check);updateGlobalLB(score,avgSpeedPerQ,totalOps,isAuto);}},1000);
