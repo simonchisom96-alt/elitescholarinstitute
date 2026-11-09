@@ -617,7 +617,11 @@
     // resolves to its existing account instead of creating a duplicate.
     await connectCredentialToProject(centralAuth, credential);
 
-    const soloApp = firebase.apps.find(item => item.name === 'esiLeaderboardAccount') ||
+    // Reuse the actual Single Player Firebase app if it is already running.
+    // Creating a second app for the same project would strand its anonymous UID.
+    const soloApp = (sourceAuth && sourceAuth.app && sourceAuth.app.options &&
+      sourceAuth.app.options.projectId === 'leadersboard-7dacc' ? sourceAuth.app : null) ||
+      firebase.apps.find(item => item.options && item.options.projectId === 'leadersboard-7dacc') ||
       firebase.initializeApp({
         apiKey: 'AIzaSyD4JwzZUn5RFMWaj1IP5r2cNWFupaeYWV0',
         authDomain: 'leadersboard-7dacc.firebaseapp.com',
@@ -628,7 +632,7 @@
         appId: '1:855741214857:web:d943c7c24d78ec581d5658'
       }, 'esiLeaderboardAccount');
     const soloAuth = soloApp.auth();
-    await connectCredentialToProject(soloAuth, credential);
+    if (soloAuth !== sourceAuth) await connectCredentialToProject(soloAuth, credential);
 
     if (centralAuth.currentUser && centralAuth.currentUser.email) {
       try {
@@ -772,10 +776,22 @@
           if (linkedCredential) await activateCentralIdentity(linkedCredential, auth);
         } catch (error) {
           if (error && error.code === 'auth/credential-already-in-use') {
+            // Capture the current anonymous profile before the Google sign-in
+            // replaces its UID. Restore it after authentication into the same project.
+            const legacySourceProfile = await captureLegacyProfile(auth);
+            if (legacySourceProfile && legacySourceProfile.captureWarnings.length) {
+              window.ESIAccount.legacyMigrationWarning = true;
+            }
             const existingSignIn = await auth.signInWithPopup(provider);
+            if (legacySourceProfile) {
+              try { await restoreLegacyProfile(auth, legacySourceProfile); }
+              catch (migrationError) {
+                console.warn('[ESI Account] source profile migration failed:', migrationError);
+                window.ESIAccount.legacyMigrationWarning = true;
+              }
+            }
             const existingCredential = firebase.auth.GoogleAuthProvider.credentialFromResult(existingSignIn);
             if (existingCredential) await activateCentralIdentity(existingCredential, auth);
-            window.ESIAccount.legacyTempDataWarning = true;
           } else if (error && (error.code === 'auth/popup-blocked' || error.code === 'auth/operation-not-supported-in-this-environment')) {
             await current.linkWithRedirect(provider);
             return;
