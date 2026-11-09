@@ -72,6 +72,11 @@
     );
     // If older builds created two app instances for this project, prefer the
     // one already signed into the Google account instead of an empty duplicate.
+    // singleplay.js writes leaderboard rows through this exact named app.
+    // It must be the canonical auth instance even if an older [DEFAULT]
+    // Firebase app is still present from a previous build.
+    const leaderboardApp = soloApps.find(item => item.name === 'esiLeaderboardAccount');
+    if (leaderboardApp) return leaderboardApp.auth();
     const signedInSoloApp = soloApps.find(item => {
       const user = item.auth().currentUser;
       return user && !user.isAnonymous;
@@ -79,8 +84,6 @@
     if (signedInSoloApp) return signedInSoloApp.auth();
     const defaultSoloApp = soloApps.find(item => item.name === '[DEFAULT]');
     if (defaultSoloApp) return defaultSoloApp.auth();
-    const namedSoloApp = soloApps.find(item => item.name === 'esiLeaderboardAccount');
-    if (namedSoloApp) return namedSoloApp.auth();
     return getCentralAuth();
   }
 
@@ -213,10 +216,12 @@
   }
 
   async function syncSinglePlayerData(centralAuth) {
-    let soloApp = firebase.apps.find(item => item.options &&
-      item.options.projectId === 'leadersboard-7dacc' && item.auth().currentUser && !item.auth().currentUser.isAnonymous) ||
-      firebase.apps.find(item => item.options && item.options.projectId === 'leadersboard-7dacc' && item.name === '[DEFAULT]') ||
-      firebase.apps.find(item => item.name === 'esiLeaderboardAccount');
+    // Use the same Firebase app instance that singleplay.js uses for
+    // leaderboard reads/writes. Older duplicate app instances are not canonical.
+    let soloApp = firebase.apps.find(item => item.name === 'esiLeaderboardAccount') ||
+      firebase.apps.find(item => item.options &&
+        item.options.projectId === 'leadersboard-7dacc' && item.auth().currentUser && !item.auth().currentUser.isAnonymous) ||
+      firebase.apps.find(item => item.options && item.options.projectId === 'leadersboard-7dacc' && item.name === '[DEFAULT]');
     if (!soloApp) {
       soloApp = firebase.initializeApp({
         apiKey: 'AIzaSyD4JwzZUn5RFMWaj1IP5r2cNWFupaeYWV0',
