@@ -284,6 +284,9 @@
     if (projectId === 'project-76067') {
       out.mpUser = await read('mp_users/' + uid);
       out.mpHistory = await read('mp_match_history/' + uid);
+      out.mpFriends = await read('mp_friends/' + uid);
+      out.mpFriendRequests = await read('mp_friend_requests/' + uid);
+      out.mpFriendRequestsSent = await read('mp_friend_requests_sent/' + uid);
       out.mpLeaderboard = await read('mp_global_lb/' + month + '/' + uid);
       const lower = out.mpUser && out.mpUser.usernameLower;
       if (lower) {
@@ -329,6 +332,18 @@
       if (legacy.mpHistory) {
         const currentHistory = await read('mp_match_history/' + uid) || {};
         writes['mp_match_history/' + uid] = { ...legacy.mpHistory, ...currentHistory };
+      }
+      if (legacy.mpFriends) {
+        const currentFriends = await read('mp_friends/' + uid) || {};
+        writes['mp_friends/' + uid] = { ...legacy.mpFriends, ...currentFriends };
+      }
+      if (legacy.mpFriendRequests) {
+        const currentRequests = await read('mp_friend_requests/' + uid) || {};
+        writes['mp_friend_requests/' + uid] = { ...legacy.mpFriendRequests, ...currentRequests };
+      }
+      if (legacy.mpFriendRequestsSent) {
+        const currentSent = await read('mp_friend_requests_sent/' + uid) || {};
+        writes['mp_friend_requests_sent/' + uid] = { ...legacy.mpFriendRequestsSent, ...currentSent };
       }
       if (legacy.mpLeaderboard && !(await read('mp_global_lb/' + new Date().toISOString().slice(0,7) + '/' + uid))) {
         writes['mp_global_lb/' + new Date().toISOString().slice(0,7) + '/' + uid] = { ...legacy.mpLeaderboard, uid };
