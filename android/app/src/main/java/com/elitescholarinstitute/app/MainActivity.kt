@@ -42,6 +42,7 @@ import java.security.MessageDigest
 
 // Keep native Android source build-ready without CI-time source rewriting.
 // Website HTML, JavaScript, CSS and JSON are refreshed file-by-file at runtime.
+// Build validation also checks the shared account and quiz JavaScript sources.
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private var authPopup: Dialog? = null
