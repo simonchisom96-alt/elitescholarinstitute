@@ -208,7 +208,7 @@
     let soloApp = firebase.apps.find(item => item.name === 'esiLeaderboardAccount');
     if (!soloApp) {
       soloApp = firebase.initializeApp({
-        apiKey: 'AIzaSyD4wzJZUn5RFMWaj1IP5r2cNWFupYWV0',
+        apiKey: 'AIzaSyD4JwzZUn5RFMWaj1IP5r2cNWFupaeYWV0',
         authDomain: 'leadersboard-7dacc.firebaseapp.com',
         databaseURL: 'https://leadersboard-7dacc-default-rtdb.firebaseio.com',
         projectId: 'leadersboard-7dacc',
@@ -502,7 +502,7 @@
 
     const soloApp = firebase.apps.find(item => item.name === 'esiLeaderboardAccount') ||
       firebase.initializeApp({
-        apiKey: 'AIzaSyD4wzJZUn5RFMWaj1IP5r2cNWFupYWV0',
+        apiKey: 'AIzaSyD4JwzZUn5RFMWaj1IP5r2cNWFupaeYWV0',
         authDomain: 'leadersboard-7dacc.firebaseapp.com',
         databaseURL: 'https://leadersboard-7dacc-default-rtdb.firebaseio.com',
         projectId: 'leadersboard-7dacc',
