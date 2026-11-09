@@ -299,7 +299,7 @@
         (entry.ts != null && entry.opponentUid ? 'fallback:' + entry.opponentUid + ':' + entry.ts : 'key:' + key);
       const previous = byMatch.get(identity);
       // Current Google-account copy wins field conflicts; old-only details survive.
-      byMatch.set(identity, previous ? { ...entry, ...previous } : entry);
+      byMatch.set(identity, previous ? { ...previous, ...entry } : entry);
     });
     const result = {};
     byMatch.forEach((entry, identity) => {
@@ -394,18 +394,21 @@
         const item = allChallenges[id];
         if (containsLegacyUid(item, uid)) out.mpChallenges[id] = item;
       });
-      const allRoomPredictions = await read('mp_room_predictions') || {};
+      // Read only this player's room-prediction branches; root-wide access is
+      // intentionally not required by the private room-prediction rules.
       out.mpRoomPredictions = {};
-      Object.keys(allRoomPredictions).forEach(id => {
-        const item = allRoomPredictions[id];
-        if (containsLegacyUid(item, uid)) out.mpRoomPredictions[id] = item;
-      });
+      for (const roomId of Object.keys(out.mpRooms)) {
+        const item = await read('mp_room_predictions/' + roomId);
+        if (item && containsLegacyUid(item, uid)) out.mpRoomPredictions[roomId] = item;
+      }
       // Friend conversations are stored under a deterministic pair of UIDs.
-      const allChats = await read('mp_chats') || {};
+      // Read only conversations with known friends rather than the entire chat tree.
       out.mpChats = {};
-      Object.keys(allChats).forEach(id => {
-        if (id.split('_').includes(uid)) out.mpChats[id] = allChats[id];
-      });
+      for (const friendUid of Object.keys(out.mpFriends || {})) {
+        const chatId = [uid, friendUid].sort().join('_');
+        const chat = await read('mp_chats/' + chatId);
+        if (chat) out.mpChats[chatId] = chat;
+      }
       // Preserve every monthly leaderboard row, not just the current month.
       const allMpMonths = await read('mp_global_lb') || {};
       out.mpLeaderboards = {};
